@@ -1,25 +1,30 @@
 # Project Notes
 
-This file is the short working map for future work in `next-frontend`. Read it first, then inspect only the files relevant to the current task. Update it when project structure, dependencies, conventions, or important behavior changes. Treat configuration recorded here as a map, and confirm current values in the relevant source/config file when they matter.
+This file is the short working map for future work in `next-frontend`. Read it first, then inspect only the files relevant to the current task. Update it when project structure, dependencies, conventions, or important behavior changes.
 
 ## What this project is
 
-- A starter Next.js web frontend in this directory.
-- `package.json` and `package-lock.json` specify Next.js `16.4.2`, React/React DOM `19.3.0`, TypeScript `^5`, Tailwind CSS `^4`, ESLint `^8.57.1`, and `eslint-config-next` `^14.2.35`.
+- A Next.js web frontend in this directory.
 - npm is the package manager (`package-lock.json` is checked in).
 - Next.js App Router: the only current route is `/`, implemented in `app/page.tsx`; the root layout is in `app/layout.tsx`.
-- Dependency declarations currently mix Next.js 16 with `eslint-config-next` 14. This is an observed version mismatch; reassess compatibility before changing or relying on lint tooling.
+- `package.json` and `package-lock.json` specify Next.js `16.4.2`, React/React DOM `19.3.0`, TypeScript `^5`, Tailwind CSS `^4`, ESLint `^9`, and `eslint-config-next` `^16.4.2`.
+- shadcn CLI `^4.22.1` configures the Nova/Radix preset in `components.json` and generates local UI components. Theme variables and imports live in `app/globals.css`.
 
 ## Key files
 
-- `app/page.tsx` — current and only route (`/`); still the Create Next App starter screen.
+- `app/page.tsx` — current and only route (`/`); loads the client-only planner shell.
+- `components/office-planner-shell.tsx` — client boundary for loading the interactive planner without prerendering browser date/storage reads.
+- `components/office-planner.tsx` — interactive monthly RTO calendar with per-date office checkboxes, browser-local persistence, and sample event/RTO notices.
 - `app/layout.tsx` — root HTML/layout, metadata, and Geist font setup.
-- `app/globals.css` — imports Tailwind and defines base theme colors.
-- `next.config.ts` — Next config; enables `cacheComponents`, `partialPrefetching`, `experimental.agentFeedback`, and Tailwind's Turbopack CSS loader.
+- `app/globals.css` — imports Tailwind and shadcn styles, and defines base theme variables.
+- `components/ui/` — shadcn-generated Button, Card, Badge, and Input components.
+- `components.json` — shadcn preset, aliases, and style configuration.
+- `lib/utils.ts` — shared class name utility.
+- `next.config.ts` — Next config and Tailwind's Turbopack CSS loader.
 - `tsconfig.json` — strict TypeScript, bundler resolution, `@/*` maps to the frontend root.
-- `eslint.config.mjs` — flat ESLint config using `eslint-config-next/core-web-vitals` and `/typescript`, plus generated output ignores. Compare its imports with installed/configured package versions before modifying lint setup.
-- `AGENTS.md` — local Next.js instructions and the requirement to read and maintain these project notes; read relevant docs under `node_modules/next/dist/docs/` before changing Next.js APIs or conventions. The installed Next.js version may differ from prior knowledge.
-- `.gitignore` — ignores framework/build output, dependencies, local env files, and editor/OS artifacts; permits env templates.
+- `eslint.config.mjs` — flat ESLint config using `eslint-config-next/core-web-vitals` and `/typescript`.
+- `AGENTS.md` — local Next.js instructions; read relevant docs under `node_modules/next/dist/docs/` before changing Next.js APIs or conventions.
+- `.gitignore` — ignores framework/build output, dependencies, local env files, and editor/OS artifacts.
 
 ## Commands
 
@@ -30,10 +35,10 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 ## Current implementation state
 
-- The app is still the Create Next App landing page with starter SVGs in `public/` and a generated starter favicon.
-- Root metadata still says “Create Next App”; no product-specific functionality or data integrations have been identified yet.
-- `node_modules/` and `.next/` exist locally and are generated; do not treat them as source. Source scan excluded these generated/dependency directories.
+- The root page is an interactive RTO planner; schedule selections are stored in browser local storage by month, and event notices are illustrative until connected to a company calendar or backend.
+- Root metadata and planner use a PwC-inspired orange and charcoal internal-tool theme.
+- `node_modules/` and `.next/` exist locally and are generated; do not treat them as source.
 
 ## Maintenance rule
 
-Keep these notes concise and factual. When a task reveals or changes architecture, routes, data flow, integrations, scripts, or important conventions, update the relevant section here so later work can start from this map instead of re-reading the entire project.
+Keep these notes concise and factual. When work changes architecture, routes, data flow, integrations, or conventions, update the relevant section here.
