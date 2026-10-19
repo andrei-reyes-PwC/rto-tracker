@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,7 +47,7 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Create a user")
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserRequest request) {
-        UserResponse created = UserResponse.from(userService.create(request.email()));
+        UserResponse created = UserResponse.from(userService.create(request.email(), request.password()));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{email}").buildAndExpand(created.email()).toUri();
         return ResponseEntity.created(location).body(created);
@@ -68,7 +69,9 @@ public class UserController {
     }
 
     public record UserRequest(
-            @NotBlank @Email @Size(max = 254) String email) {
+            @NotBlank @Email @Pattern(regexp = "^[^@\\s]+@(?:[^@.\\s]+\\.)+[^@.\\s]+$")
+            @Size(max = 254) String email,
+            @NotBlank @Size(min = 8, max = 72) String password) {
     }
 
     public record UserResponse(String email) {

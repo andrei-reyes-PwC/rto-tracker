@@ -13,14 +13,22 @@ public class User {
     @Column(name = "email", nullable = false, length = 254)
     private String email;
 
+    @Column(name = "password_hash", length = 60)
+    private String passwordHash;
+
     protected User() {
     }
 
-    public User(String email) {
+    public User(String email, String passwordHash) {
         this.email = email;
+        this.passwordHash = passwordHash;
     }
 
     public String getEmail() {
         return email;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
     }
 }

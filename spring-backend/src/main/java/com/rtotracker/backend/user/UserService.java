@@ -14,9 +14,11 @@ import java.util.Locale;
 public class UserService {
 
     private final UserRepository users;
+    private final PasswordHashingService passwordHashingService;
 
-    public UserService(UserRepository users) {
+    public UserService(UserRepository users, PasswordHashingService passwordHashingService) {
         this.users = users;
+        this.passwordHashingService = passwordHashingService;
     }
 
     @Transactional(readOnly = true)
@@ -30,12 +32,12 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
-    public User create(String email) {
+    public User create(String email, String password) {
         String normalizedEmail = normalize(email);
         if (users.existsById(normalizedEmail)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A user with this email already exists");
         }
-        return users.save(new User(normalizedEmail));
+        return users.save(new User(normalizedEmail, passwordHashingService.hash(password)));
     }
 
     public User update(String currentEmail, String replacementEmail) {
@@ -49,7 +51,7 @@ public class UserService {
         }
         users.delete(current);
         users.flush();
-        return users.save(new User(normalizedReplacement));
+        return users.save(new User(normalizedReplacement, current.getPasswordHash()));
     }
 
     public void delete(String email) {
