@@ -14,7 +14,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 - `app/page.tsx` â€” planner route (`/`); Server Component that renders the planner.
 - `app/login/login-form.tsx` â€” client-side login form using shadcn UI components and Zod validation; submits to the Spring API and includes the HTTP session cookie.
-- `api/` â€” frontend API client functions and Next.js backend proxy rewrite configuration.
+- `api/` â€” frontend API client, backend proxy rewrite, backend URL, and session-check helpers.
 - `validation/` â€” Zod schemas and inferred form value types, organized by form.
 - `app/component/OfficePlanner.tsx` â€” route-specific interactive planner; browser schedule storage and the current client date are read through `useSyncExternalStore`.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation/profile built on shadcn's responsive Sidebar component.
@@ -40,7 +40,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 ## Current implementation state
 
-- The `/login` route submits credentials to same-origin `/api/auth/login`. A Next.js rewrite reverse-proxies `/api/*` to `BACKEND_API_URL` (default `http://localhost:8080`), preserving the backend session cookie without browser CORS.
+- The root and `/login` routes are guarded by the root `proxy.ts`, which validates the backend session through `/api/auth/me` and redirects based on authentication state. A Next.js rewrite reverse-proxies `/api/*` to `BACKEND_API_URL` (default `http://localhost:8080`), preserving the backend session cookie without browser CORS.
 
 - Use React Hook Form `Controller` for form fields, with Zod schemas and the Zod resolver for validation.
 

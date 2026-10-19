@@ -14,7 +14,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 ## Key files
 
 - `src/main/java/com/rtotracker/backend/user/` contains the user entity, repository, service, and CRUD controller.
-- `src/main/java/com/rtotracker/backend/auth/` contains the login endpoint and credential verification service; successful login creates an HTTP session.
+- `src/main/java/com/rtotracker/backend/auth/` contains login, session validation (`GET /api/auth/me`), and credential verification; successful login creates an HTTP session.
 - `src/main/java/com/rtotracker/backend/WebCorsConfig.java` configures credentialed CORS globally for `/api/**`.
 - `src/main/java/com/rtotracker/backend/ApiExceptionHandler.java` formats validation, malformed request, and application status errors as JSON responses with explanations.
 - `src/main/resources/db/migration/` contains Flyway schema migrations.

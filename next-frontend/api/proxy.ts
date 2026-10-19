@@ -1,4 +1,4 @@
-const backendApiUrl = (process.env.BACKEND_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
+import { backendApiUrl } from "./backend-url";
 
 export function getApiRewrites() {
   return [
