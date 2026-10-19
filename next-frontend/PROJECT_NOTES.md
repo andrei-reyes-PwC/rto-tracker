@@ -1,4 +1,4 @@
-# Project Notes
+﻿# Project Notes
 
 This file is the short working map for future work in `next-frontend`. Read it first, then inspect only the files relevant to the current task. Update it when project structure, dependencies, conventions, or important behavior changes.
 
@@ -12,27 +12,28 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 ## Key files
 
-- `app/page.tsx` — current and only route (`/`); Server Component that renders the planner.
-- `app/component/OfficePlanner.tsx` — route-specific interactive planner; browser schedule storage and the current client date are read through `useSyncExternalStore`.
-- `components/Sidebar.tsx` — reusable desktop sidebar, mobile navigation drawer, and mobile menu button.
-- `app/component/` — route-scoped planner and sections: heading, monthly summary, calendar, and event requirements.
-- `app/layout.tsx` — root HTML/layout, metadata, and Geist font setup.
-- `app/globals.css` — imports Tailwind and shadcn styles, and defines base theme variables.
-- `components/ui/` — shadcn-generated Button, Card, Badge, and Input components.
-- `components.json` — shadcn preset, aliases, and style configuration.
-- `lib/utils.ts` — shared class name utility.
-- `next.config.ts` — Next config and Tailwind's Turbopack CSS loader.
-- `tsconfig.json` — strict TypeScript, bundler resolution, `@/*` maps to the frontend root.
-- `eslint.config.mjs` — flat ESLint config using `eslint-config-next/core-web-vitals` and `/typescript`.
-- `AGENTS.md` — local Next.js instructions; read relevant docs under `node_modules/next/dist/docs/` before changing Next.js APIs or conventions.
-- `.gitignore` — ignores framework/build output, dependencies, local env files, and editor/OS artifacts.
+- `app/page.tsx` â€” current and only route (`/`); Server Component that renders the planner.
+- `app/component/OfficePlanner.tsx` â€” route-specific interactive planner; browser schedule storage and the current client date are read through `useSyncExternalStore`.
+- `components/Sidebar.tsx` â€” shared AC Manila navigation/profile built on shadcn's responsive Sidebar component.
+- `components/ui/sidebar.tsx` â€” shadcn responsive sidebar primitives; `hooks/use-mobile.ts` supplies its mobile breakpoint.
+- `app/component/` â€” route-scoped planner and sections: heading, monthly summary, calendar, and event requirements.
+- `app/layout.tsx` â€” root HTML/layout, metadata, and Geist font setup.
+- `app/globals.css` â€” imports Tailwind and shadcn styles, and defines base theme variables.
+- `components/ui/` â€” shadcn-generated Button, Card, Badge, and Input components.
+- `components.json` â€” shadcn preset, aliases, and style configuration.
+- `lib/utils.ts` â€” shared class name utility.
+- `next.config.ts` â€” Next config and Tailwind's Turbopack CSS loader.
+- `tsconfig.json` â€” strict TypeScript, bundler resolution, `@/*` maps to the frontend root.
+- `eslint.config.mjs` â€” flat ESLint config using `eslint-config-next/core-web-vitals` and `/typescript`.
+- `AGENTS.md` â€” local Next.js instructions; read relevant docs under `node_modules/next/dist/docs/` before changing Next.js APIs or conventions.
+- `.gitignore` â€” ignores framework/build output, dependencies, local env files, and editor/OS artifacts.
 
 ## Commands
 
-- `npm run dev` — development server.
-- `npm run build` — production build.
-- `npm run start` — serve the production build.
-- `npm run lint` — ESLint.
+- `npm run dev` â€” development server.
+- `npm run build` â€” production build.
+- `npm run start` â€” serve the production build.
+- `npm run lint` â€” ESLint.
 
 ## Current implementation state
 

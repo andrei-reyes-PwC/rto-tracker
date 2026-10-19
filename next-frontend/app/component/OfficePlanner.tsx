@@ -3,6 +3,8 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Building2, Coffee, Users } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import EventsRequirements, { type PlannerEvent } from "@/app/component/EventsRequirements";
 import MonthlyCalendar from "@/app/component/MonthlyCalendar";
 import PlannerHeading from "@/app/component/PlannerHeading";
@@ -64,8 +66,6 @@ function getMonthKey(year: number, month: number) {
 }
 
 export default function OfficePlanner() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [visibleMonthOverride, setVisibleMonthOverride] = useState<string | null>(null);
   const [draftByMonth, setDraftByMonth] = useState<Record<string, string[]> | null>(null);
@@ -157,20 +157,18 @@ export default function OfficePlanner() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f6f4] text-[#2d2926]">
-      <div className="flex min-h-screen w-full lg:h-screen lg:min-h-0 lg:overflow-hidden">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          mobileOpen={mobileNavOpen}
-          onCollapsedChange={setSidebarCollapsed}
-          onMobileOpenChange={setMobileNavOpen}
-        />
-        <section className="min-h-0 min-w-0 flex-1 lg:h-screen lg:overflow-y-auto">
-          <div className="w-full space-y-7 px-5 py-8 sm:px-8 sm:py-10 lg:px-10 xl:px-12">
+    <TooltipProvider>
+      <SidebarProvider defaultOpen className="min-h-screen bg-[#f7f6f4] text-[#2d2926] lg:h-screen lg:min-h-0">
+        <Sidebar />
+        <SidebarInset className="min-h-screen min-w-0 lg:h-screen lg:min-h-0 lg:overflow-y-auto">
+          <header className="sticky top-0 z-30 flex h-20 items-center gap-3 border-b border-slate-200/80 bg-white/95 px-5 py-4 backdrop-blur sm:px-8 lg:px-10 xl:px-12">
+            <SidebarTrigger className="size-9 rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Toggle sidebar" />
+            <h1 className="text-base font-semibold tracking-tight text-[#2d2926] sm:text-lg">My Schedule</h1>
+          </header>
+          <div className="w-full space-y-7 px-5 pb-8 pt-4 sm:px-8 sm:pb-10 sm:pt-5 lg:px-10 xl:px-12">
             <PlannerHeading
               hasUnsavedChanges={hasUnsavedChanges}
               onSave={saveSchedule}
-              onOpenNavigation={() => setMobileNavOpen(true)}
             />
             <PlannerSummary
               officeDayCount={officeDays.length}
@@ -198,8 +196,8 @@ export default function OfficePlanner() {
               Your schedule stays on this device until you connect a work account.
             </p>
           </div>
-        </section>
-      </div>
-    </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }
