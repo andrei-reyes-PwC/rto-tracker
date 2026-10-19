@@ -6,20 +6,21 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 - A Next.js web frontend in this directory.
 - npm is the package manager (`package-lock.json` is checked in).
-- Next.js App Router: the only current route is `/`, implemented in `app/page.tsx`; the root layout is in `app/layout.tsx`.
-- `package.json` and `package-lock.json` specify Next.js `16.4.2`, React/React DOM `19.3.0`, TypeScript `^5`, Tailwind CSS `^4`, ESLint `^9`, and `eslint-config-next` `^16.4.2`.
+- Next.js App Router routes: `/` is implemented in `app/page.tsx`; `/login` is implemented in `app/login/page.tsx` and `app/login/login-form.tsx`. The root layout is in `app/layout.tsx`.
+- `package.json` and `package-lock.json` specify Next.js `16.4.2`, React/React DOM `19.3.0`, TypeScript `^5`, Tailwind CSS `^4`, ESLint `^9`, React Hook Form, the Zod resolver, and Zod.
 - shadcn CLI `^4.22.1` configures the Nova/Radix preset in `components.json` and generates local UI components. Theme variables and imports live in `app/globals.css`.
 
 ## Key files
 
-- `app/page.tsx` â€” current and only route (`/`); Server Component that renders the planner.
+- `app/page.tsx` â€” planner route (`/`); Server Component that renders the planner.
+- `app/login/login-form.tsx` â€” client-side login form using shadcn UI components and Zod validation. Authentication submission is not connected to a backend yet.
 - `app/component/OfficePlanner.tsx` â€” route-specific interactive planner; browser schedule storage and the current client date are read through `useSyncExternalStore`.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation/profile built on shadcn's responsive Sidebar component.
 - `components/ui/sidebar.tsx` â€” shadcn responsive sidebar primitives; `hooks/use-mobile.ts` supplies its mobile breakpoint.
 - `app/component/` â€” route-scoped planner and sections: heading, monthly summary, calendar, and event requirements.
 - `app/layout.tsx` â€” root HTML/layout, metadata, and Geist font setup.
 - `app/globals.css` â€” imports Tailwind and shadcn styles, and defines base theme variables.
-- `components/ui/` â€” shadcn-generated Button, Card, Badge, and Input components.
+- `components/ui/` â€” shadcn-generated Button, Card, Badge, Input, Label, Alert, and other shared UI components.
 - `components.json` â€” shadcn preset, aliases, and style configuration.
 - `lib/utils.ts` â€” shared class name utility.
 - `next.config.ts` â€” Next config and Tailwind's Turbopack CSS loader.
@@ -36,6 +37,11 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `npm run lint` â€” ESLint.
 
 ## Current implementation state
+
+- The `/login` route has a client-side email/password form validated with Zod. Authentication submission is not connected to a backend yet.
+
+- Use React Hook Form `Controller` for form fields, with Zod schemas and the Zod resolver for validation.
+
 
 - The root page is an interactive RTO planner; schedule selections are stored in browser local storage by month, and event notices are illustrative until connected to a company calendar or backend.
 - Root metadata and planner use a PwC-inspired orange and charcoal internal-tool theme.
