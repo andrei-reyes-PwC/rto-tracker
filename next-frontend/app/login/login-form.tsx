@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { login } from "@/api/auth";
+import { loginSchema, type LoginFormValues } from "@/validation/login";
 import { ArrowRight, Building2, CalendarDays, ShieldCheck } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,26 +20,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .min(1, "Enter your email address.")
-    .email("Enter a valid email address."),
-  password: z.string().min(1, "Enter your password."),
-});
-
-type LoginValues = z.infer<typeof loginSchema>;
-
 export default function LoginForm() {
   const [notice, setNotice] = useState("");
-  const form = useForm<LoginValues>({
+  const router = useRouter();
+  const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  function handleSubmit(_values: LoginValues) {
-    setNotice("Sign-in is not connected yet. Your credentials were not sent.");
+  async function handleSubmit(values: LoginFormValues) {
+    setNotice("");
+    const result = await login(values);
+    if (!result.success) {
+      setNotice(result.message);
+      return;
+    }
+    router.replace("/");
   }
 
   return (
@@ -139,8 +137,8 @@ export default function LoginForm() {
                   />
                 </div>
 
-                <Button type="submit" size="lg" className="h-11 w-full rounded-xl bg-[#e65300] text-white hover:bg-[#ca4900]">
-                  Sign in <ArrowRight className="ml-1 size-4" aria-hidden="true" />
+                <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="h-11 w-full rounded-xl bg-[#e65300] text-white hover:bg-[#ca4900]">
+                  {form.formState.isSubmitting ? "Signing in…" : "Sign in"} <ArrowRight className="ml-1 size-4" aria-hidden="true" />
                 </Button>
 
                 {notice && (

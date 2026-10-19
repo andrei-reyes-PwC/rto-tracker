@@ -7,13 +7,15 @@ This file is the short working map for `spring-backend`. Read it before backend 
 - A standalone Spring Boot REST API built with Maven.
 - Spring Boot `4.1.1`, Java `25`, Spring MVC, Spring Data JPA, MySQL, Flyway, and springdoc OpenAPI are configured in `pom.xml`.
 - Flyway creates the `users` table with email as its primary key and adds a nullable BCrypt password hash for compatibility with existing records; Hibernate validates the mapped entity.
-- The API exposes CRUD endpoints under `/api/users`.
+- The API exposes `POST /api/auth/login` and CRUD endpoints under `/api/users`.
 - Swagger UI is available at `/swagger-ui.html`; startup prints its URL.
 - The default HTTP port is `8080`.
 
 ## Key files
 
 - `src/main/java/com/rtotracker/backend/user/` contains the user entity, repository, service, and CRUD controller.
+- `src/main/java/com/rtotracker/backend/auth/` contains the login endpoint and credential verification service; successful login creates an HTTP session.
+- `src/main/java/com/rtotracker/backend/WebCorsConfig.java` configures credentialed CORS globally for `/api/**`.
 - `src/main/java/com/rtotracker/backend/ApiExceptionHandler.java` formats validation, malformed request, and application status errors as JSON responses with explanations.
 - `src/main/resources/db/migration/` contains Flyway schema migrations.
 
@@ -35,5 +37,6 @@ Run these from `spring-backend/`:
 
 - User records are persisted through Spring Data JPA and MySQL, with Flyway managing schema changes. User request emails must have a dotted domain. New users provide a password, and `PasswordHashingService` stores a BCrypt hash with a generated per-password salt; API responses expose email only.
 - Database connection values are configurable through `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`.
-- The API has no authentication configured; CRUD endpoints are public.
+- `POST /api/auth/login` verifies BCrypt credentials and establishes an HTTP session. The current user CRUD endpoints remain public; the session is not yet used to authorize them.
+- The frontend reverse-proxies `/api/*` to the backend, so its browser API requests remain same-origin. Direct cross-origin API requests are allowed from `FRONTEND_ORIGIN` (default `http://localhost:3000`) with credentials.
 - `target/` contains generated Maven output and is not source.

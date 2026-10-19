@@ -13,7 +13,9 @@ This file is the short working map for future work in `next-frontend`. Read it f
 ## Key files
 
 - `app/page.tsx` â€” planner route (`/`); Server Component that renders the planner.
-- `app/login/login-form.tsx` â€” client-side login form using shadcn UI components and Zod validation. Authentication submission is not connected to a backend yet.
+- `app/login/login-form.tsx` â€” client-side login form using shadcn UI components and Zod validation; submits to the Spring API and includes the HTTP session cookie.
+- `api/` â€” frontend API client functions and Next.js backend proxy rewrite configuration.
+- `validation/` â€” Zod schemas and inferred form value types, organized by form.
 - `app/component/OfficePlanner.tsx` â€” route-specific interactive planner; browser schedule storage and the current client date are read through `useSyncExternalStore`.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation/profile built on shadcn's responsive Sidebar component.
 - `components/ui/sidebar.tsx` â€” shadcn responsive sidebar primitives; `hooks/use-mobile.ts` supplies its mobile breakpoint.
@@ -23,7 +25,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `components/ui/` â€” shadcn-generated Button, Card, Badge, Input, Label, Alert, and other shared UI components.
 - `components.json` â€” shadcn preset, aliases, and style configuration.
 - `lib/utils.ts` â€” shared class name utility.
-- `next.config.ts` â€” Next config and Tailwind's Turbopack CSS loader.
+- `next.config.ts` â€” Next config that registers the proxy rewrite from `api/proxy.ts`, plus Tailwind's Turbopack CSS loader.
 - `tsconfig.json` â€” strict TypeScript, bundler resolution, `@/*` maps to the frontend root.
 - `eslint.config.mjs` â€” flat ESLint config using `eslint-config-next/core-web-vitals` and `/typescript`.
 - `AGENTS.md` â€” local Next.js instructions; read relevant docs under `node_modules/next/dist/docs/` before changing Next.js APIs or conventions.
@@ -38,7 +40,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 ## Current implementation state
 
-- The `/login` route has a client-side email/password form validated with Zod. Authentication submission is not connected to a backend yet.
+- The `/login` route submits credentials to same-origin `/api/auth/login`. A Next.js rewrite reverse-proxies `/api/*` to `BACKEND_API_URL` (default `http://localhost:8080`), preserving the backend session cookie without browser CORS.
 
 - Use React Hook Form `Controller` for form fields, with Zod schemas and the Zod resolver for validation.
 
