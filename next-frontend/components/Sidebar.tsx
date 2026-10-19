@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarDays } from "lucide-react";
+import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -14,19 +15,6 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
-
-function Profile() {
-  return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <SidebarMenuButton size="lg" tooltip="My profile" className="h-12">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#ffe0cc] text-xs font-semibold text-[#b83b00]">AR</span>
-          <span className="truncate text-sm font-medium">My profile</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    </SidebarMenu>
-  );
-}
 
 export default function Sidebar() {
   const { setOpenMobile } = useSidebar();
@@ -62,7 +50,7 @@ export default function Sidebar() {
       </SidebarContent>
       <SidebarFooter className="gap-2 p-2">
         <SidebarSeparator />
-        <Profile />
+        <ProfileMenu />
       </SidebarFooter>
     </ShadcnSidebar>
   );

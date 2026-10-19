@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "@/api/auth";
+import { useAuth } from "@/providers/AuthProvider";
 import { loginSchema, type LoginFormValues } from "@/validation/login";
 import { ArrowRight, Building2, CalendarDays, ShieldCheck } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 export default function LoginForm() {
   const [notice, setNotice] = useState("");
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
@@ -35,6 +37,8 @@ export default function LoginForm() {
       setNotice(result.message);
       return;
     }
+    await refreshUser();
+    form.reset();
     router.replace("/");
   }
 

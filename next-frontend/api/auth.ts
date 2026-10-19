@@ -3,6 +3,10 @@ export type LoginCredentials = {
   password: string;
 };
 
+export type AuthenticatedUser = {
+  email: string;
+};
+
 type ApiErrorResponse = {
   message?: string;
   details?: string[];
@@ -38,5 +42,30 @@ export async function login(credentials: LoginCredentials): Promise<LoginResult>
       success: false,
       message: "Could not connect to the sign-in service. Please try again.",
     };
+  }
+}
+
+export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
+  try {
+    const response = await fetch("/api/auth/me", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as AuthenticatedUser;
+  } catch {
+    return null;
+  }
+}
+
+export async function logout(): Promise<boolean> {
+  try {
+    const response = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    return response.ok;
+  } catch {
+    return false;
   }
 }
