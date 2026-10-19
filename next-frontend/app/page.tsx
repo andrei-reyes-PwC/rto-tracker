@@ -1,5 +1,5 @@
-import OfficePlannerShell from "@/components/office-planner-shell";
+import OfficePlanner from "./component/OfficePlanner";
 
 export default function Home() {
-  return <OfficePlannerShell />;
+  return <OfficePlanner />;
 }

@@ -12,9 +12,10 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 ## Key files
 
-- `app/page.tsx` — current and only route (`/`); loads the client-only planner shell.
-- `components/office-planner-shell.tsx` — client boundary for loading the interactive planner without prerendering browser date/storage reads.
-- `components/office-planner.tsx` — interactive monthly RTO calendar with per-date office checkboxes, browser-local persistence, and sample event/RTO notices.
+- `app/page.tsx` — current and only route (`/`); Server Component that renders the planner.
+- `app/component/OfficePlanner.tsx` — route-specific interactive planner; browser schedule storage and the current client date are read through `useSyncExternalStore`.
+- `components/Sidebar.tsx` — reusable desktop sidebar, mobile navigation drawer, and mobile menu button.
+- `app/component/` — route-scoped planner and sections: heading, monthly summary, calendar, and event requirements.
 - `app/layout.tsx` — root HTML/layout, metadata, and Geist font setup.
 - `app/globals.css` — imports Tailwind and shadcn styles, and defines base theme variables.
 - `components/ui/` — shadcn-generated Button, Card, Badge, and Input components.
