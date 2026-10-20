@@ -46,7 +46,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - Use React Hook Form `Controller` for form fields, with Zod schemas and the Zod resolver for validation.
 
 
-- The root page is an interactive RTO planner; schedule selections are stored in browser local storage by month, and event notices are illustrative until connected to a company calendar or backend.
+- The root page is an interactive RTO planner; schedules load from and save to the backend per month, and unsaved edits are kept as client-side drafts. Event notices are illustrative until connected to a company calendar or backend.
 - `components/sidebar/ProfileMenu.tsx` and `components/sidebar/utils.ts` contain the authenticated profile menu/logout behavior and email initials helper, respectively.
 - Root metadata and planner use a PwC-inspired orange and charcoal internal-tool theme.
 - `node_modules/` and `.next/` exist locally and are generated; do not treat them as source.
@@ -54,3 +54,5 @@ This file is the short working map for future work in `next-frontend`. Read it f
 ## Maintenance rule
 
 Keep these notes concise and factual. When work changes architecture, routes, data flow, integrations, or conventions, update the relevant section here.
+
+- `api/office-days.ts` loads and replaces the authenticated user's monthly schedule through the same-origin API proxy. The planner keeps unsaved edits in client state and persists them with the backend on Save.

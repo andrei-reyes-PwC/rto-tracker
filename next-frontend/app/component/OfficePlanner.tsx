@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Building2, Coffee, Users } from "lucide-react";
+import { getOfficeDays, replaceOfficeDays } from "@/api/office-days";
 import Sidebar from "@/components/Sidebar";
+import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import EventsRequirements, { type PlannerEvent } from "@/app/component/EventsRequirements";
@@ -10,8 +12,6 @@ import MonthlyCalendar from "@/app/component/MonthlyCalendar";
 import PlannerHeading from "@/app/component/PlannerHeading";
 import PlannerSummary from "@/app/component/PlannerSummary";
 
-const storageKey = "roamly-office-days";
-const scheduleChangedEvent = "rto-schedule-change";
 const serverDateSnapshot = "2000-01-01";
 let clientDateSnapshot: string | undefined;
 
@@ -32,31 +32,6 @@ function subscribeToCurrentDate(onStoreChange: () => void) {
   return () => window.clearInterval(interval);
 }
 
-function subscribeToSchedule(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(scheduleChangedEvent, onStoreChange);
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(scheduleChangedEvent, onStoreChange);
-  };
-}
-
-function getScheduleSnapshot() {
-  try {
-    return localStorage.getItem(storageKey) ?? "{}";
-  } catch {
-    return "{}";
-  }
-}
-
-function parseSchedule(snapshot: string): Record<string, string[]> {
-  try {
-    return JSON.parse(snapshot) as Record<string, string[]>;
-  } catch {
-    return {};
-  }
-}
-
 function dateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
@@ -66,33 +41,63 @@ function getMonthKey(year: number, month: number) {
 }
 
 export default function OfficePlanner() {
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [visibleMonthOverride, setVisibleMonthOverride] = useState<string | null>(null);
-  const [draftByMonth, setDraftByMonth] = useState<Record<string, string[]> | null>(null);
+  const [savedByMonth, setSavedByMonth] = useState<Record<string, string[]>>({});
+  const [draftByMonth, setDraftByMonth] = useState<Record<string, string[]>>({});
+  const [isLoadingMonth, setIsLoadingMonth] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [loadRetry, setLoadRetry] = useState(0);
+  const loadedMonths = useRef(new Set<string>());
   const currentDateKey = useSyncExternalStore(
     subscribeToCurrentDate,
     readClientDateSnapshot,
     () => serverDateSnapshot,
   );
-  const storedSchedule = useSyncExternalStore(
-    subscribeToSchedule,
-    getScheduleSnapshot,
-    () => "{}",
-  );
-  const persistedByMonth = useMemo(() => parseSchedule(storedSchedule), [storedSchedule]);
-  const savedByMonth = draftByMonth ?? persistedByMonth;
-
   const monthSelection = visibleMonthOverride ?? currentDateKey;
   const [selectedYear, selectedMonthNumber] = monthSelection.split("-").map(Number);
   const visibleMonth = new Date(selectedYear, selectedMonthNumber - 1, 1);
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
   const monthKey = getMonthKey(year, month);
-  const officeDays = savedByMonth[monthKey] ?? [];
+  const officeDays = draftByMonth[monthKey] ?? savedByMonth[monthKey] ?? [];
+  const hasUnsavedChanges = draftByMonth[monthKey] !== undefined;
   const today = new Date(`${currentDateKey}T12:00:00`);
   const todayKey = dateKey(today);
   const monthLabel = new Intl.DateTimeFormat("en", { month: "long" }).format(visibleMonth);
   const monthName = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(visibleMonth);
+
+  useEffect(() => {
+    if (monthKey === serverDateSnapshot) return;
+    if (loadedMonths.current.has(monthKey)) {
+      setIsLoadingMonth(false);
+      setLoadError("");
+      return;
+    }
+
+    let isCurrentRequest = true;
+    setIsLoadingMonth(true);
+    setLoadError("");
+
+    getOfficeDays(monthKey)
+      .then((schedule) => {
+        if (!isCurrentRequest) return;
+        loadedMonths.current.add(monthKey);
+        setSavedByMonth((current) => ({ ...current, [monthKey]: schedule.officeDays }));
+      })
+      .catch((error: unknown) => {
+        if (!isCurrentRequest) return;
+        setLoadError(error instanceof Error ? error.message : "Could not load this month's schedule.");
+      })
+      .finally(() => {
+        if (isCurrentRequest) setIsLoadingMonth(false);
+      });
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [monthKey, loadRetry]);
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
@@ -118,9 +123,10 @@ export default function OfficePlanner() {
   const visibleEvents = allMonthEvents.filter((event) => dateKey(event.date) >= todayKey);
 
   function updateOfficeDays(update: (current: string[]) => string[]) {
-    setHasUnsavedChanges(true);
-    const current = draftByMonth ?? persistedByMonth;
-    setDraftByMonth({ ...current, [monthKey]: update(current[monthKey] ?? []) });
+    setDraftByMonth((current) => ({
+      ...current,
+      [monthKey]: update(current[monthKey] ?? savedByMonth[monthKey] ?? []),
+    }));
   }
 
   function toggleDay(key: string) {
@@ -136,14 +142,22 @@ export default function OfficePlanner() {
     updateOfficeDays(() => []);
   }
 
-  function saveSchedule() {
+  async function saveSchedule() {
+    setIsSaving(true);
+    setSaveError("");
     try {
-      localStorage.setItem(storageKey, JSON.stringify(savedByMonth));
-      window.dispatchEvent(new Event(scheduleChangedEvent));
-      setDraftByMonth(null);
-      setHasUnsavedChanges(false);
-    } catch {
-      setHasUnsavedChanges(true);
+      const schedule = await replaceOfficeDays(monthKey, officeDays);
+      setSavedByMonth((current) => ({ ...current, [monthKey]: schedule.officeDays }));
+      setDraftByMonth((current) => {
+        const next = { ...current };
+        delete next[monthKey];
+        return next;
+      });
+      loadedMonths.current.add(monthKey);
+    } catch (error: unknown) {
+      setSaveError(error instanceof Error ? error.message : "Could not save this month's schedule.");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -168,8 +182,20 @@ export default function OfficePlanner() {
           <div className="w-full space-y-7 px-5 pb-8 pt-4 sm:px-8 sm:pb-10 sm:pt-5 lg:px-10 xl:px-12">
             <PlannerHeading
               hasUnsavedChanges={hasUnsavedChanges}
+              isLoading={isLoadingMonth}
+              isSaving={isSaving}
               onSave={saveSchedule}
             />
+            {(loadError || saveError) && (
+              <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <span>{loadError || saveError}</span>
+                {loadError && (
+                  <Button variant="outline" size="sm" onClick={() => setLoadRetry((attempt) => attempt + 1)}>
+                    Retry
+                  </Button>
+                )}
+              </div>
+            )}
             <PlannerSummary
               officeDayCount={officeDays.length}
               weekdayCount={weekdayCount}
@@ -189,11 +215,12 @@ export default function OfficePlanner() {
                 onToday={goToToday}
                 onSelectWeekdays={setWeekdays}
                 onClearMonth={clearMonth}
+                disabled={isLoadingMonth || Boolean(loadError) || isSaving}
               />
               <EventsRequirements events={visibleEvents} monthLabel={monthLabel} />
             </div>
             <p className="pb-3 text-center text-xs text-slate-400">
-              Your schedule stays on this device until you connect a work account.
+              Your office days are saved to your work account.
             </p>
           </div>
         </SidebarInset>

@@ -26,6 +26,7 @@ type MonthlyCalendarProps = {
   onToday: () => void;
   onSelectWeekdays: () => void;
   onClearMonth: () => void;
+  disabled?: boolean;
 };
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -46,6 +47,7 @@ export default function MonthlyCalendar({
   onToday,
   onSelectWeekdays,
   onClearMonth,
+  disabled = false,
 }: MonthlyCalendarProps) {
   return (
     <Card id="calendar" className="gap-0 border-slate-200/80 shadow-none">
@@ -74,7 +76,7 @@ export default function MonthlyCalendar({
               <label key={key} className={`group relative flex min-h-[78px] cursor-pointer flex-col border-b border-r border-slate-100 p-2 transition sm:min-h-[112px] sm:p-3 ${isOfficeDay ? "bg-[#fff0e6]/70 hover:bg-[#fff0e6]" : "bg-white hover:bg-slate-50"} ${isWeekend ? "bg-slate-50/40" : ""}`}>
                 <span className="flex items-center justify-between">
                   <span className={`flex size-7 items-center justify-center rounded-full text-xs ${isToday ? "bg-[#e65300] font-semibold text-white" : "font-medium text-slate-700"}`}>{date.getDate()}</span>
-                  <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => onToggleDay(key)} className="size-4 cursor-pointer accent-[#e65300]" />
+                  <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => onToggleDay(key)} disabled={disabled} className="size-4 cursor-pointer accent-[#e65300]" />
                 </span>
                 <span className={`mt-auto flex items-center gap-1 text-[10px] font-medium sm:text-xs ${isOfficeDay ? "text-[#b83b00]" : "text-slate-300 group-hover:text-slate-400"}`}>
                   {isOfficeDay ? <><MapPin className="size-3" /> Office</> : event?.required ? <><Building2 className="size-3" /> Required</> : event ? <><CalendarDays className="size-3" /> Event</> : <span className="opacity-0 group-hover:opacity-100">+ Add plan</span>}
@@ -90,8 +92,8 @@ export default function MonthlyCalendar({
             <span className="flex items-center gap-2"><span className="size-3 rounded-full bg-[#e65300]" /> Today</span>
           </div>
           <div className="flex flex-wrap gap-2 self-start">
-            <Button variant="outline" size="sm" onClick={onSelectWeekdays} className="gap-2"><Check className="size-3.5" /> Select all remaining weekdays</Button>
-            <Button variant="outline" size="sm" onClick={onClearMonth} disabled={officeDays.length === 0} className="gap-2"><RotateCcw className="size-3.5" /> Clear month</Button>
+            <Button variant="outline" size="sm" onClick={onSelectWeekdays} disabled={disabled} className="gap-2"><Check className="size-3.5" /> Select all remaining weekdays</Button>
+            <Button variant="outline" size="sm" onClick={onClearMonth} disabled={disabled || officeDays.length === 0} className="gap-2"><RotateCcw className="size-3.5" /> Clear month</Button>
           </div>
         </div>
       </CardContent>
