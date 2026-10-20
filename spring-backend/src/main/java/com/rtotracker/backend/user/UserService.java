@@ -1,6 +1,7 @@
 package com.rtotracker.backend.user;
 
 import com.rtotracker.backend.office.OfficeDayRepository;
+import com.rtotracker.backend.platform.PlatformRepository;
 import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.role.RoleRepository;
 import org.springframework.data.domain.Page;
@@ -24,16 +25,19 @@ public class UserService {
     private final PasswordHashingService passwordHashingService;
     private final RoleRepository roles;
     private final OfficeDayRepository officeDays;
+    private final PlatformRepository platforms;
 
     public UserService(
             UserRepository users,
             PasswordHashingService passwordHashingService,
             RoleRepository roles,
-            OfficeDayRepository officeDays) {
+            OfficeDayRepository officeDays,
+            PlatformRepository platforms) {
         this.users = users;
         this.passwordHashingService = passwordHashingService;
         this.roles = roles;
         this.officeDays = officeDays;
+        this.platforms = platforms;
     }
 
     @Transactional(readOnly = true)
@@ -90,6 +94,7 @@ public class UserService {
         User replacement = users.save(new User(normalizedReplacement, current.getPasswordHash(), replacementRoles));
         users.flush();
         officeDays.updateUserEmail(current.getEmail(), normalizedReplacement);
+        platforms.updateMemberEmail(current.getEmail(), normalizedReplacement);
         users.delete(current);
         users.flush();
         return findByEmail(replacement.getEmail());

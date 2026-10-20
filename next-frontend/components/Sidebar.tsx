@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Users } from "lucide-react";
+import { Boxes, CalendarDays, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import { useAuth } from "@/providers/AuthProvider";
 import {
@@ -57,6 +57,16 @@ export default function Sidebar() {
                   <Link href="/users" onClick={() => setOpenMobile(false)} aria-label="Manage users">
                     <Users />
                     <span>Manage users</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            {canManageUsers && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/platforms" || pathname.startsWith("/platforms/")} tooltip="Manage platforms">
+                  <Link href="/platforms" onClick={() => setOpenMobile(false)} aria-label="Manage platforms">
+                    <Boxes />
+                    <span>Manage platforms</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

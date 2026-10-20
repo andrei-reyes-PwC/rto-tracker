@@ -14,6 +14,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 - `app/page.tsx` â€” planner route (`/`); Server Component that renders the planner.
 - `app/users/user-management.tsx` owns the preview roster; `user-editor-sheet.tsx` and `user-editor-form.tsx` provide the shared add/edit sheet and form.
+- `/platforms` is implemented in `app/platforms/`; its admin UI manages platform names and user membership through the backend `/api/platforms` CRUD API.
 - `components/SidebarPageLayout.tsx` provides the shared sidebar shell and page header; routes pass their header content as a prop. `components/ui/sidebar.tsx` persists the expanded/collapsed preference in a cookie and restores it when a route mounts.
 - `app/login/login-form.tsx` â€” client-side login form using shadcn UI components and Zod validation; submits to the Spring API and includes the HTTP session cookie.
 - `api/` â€” frontend API client (login, current user, logout), backend proxy rewrite, backend URL, and session-check helpers.
@@ -62,3 +63,4 @@ Keep these notes concise and factual. When work changes architecture, routes, da
 
 - `api/office-days.ts` loads and replaces the authenticated user's monthly schedule through the same-origin API proxy. The planner keeps unsaved edits in client state and persists them with the backend on Save.
 - `api/users.ts` loads, creates, updates, and deletes backend users through the same-origin API proxy without caching list requests.
+- `api/platforms.ts` loads, creates, updates, and deletes platforms through the same-origin API proxy; the platform editor loads the paginated user roster to select members.
