@@ -1,6 +1,7 @@
 package com.rtotracker.backend.auth;
 
 import com.rtotracker.backend.role.Role;
+import com.rtotracker.backend.platform.PlatformService;
 import com.rtotracker.backend.user.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -25,9 +26,11 @@ import java.util.List;
 public class AuthController {
 
     private final AuthService authService;
+    private final PlatformService platformService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, PlatformService platformService) {
         this.authService = authService;
+        this.platformService = platformService;
     }
 
     @PostMapping("/login")
@@ -37,12 +40,16 @@ public class AuthController {
             servletRequest.changeSessionId();
         }
         servletRequest.getSession(true).setAttribute(AuthSession.AUTHENTICATED_EMAIL_ATTRIBUTE, user.getEmail());
-        return LoginResponse.from(user);
+        return responseFor(user);
     }
 
     @GetMapping("/me")
     public LoginResponse currentUser(HttpServletRequest servletRequest) {
-        return LoginResponse.from(authService.findByEmail(AuthSession.requireEmail(servletRequest)));
+        return responseFor(authService.findByEmail(AuthSession.requireEmail(servletRequest)));
+    }
+
+    private LoginResponse responseFor(User user) {
+        return LoginResponse.from(user, platformService.findNamesForUser(user.getEmail()));
     }
 
     @PostMapping("/logout")
@@ -68,10 +75,10 @@ public class AuthController {
             @NotBlank @Size(max = 72) String password) {
     }
 
-    public record LoginResponse(String email, List<String> roles) {
-        static LoginResponse from(User user) {
+    public record LoginResponse(String email, List<String> roles, List<String> platforms) {
+        static LoginResponse from(User user, List<String> platforms) {
             return new LoginResponse(user.getEmail(), user.getRoles().stream()
-                    .map(Role::getCode).sorted().toList());
+                    .map(Role::getCode).sorted().toList(), platforms);
         }
     }
 }

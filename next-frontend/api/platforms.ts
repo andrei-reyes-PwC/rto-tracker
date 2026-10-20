@@ -1,8 +1,10 @@
-export type Platform = {
-  id: number;
-  name: string;
-  userEmails: string[];
-};
+export type PlatformOption = { id: number; name: string };
+
+export type Platform = PlatformOption & { userCount: number };
+
+export type PlatformMembership = PlatformOption & { userEmails: string[] };
+
+export type PlatformDetails = { id: number; name: string; userEmails: string[] };
 
 export type PlatformInput = {
   name: string;
@@ -22,7 +24,13 @@ export async function getPlatforms(): Promise<Platform[]> {
   return (await response.json()) as Platform[];
 }
 
-export async function createPlatform(platform: PlatformInput): Promise<Platform> {
+export async function getPlatform(id: number): Promise<PlatformDetails> {
+  const response = await fetch(`/api/platforms/${id}`, { credentials: "include", cache: "no-store" });
+  if (!response.ok) throw new Error(await responseError(response));
+  return (await response.json()) as PlatformDetails;
+}
+
+export async function createPlatform(platform: PlatformInput): Promise<void> {
   const response = await fetch("/api/platforms", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,10 +38,9 @@ export async function createPlatform(platform: PlatformInput): Promise<Platform>
     body: JSON.stringify(platform),
   });
   if (!response.ok) throw new Error(await responseError(response));
-  return (await response.json()) as Platform;
 }
 
-export async function updatePlatform(id: number, platform: PlatformInput): Promise<Platform> {
+export async function updatePlatform(id: number, platform: PlatformInput): Promise<void> {
   const response = await fetch(`/api/platforms/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -41,7 +48,6 @@ export async function updatePlatform(id: number, platform: PlatformInput): Promi
     body: JSON.stringify(platform),
   });
   if (!response.ok) throw new Error(await responseError(response));
-  return (await response.json()) as Platform;
 }
 
 export async function deletePlatform(id: number): Promise<void> {

@@ -8,8 +8,8 @@ This file is the short working map for `spring-backend`. Read it before backend 
 - Spring Boot `4.1.1`, Java `25`, Spring MVC, Spring Data JPA, MySQL, Flyway, and springdoc OpenAPI are configured in `pom.xml`.
 - Spring Boot DevTools is an optional development dependency; with `mvn spring-boot:run`, the app restarts when compiled classpath files change. The root `.vscode/settings.json` enables Java auto-build on save.
 - Flyway creates the `users` table with email as its primary key, a nullable BCrypt password hash for compatibility with existing records, a role catalog, and a `user_roles` many-to-many association; Hibernate validates the mapped entities.
-- The API exposes `POST /api/auth/login`, user CRUD under `/api/users`, platform CRUD under `/api/platforms`, the role catalog under `/api/roles`, and authenticated office-day queries and monthly replacement under `/api/office-days`.
-- `GET /api/users` returns a Spring page ordered by email; `page` is zero-based (default `0`) and `size` defaults to `20`, with a maximum size of `100`. Optional `platformId` filters the page to that platform's members.
+- The API exposes `POST /api/auth/login`, user CRUD under `/api/users`, platform CRUD under `/api/platforms` (the admin list returns member counts; `GET /api/platforms/{id}` returns member emails), the role catalog under `/api/roles`, and authenticated office-day queries and monthly replacement under `/api/office-days`. Login and `GET /api/auth/me` include the user's platform names.
+- `GET /api/users` returns the general paginated roster; `includePlatforms=false` omits legacy platform details for roster-only callers. `GET /api/users/manage` returns the paginated Manage Users roster with platform options (`id`, `name`) and memberships attached to each returned user. Both support `page` (zero-based, default `0`), `size` (default `20`, max `100`), and optional `platformId` filtering.
 - Swagger UI is available at `/swagger-ui.html`; startup prints its URL.
 - The default HTTP port is `8080`.
 

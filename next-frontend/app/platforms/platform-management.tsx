@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Boxes, LoaderCircle, Plus, RefreshCw, Search, Trash2, UserRoundPen, Users } from "lucide-react";
-import { getPlatforms, createPlatform, deletePlatform, updatePlatform, type Platform } from "@/api/platforms";
-import { getUsers } from "@/api/users";
+import { createPlatform, deletePlatform, getPlatform, getPlatforms, updatePlatform, type Platform, type PlatformDetails } from "@/api/platforms";
+import { getAllUsers } from "@/api/users";
 import type { ManagedUser } from "@/app/users/user-types";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +16,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
-type Editor = { mode: "create" } | { mode: "edit"; platform: Platform };
+type Editor = { mode: "create" } | { mode: "edit"; platform: PlatformDetails };
 
 export default function PlatformManagement() {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [isLoadingEditorData, setIsLoadingEditorData] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -35,14 +36,7 @@ export default function PlatformManagement() {
     setLoading(true);
     setError("");
     try {
-      const [platformResults, firstUserPage] = await Promise.all([getPlatforms(), getUsers(0, 100)]);
-      const allUsers = [...firstUserPage.content];
-      for (let page = 1; page < firstUserPage.totalPages; page += 1) {
-        const result = await getUsers(page, 100);
-        allUsers.push(...result.content);
-      }
-      setPlatforms(platformResults);
-      setUsers(allUsers);
+      setPlatforms(await getPlatforms());
     } catch (loadError: unknown) {
       setError(loadError instanceof Error ? loadError.message : "Could not load platforms. Please try again.");
     } finally {
@@ -52,10 +46,28 @@ export default function PlatformManagement() {
 
   useEffect(() => { void load(); }, [load]);
 
+  async function openEditor(mode: "create" | "edit", platform?: Platform) {
+    setIsLoadingEditorData(true);
+    setError("");
+    setEditor(null);
+    try {
+      const [allUsers, details] = await Promise.all([
+        getAllUsers(),
+        mode === "edit" && platform ? getPlatform(platform.id) : Promise.resolve(null),
+      ]);
+      setUsers(allUsers);
+      if (mode === "edit" && details) setEditor({ mode, platform: details });
+      else setEditor({ mode: "create" });
+    } catch (editorError: unknown) {
+      setError(editorError instanceof Error ? editorError.message : "Could not load users for this platform.");
+    } finally {
+      setIsLoadingEditorData(false);
+    }
+  }
+
   const filtered = useMemo(() => {
     const normalized = debouncedQuery.trim().toLowerCase();
-    return normalized ? platforms.filter((platform) => platform.name.toLowerCase().includes(normalized)
-      || platform.userEmails.some((email) => email.toLowerCase().includes(normalized))) : platforms;
+    return normalized ? platforms.filter((platform) => platform.name.toLowerCase().includes(normalized)) : platforms;
   }, [platforms, debouncedQuery]);
 
   async function save(name: string, userEmails: string[]) {
@@ -91,7 +103,7 @@ export default function PlatformManagement() {
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p><h1 className="text-3xl font-semibold tracking-tight">Platform management</h1><p className="mt-2 text-sm text-muted-foreground">Group users into platforms and manage their membership.</p></div>
-          <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add platform</Button>
+          <Button disabled={isLoadingEditorData} onClick={() => void openEditor("create")}><Plus /> Add platform</Button>
         </div>
         {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
         {notice && <div role="status" className="rounded-lg border border-emerald-600/20 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
@@ -102,12 +114,12 @@ export default function PlatformManagement() {
               <div className="flex items-center gap-2 text-sm"><Boxes className="size-4 text-[#b83b00]" /><span className="font-semibold">{platforms.length}</span><span className="text-muted-foreground">{platforms.length === 1 ? "platform" : "platforms"}</span></div>
               <Button variant="outline" size="sm" disabled={loading} onClick={() => void load()}><RefreshCw /> Refresh</Button>
             </CardAction>
-            <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs"><div className="relative"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search platforms or members" aria-label="Search platforms" className="pl-9" /></div></div>
+            <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs"><div className="relative"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search platforms" aria-label="Search platforms" className="pl-9" /></div></div>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? <div className="flex items-center justify-center gap-2 px-6 py-16 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading platforms…</div>
               : filtered.length === 0 ? <div className="px-6 py-16 text-center"><Boxes className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{error ? "Platforms could not be loaded" : platforms.length ? "No platforms match this search" : "No platforms yet"}</p><p className="mt-1 text-sm text-muted-foreground">{error ? "Check your connection and try refreshing." : "Create a platform to group workspace users."}</p></div>
-                : <div className="divide-y">{filtered.map((platform) => <div key={platform.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-medium">{platform.name}</p><div className="mt-2"><Badge variant="secondary"><Users /> {platform.userEmails.length} {platform.userEmails.length === 1 ? "user" : "users"}</Badge></div></div><div className="flex w-full gap-2 sm:w-auto sm:shrink-0"><Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setEditor({ mode: "edit", platform })}><UserRoundPen /> Edit</Button><Button variant="destructive" size="icon-sm" aria-label={`Delete ${platform.name}`} onClick={() => setDeleting(platform)}><Trash2 /></Button></div></div>)}</div>}
+                : <div className="divide-y">{filtered.map((platform) => <div key={platform.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-medium">{platform.name}</p><div className="mt-2"><Badge variant="secondary"><Users /> {platform.userCount} {platform.userCount === 1 ? "user" : "users"}</Badge></div></div><div className="flex w-full gap-2 sm:w-auto sm:shrink-0"><Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={isLoadingEditorData} onClick={() => void openEditor("edit", platform)}><UserRoundPen /> Edit</Button><Button variant="destructive" size="icon-sm" aria-label={`Delete ${platform.name}`} disabled={isLoadingEditorData} onClick={() => setDeleting(platform)}><Trash2 /></Button></div></div>)}</div>}
           </CardContent>
         </Card>
       </main>

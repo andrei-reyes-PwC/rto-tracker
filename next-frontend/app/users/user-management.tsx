@@ -25,8 +25,8 @@ import {
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { createUser, deleteUser, getUsers, updateUser } from "@/api/users";
-import { getPlatforms, type Platform } from "@/api/platforms";
+import type { PlatformOption } from "@/api/platforms";
+import { createUser, deleteUser, getManageUsers, updateUser } from "@/api/users";
 import { useAuth } from "@/providers/AuthProvider";
 import UserEditorSheet from "./user-editor-sheet";
 import type { AvailableRole, ManagedUser, UserEditorMode, UserEditorValues } from "./user-types";
@@ -42,7 +42,7 @@ const availableRoles: AvailableRole[] = [
 export default function UserManagement() {
   const { user: signedInUser, isLoading: isAuthLoading } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [platforms, setPlatforms] = useState<PlatformOption[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(0);
@@ -62,12 +62,9 @@ export default function UserManagement() {
     setError("");
     try {
       const selectedPlatformId = platformId === "all" ? undefined : Number(platformId);
-      const [result, platformResults] = await Promise.all([
-        getUsers(page, pageSize, selectedPlatformId),
-        getPlatforms(),
-      ]);
+      const result = await getManageUsers(page, pageSize, selectedPlatformId);
       setUsers(result.content);
-      setPlatforms(platformResults);
+      setPlatforms(result.platforms);
       setTotalUsers(result.totalElements);
       setTotalPages(result.totalPages);
     } catch (error: unknown) {
@@ -184,7 +181,7 @@ export default function UserManagement() {
               {filteredUsers.map((managedUser) => {
                 const isProtected = managedUser.roles.includes("SUPER_ADMIN");
                 const isCurrentUser = signedInUser?.email.toLowerCase() === managedUser.email.toLowerCase();
-                const userPlatforms = platforms.filter((platform) => platform.userEmails.includes(managedUser.email));
+                const userPlatforms = managedUser.platforms ?? [];
                 return (
                   <div key={managedUser.email} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">

@@ -25,6 +25,7 @@ export default function ProfileMenu() {
   const email = user?.email ?? "";
   const [logoutError, setLogoutError] = useState("");
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const platforms = user?.platforms ?? [];
 
   async function handleLogout() {
     setLogoutError("");
@@ -61,7 +62,10 @@ export default function ProfileMenu() {
         className="z-50 min-w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
       >
         <DropdownMenuLabel className="max-w-64 break-all px-2 py-1.5 text-xs text-muted-foreground">
-          {email || "Account"}
+          <span className="block">{email || "Account"}</span>
+          <span className="mt-1 block font-normal text-foreground">
+            {platforms.length > 0 ? platforms.join(", ") : "No platform"}
+          </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="-mx-1 my-1 h-px bg-border" />
         <DropdownMenuItem

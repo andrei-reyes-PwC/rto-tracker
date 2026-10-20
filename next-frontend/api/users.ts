@@ -1,4 +1,5 @@
 import type { ManagedUser } from "@/app/users/user-types";
+import type { PlatformOption } from "@/api/platforms";
 
 type ApiErrorResponse = {
   message?: string;
@@ -11,6 +12,7 @@ export type UserPage = {
   totalPages: number;
   number: number;
   size: number;
+  platforms: PlatformOption[];
 };
 
 export type CreateUserRequest = {
@@ -58,9 +60,10 @@ export async function updateUser(currentEmail: string, user: UpdateUserRequest):
   return (await response.json()) as ManagedUser;
 }
 
-export async function getUsers(page: number, size: number, platformId?: number): Promise<UserPage> {
+export async function getUsers(page: number, size: number, platformId?: number, includePlatforms = true): Promise<UserPage> {
   const params = new URLSearchParams({ page: String(page), size: String(size) });
   if (platformId !== undefined) params.set("platformId", String(platformId));
+  if (!includePlatforms) params.set("includePlatforms", "false");
   const response = await fetch(`/api/users?${params}`, {
     credentials: "include",
     cache: "no-store",
@@ -77,6 +80,7 @@ export async function getUsers(page: number, size: number, platformId?: number):
       totalPages,
       number: page,
       size,
+      platforms: [],
     };
   }
 
@@ -93,8 +97,35 @@ export async function getUsers(page: number, size: number, platformId?: number):
       totalPages: result.totalPages,
       number: result.number,
       size: result.size,
+      platforms: Array.isArray(result.platforms) ? result.platforms : [],
     };
   }
 
   throw new Error("The users service returned an unexpected response. Please refresh and try again.");
+}
+
+export async function getManageUsers(page: number, size: number, platformId?: number): Promise<UserPage> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  if (platformId !== undefined) params.set("platformId", String(platformId));
+  const response = await fetch(`/api/users/manage?${params}`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+
+  const result = await response.json() as UserPage;
+  if (!result || !Array.isArray(result.content) || !Array.isArray(result.platforms)) {
+    throw new Error("The users service returned an unexpected response. Please refresh and try again.");
+  }
+  return result;
+}
+
+export async function getAllUsers(): Promise<ManagedUser[]> {
+  const firstPage = await getUsers(0, 100, undefined, false);
+  const allUsers = [...firstPage.content];
+  for (let page = 1; page < firstPage.totalPages; page += 1) {
+    const result = await getUsers(page, 100, undefined, false);
+    allUsers.push(...result.content);
+  }
+  return allUsers;
 }

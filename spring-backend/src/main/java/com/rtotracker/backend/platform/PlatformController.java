@@ -42,9 +42,18 @@ public class PlatformController {
 
     @GetMapping
     @Operation(summary = "List platforms")
-    public List<PlatformResponse> findAll(HttpServletRequest request) {
+    public List<PlatformSummary> findAll(HttpServletRequest request) {
         requireSuperAdmin(request);
-        return platformService.findAll().stream().map(PlatformResponse::from).toList();
+        return platformService.findAllSummaries().stream()
+                .map(platform -> new PlatformSummary(platform.getId(), platform.getName(), platform.getUserCount()))
+                .toList();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get a platform and its members")
+    public PlatformResponse findById(@PathVariable Long id, HttpServletRequest request) {
+        requireSuperAdmin(request);
+        return PlatformResponse.from(platformService.findById(id));
     }
 
     @PostMapping
@@ -90,5 +99,8 @@ public class PlatformController {
             return new PlatformResponse(platform.getId(), platform.getName(), platform.getUsers().stream()
                     .map(User::getEmail).sorted().toList());
         }
+    }
+
+    public record PlatformSummary(Long id, String name, long userCount) {
     }
 }

@@ -1,6 +1,8 @@
 package com.rtotracker.backend.user;
 
 import com.rtotracker.backend.auth.AuthSession;
+import com.rtotracker.backend.platform.Platform;
+import com.rtotracker.backend.platform.PlatformService;
 import com.rtotracker.backend.role.Role;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +35,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Validated
@@ -42,14 +47,35 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final PlatformService platformService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, PlatformService platformService) {
         this.userService = userService;
+        this.platformService = platformService;
     }
 
     @GetMapping
     @Operation(summary = "List users")
-    public Page<UserResponse> findAll(
+    public UserPageResponse findAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) @Min(1) Long platformId,
+            @RequestParam(defaultValue = "true") boolean includePlatforms,
+            HttpServletRequest request) {
+        requireSuperAdmin(request);
+        Pageable pageable = PageRequest.of(page, size, platformId == null
+                ? Sort.by(Sort.Direction.ASC, "email")
+                : Sort.unsorted());
+        Page<UserResponse> users = userService.findAll(pageable, platformId);
+        List<PlatformResponse> platforms = includePlatforms
+                ? platformService.findAll().stream().map(PlatformResponse::from).toList()
+                : List.of();
+        return UserPageResponse.from(users, platforms);
+    }
+
+    @GetMapping("/manage")
+    @Operation(summary = "List users and platform memberships for user management")
+    public UserManagementPageResponse findAllForManagement(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestParam(required = false) @Min(1) Long platformId,
@@ -58,7 +84,20 @@ public class UserController {
         Pageable pageable = PageRequest.of(page, size, platformId == null
                 ? Sort.by(Sort.Direction.ASC, "email")
                 : Sort.unsorted());
-        return userService.findAll(pageable, platformId);
+        Page<UserResponse> users = userService.findAll(pageable, platformId);
+        List<PlatformOption> options = platformService.findAllOptions().stream()
+                .map(platform -> new PlatformOption(platform.getId(), platform.getName())).toList();
+        Map<String, List<PlatformOption>> membershipsByEmail = new LinkedHashMap<>();
+        platformService.findMembershipsForUsers(users.getContent().stream().map(UserResponse::email).toList())
+                .forEach(membership -> membershipsByEmail
+                        .computeIfAbsent(membership.getUserEmail(), ignored -> new ArrayList<>())
+                        .add(new PlatformOption(membership.getId(), membership.getName())));
+        List<ManagedUserResponse> content = users.getContent().stream()
+                .map(user -> new ManagedUserResponse(user.email(), user.roles(),
+                        membershipsByEmail.getOrDefault(user.email(), List.of())))
+                .toList();
+        return new UserManagementPageResponse(content, users.getTotalElements(), users.getTotalPages(),
+                users.getNumber(), users.getSize(), options);
     }
 
     @GetMapping("/{email}")
@@ -128,6 +167,31 @@ public class UserController {
             @NotBlank @Email @Pattern(regexp = "^[^@\\s]+@(?:[^@.\\s]+\\.)+[^@.\\s]+$")
             @Size(max = 254) String email,
             @NotEmpty List<@NotBlank String> roles) {
+    }
+
+    public record UserPageResponse(List<UserResponse> content, long totalElements, int totalPages,
+                                   int number, int size, List<PlatformResponse> platforms) {
+        static UserPageResponse from(Page<UserResponse> users, List<PlatformResponse> platforms) {
+            return new UserPageResponse(users.getContent(), users.getTotalElements(), users.getTotalPages(),
+                    users.getNumber(), users.getSize(), platforms);
+        }
+    }
+
+    public record UserManagementPageResponse(List<ManagedUserResponse> content, long totalElements, int totalPages,
+                                             int number, int size, List<PlatformOption> platforms) {
+    }
+
+    public record ManagedUserResponse(String email, List<String> roles, List<PlatformOption> platforms) {
+    }
+
+    public record PlatformOption(Long id, String name) {
+    }
+
+    public record PlatformResponse(Long id, String name, List<String> userEmails) {
+        static PlatformResponse from(Platform platform) {
+            return new PlatformResponse(platform.getId(), platform.getName(), platform.getUsers().stream()
+                    .map(User::getEmail).sorted().toList());
+        }
     }
 
     public record UserResponse(String email, List<String> roles) {

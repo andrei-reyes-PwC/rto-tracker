@@ -1,6 +1,7 @@
 export type ManagedUser = {
   email: string;
   roles: string[];
+  platforms?: { id: number; name: string }[];
 };
 
 export type AvailableRole = {

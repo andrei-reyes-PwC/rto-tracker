@@ -25,8 +25,34 @@ public class PlatformService {
     }
 
     @Transactional(readOnly = true)
+    public List<PlatformRepository.PlatformSummaryProjection> findAllSummaries() {
+        return platforms.findAllSummaries();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlatformRepository.PlatformOptionProjection> findAllOptions() {
+        return platforms.findAllOptions();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlatformRepository.UserPlatformProjection> findMembershipsForUsers(List<String> emails) {
+        return emails.isEmpty() ? List.of() : platforms.findMembershipsForUsers(emails);
+    }
+
+    @Transactional(readOnly = true)
     public List<Platform> findAll() {
         return platforms.findAll(Sort.by(Sort.Direction.ASC, "name"));
+    }
+
+    @Transactional(readOnly = true)
+    public Platform findById(Long id) {
+        return platforms.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> findNamesForUser(String email) {
+        return platforms.findAllForUser(email).stream().map(Platform::getName).toList();
     }
 
     public Platform create(String name, List<String> userEmails) {
