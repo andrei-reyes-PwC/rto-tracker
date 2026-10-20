@@ -41,8 +41,11 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserController.UserResponse> findAll(Pageable pageable) {
-        return users.findAll(pageable).map(UserController.UserResponse::from);
+    public Page<UserController.UserResponse> findAll(Pageable pageable, Long platformId) {
+        Page<User> matchingUsers = platformId == null
+                ? users.findAll(pageable)
+                : users.findAllByPlatformId(platformId, pageable);
+        return matchingUsers.map(UserController.UserResponse::from);
     }
 
     @Transactional(readOnly = true)

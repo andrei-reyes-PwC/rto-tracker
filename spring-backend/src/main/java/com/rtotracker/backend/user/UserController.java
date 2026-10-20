@@ -52,10 +52,13 @@ public class UserController {
     public Page<UserResponse> findAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) @Min(1) Long platformId,
             HttpServletRequest request) {
         requireSuperAdmin(request);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "email"));
-        return userService.findAll(pageable);
+        Pageable pageable = PageRequest.of(page, size, platformId == null
+                ? Sort.by(Sort.Direction.ASC, "email")
+                : Sort.unsorted());
+        return userService.findAll(pageable, platformId);
     }
 
     @GetMapping("/{email}")

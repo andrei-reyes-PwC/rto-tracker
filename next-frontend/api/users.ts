@@ -58,8 +58,9 @@ export async function updateUser(currentEmail: string, user: UpdateUserRequest):
   return (await response.json()) as ManagedUser;
 }
 
-export async function getUsers(page: number, size: number): Promise<UserPage> {
+export async function getUsers(page: number, size: number, platformId?: number): Promise<UserPage> {
   const params = new URLSearchParams({ page: String(page), size: String(size) });
+  if (platformId !== undefined) params.set("platformId", String(platformId));
   const response = await fetch(`/api/users?${params}`, {
     credentials: "include",
     cache: "no-store",

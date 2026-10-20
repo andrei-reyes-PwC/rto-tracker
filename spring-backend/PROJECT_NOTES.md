@@ -9,7 +9,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 - Spring Boot DevTools is an optional development dependency; with `mvn spring-boot:run`, the app restarts when compiled classpath files change. The root `.vscode/settings.json` enables Java auto-build on save.
 - Flyway creates the `users` table with email as its primary key, a nullable BCrypt password hash for compatibility with existing records, a role catalog, and a `user_roles` many-to-many association; Hibernate validates the mapped entities.
 - The API exposes `POST /api/auth/login`, user CRUD under `/api/users`, platform CRUD under `/api/platforms`, the role catalog under `/api/roles`, and authenticated office-day queries and monthly replacement under `/api/office-days`.
-- `GET /api/users` returns a Spring page ordered by email; `page` is zero-based (default `0`) and `size` defaults to `20`, with a maximum size of `100`.
+- `GET /api/users` returns a Spring page ordered by email; `page` is zero-based (default `0`) and `size` defaults to `20`, with a maximum size of `100`. Optional `platformId` filters the page to that platform's members.
 - Swagger UI is available at `/swagger-ui.html`; startup prints its URL.
 - The default HTTP port is `8080`.
 

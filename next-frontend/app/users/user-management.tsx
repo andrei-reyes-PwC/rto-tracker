@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { createUser, deleteUser, getUsers, updateUser } from "@/api/users";
+import { getPlatforms, type Platform } from "@/api/platforms";
 import { useAuth } from "@/providers/AuthProvider";
 import UserEditorSheet from "./user-editor-sheet";
 import type { AvailableRole, ManagedUser, UserEditorMode, UserEditorValues } from "./user-types";
@@ -40,6 +41,7 @@ const availableRoles: AvailableRole[] = [
 export default function UserManagement() {
   const { user: signedInUser, isLoading: isAuthLoading } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(0);
@@ -49,6 +51,7 @@ export default function UserManagement() {
   const [notice, setNotice] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [query, setQuery] = useState("");
+  const [platformId, setPlatformId] = useState("all");
   const [editor, setEditor] = useState<{ mode: UserEditorMode; user?: ManagedUser } | null>(null);
   const [deletingUser, setDeletingUser] = useState<ManagedUser | null>(null);
 
@@ -56,8 +59,13 @@ export default function UserManagement() {
     setIsLoading(true);
     setError("");
     try {
-      const result = await getUsers(page, pageSize);
+      const selectedPlatformId = platformId === "all" ? undefined : Number(platformId);
+      const [result, platformResults] = await Promise.all([
+        getUsers(page, pageSize, selectedPlatformId),
+        getPlatforms(),
+      ]);
       setUsers(result.content);
+      setPlatforms(platformResults);
       setTotalUsers(result.totalElements);
       setTotalPages(result.totalPages);
     } catch (error: unknown) {
@@ -65,7 +73,7 @@ export default function UserManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, platformId]);
 
   useEffect(() => {
     void load();
@@ -150,11 +158,18 @@ export default function UserManagement() {
             </div>
             <Button variant="outline" size="sm" className="shrink-0 rounded-xl" disabled={isLoading} onClick={() => void load()}><RefreshCw /> Refresh</Button>
           </CardAction>
-          <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs">
+          <div className="col-span-2 flex w-full flex-col gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xl sm:flex-row">
             <div className="relative w-full sm:max-w-xs">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this page by email or role" aria-label="Search users on this page" className="pl-9" />
             </div>
+            <Select value={platformId} onValueChange={(value) => { setPage(0); setPlatformId(value); }} disabled={isLoading}>
+              <SelectTrigger className="w-full sm:w-[220px]" aria-label="Filter users by platform"><SelectValue placeholder="All platforms" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All platforms</SelectItem>
+                {platforms.map((platform) => <SelectItem key={platform.id} value={String(platform.id)}>{platform.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent className="p-0">
