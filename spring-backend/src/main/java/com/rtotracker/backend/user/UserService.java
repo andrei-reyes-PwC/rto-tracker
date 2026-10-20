@@ -1,5 +1,6 @@
 package com.rtotracker.backend.user;
 
+import com.rtotracker.backend.office.OfficeDayRepository;
 import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.role.RoleRepository;
 import org.springframework.data.domain.Page;
@@ -11,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Locale;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -20,11 +23,17 @@ public class UserService {
     private final UserRepository users;
     private final PasswordHashingService passwordHashingService;
     private final RoleRepository roles;
+    private final OfficeDayRepository officeDays;
 
-    public UserService(UserRepository users, PasswordHashingService passwordHashingService, RoleRepository roles) {
+    public UserService(
+            UserRepository users,
+            PasswordHashingService passwordHashingService,
+            RoleRepository roles,
+            OfficeDayRepository officeDays) {
         this.users = users;
         this.passwordHashingService = passwordHashingService;
         this.roles = roles;
+        this.officeDays = officeDays;
     }
 
     @Transactional(readOnly = true)
@@ -47,18 +56,43 @@ public class UserService {
                 Set.of(defaultRole())));
     }
 
-    public User update(String currentEmail, String replacementEmail) {
+    public User update(String currentEmail, String replacementEmail, List<String> requestedRoleCodes) {
         User current = findByEmail(currentEmail);
-        String normalizedReplacement = normalize(replacementEmail);
-        if (current.getEmail().equals(normalizedReplacement)) {
-            return current;
+        if (current.getRoles().stream().anyMatch(Role::isProtectedRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected users cannot be edited");
         }
-        if (users.existsById(normalizedReplacement)) {
+
+        String normalizedReplacement = normalize(replacementEmail);
+        if (!current.getEmail().equals(normalizedReplacement) && users.existsById(normalizedReplacement)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A user with this email already exists");
         }
+
+        Set<String> requestedCodes = requestedRoleCodes.stream()
+                .map(String::trim)
+                .collect(Collectors.toSet());
+        if (requestedCodes.isEmpty() || requestedCodes.contains("")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Select at least one valid role");
+        }
+        List<Role> requestedRoles = roles.findAllById(requestedCodes);
+        if (requestedRoles.size() != requestedCodes.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more roles do not exist");
+        }
+        if (requestedRoles.stream().anyMatch(Role::isProtectedRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected roles cannot be assigned");
+        }
+
+        Set<Role> replacementRoles = Set.copyOf(requestedRoles);
+        if (current.getEmail().equals(normalizedReplacement)) {
+            current.setRoles(replacementRoles);
+            return current;
+        }
+
+        User replacement = users.save(new User(normalizedReplacement, current.getPasswordHash(), replacementRoles));
+        users.flush();
+        officeDays.updateUserEmail(current.getEmail(), normalizedReplacement);
         users.delete(current);
         users.flush();
-        return users.save(new User(normalizedReplacement, current.getPasswordHash(), current.getRoles()));
+        return findByEmail(replacement.getEmail());
     }
 
     public void delete(String email) {

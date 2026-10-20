@@ -55,4 +55,8 @@ public class User {
     public Set<Role> getRoles() {
         return Set.copyOf(roles);
     }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = new HashSet<>(roles);
+    }
 }

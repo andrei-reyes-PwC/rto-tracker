@@ -17,7 +17,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 
 - `src/main/java/com/rtotracker/backend/user/` contains the user entity, repository, service, and CRUD controller.
 - `src/main/java/com/rtotracker/backend/role/` contains the role entity, repository, read service, and read-only `GET /api/roles` catalog endpoint.
-- User creation assigns `USER` by default; user and authentication responses include role codes. `SUPER_ADMIN` is seeded as a protected catalog role. User CRUD does not currently provide role assignment; every `/api/users` endpoint requires an authenticated `SUPER_ADMIN` session, protected users cannot be deleted, and administrators cannot delete themselves.
+- User creation assigns `USER` by default; user and authentication responses include role codes. `SUPER_ADMIN` is seeded as a protected catalog role. `PUT /api/users/{email}` updates a user's email and assignable roles while preserving the password and linked office-day records; protected users cannot be edited, protected roles cannot be assigned, and duplicate emails are rejected. Every `/api/users` endpoint requires an authenticated `SUPER_ADMIN` session; protected users cannot be deleted, and administrators cannot delete themselves.
 - `src/main/java/com/rtotracker/backend/office/` contains office-day persistence and authenticated per-user monthly schedule APIs.
 - `src/main/java/com/rtotracker/backend/auth/` contains login, current-session (`GET /api/auth/me`), logout (`POST /api/auth/logout`), and credential verification; logout invalidates the HTTP session.
 - `src/main/java/com/rtotracker/backend/WebCorsConfig.java` configures credentialed CORS globally for `/api/**`.

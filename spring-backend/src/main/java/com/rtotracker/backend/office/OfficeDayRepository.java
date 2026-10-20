@@ -24,4 +24,10 @@ public interface OfficeDayRepository extends JpaRepository<OfficeDay, Long> {
             @Param("userEmail") String userEmail,
             @Param("startInclusive") LocalDate startInclusive,
             @Param("endExclusive") LocalDate endExclusive);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update OfficeDay officeDay set officeDay.userEmail = :replacementEmail where officeDay.userEmail = :currentEmail")
+    int updateUserEmail(
+            @Param("currentEmail") String currentEmail,
+            @Param("replacementEmail") String replacementEmail);
 }

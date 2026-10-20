@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
@@ -77,13 +78,13 @@ public class UserController {
     }
 
     @PutMapping("/{email}")
-    @Operation(summary = "Change a user's email")
+    @Operation(summary = "Update a user's email and roles")
     public UserResponse update(
             @PathVariable String email,
-            @Valid @RequestBody UserRequest request,
+            @Valid @RequestBody UserUpdateRequest request,
             HttpServletRequest servletRequest) {
         requireSuperAdmin(servletRequest);
-        return UserResponse.from(userService.update(email, request.email()));
+        return UserResponse.from(userService.update(email, request.email(), request.roles()));
     }
 
     @DeleteMapping("/{email}")
@@ -118,6 +119,12 @@ public class UserController {
             @NotBlank @Email @Pattern(regexp = "^[^@\\s]+@(?:[^@.\\s]+\\.)+[^@.\\s]+$")
             @Size(max = 254) String email,
             @NotBlank @Size(min = 8, max = 72) String password) {
+    }
+
+    public record UserUpdateRequest(
+            @NotBlank @Email @Pattern(regexp = "^[^@\\s]+@(?:[^@.\\s]+\\.)+[^@.\\s]+$")
+            @Size(max = 254) String email,
+            @NotEmpty List<@NotBlank String> roles) {
     }
 
     public record UserResponse(String email, List<String> roles) {

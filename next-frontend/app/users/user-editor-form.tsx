@@ -130,7 +130,7 @@ export default function UserEditorForm({
               <span className="font-medium">{role.code}</span>
             </label>
           ))}
-          <p className="text-xs leading-5 text-muted-foreground">Protected roles cannot be changed in this preview.</p>
+          <p className="text-xs leading-5 text-muted-foreground">Protected roles cannot be assigned or edited.</p>
         </fieldset>
       )}
 
@@ -138,7 +138,7 @@ export default function UserEditorForm({
 
       <div className="flex gap-2 pt-1">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Creating…" : mode === "create" ? "Create user" : "Save changes"}
+          {isSubmitting ? (mode === "create" ? "Creating…" : "Saving…") : mode === "create" ? "Create user" : "Save changes"}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Info, LoaderCircle, Plus, RefreshCw, Search, Shield, Trash2, UserRoundPen, Users } from "lucide-react";
+import { LoaderCircle, Plus, RefreshCw, Search, Shield, Trash2, UserRoundPen, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
-import { createUser, deleteUser, getUsers } from "@/api/users";
+import { createUser, deleteUser, getUsers, updateUser } from "@/api/users";
 import { useAuth } from "@/providers/AuthProvider";
 import UserEditorSheet from "./user-editor-sheet";
 import type { AvailableRole, ManagedUser, UserEditorMode, UserEditorValues } from "./user-types";
@@ -81,15 +81,18 @@ export default function UserManagement() {
   }, [query, users]);
 
   async function handleEditorSave(values: UserEditorValues) {
-    if (editor?.mode !== "create") {
-      return "Editing users is not connected yet. No backend data was changed.";
-    }
-
     try {
-      await createUser({ email: values.email, password: values.password });
+      if (editor?.mode === "create") {
+        await createUser({ email: values.email, password: values.password });
+      } else if (editor?.mode === "edit" && editor.user) {
+        await updateUser(editor.user.email, { email: values.email, roles: values.roles });
+      } else {
+        return "Select a user to edit and try again.";
+      }
+
       setEditor(null);
       setError("");
-      setNotice(`${values.email} was created.`);
+      setNotice(`${values.email} was ${editor.mode === "create" ? "created" : "updated"}.`);
       if (page === 0) {
         await load();
       } else {
@@ -97,7 +100,7 @@ export default function UserManagement() {
       }
       return null;
     } catch (error: unknown) {
-      return error instanceof Error ? error.message : "Could not create this user. Please try again.";
+      return error instanceof Error ? error.message : "Could not save this user. Please try again.";
     }
   }
 
@@ -131,11 +134,6 @@ export default function UserManagement() {
           <p className="mt-2 text-sm text-muted-foreground">Review registered accounts and their assigned roles.</p>
         </div>
         <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add user</Button>
-      </div>
-
-      <div className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-        <Info className="mt-0.5 size-4 shrink-0" />
-        <p><span className="font-medium">User management requires SUPER_ADMIN access.</span> Add is connected; edit is not connected yet.</p>
       </div>
 
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}

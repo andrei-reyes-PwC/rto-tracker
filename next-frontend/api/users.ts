@@ -18,6 +18,11 @@ export type CreateUserRequest = {
   password: string;
 };
 
+export type UpdateUserRequest = {
+  email: string;
+  roles: string[];
+};
+
 async function responseError(response: Response) {
   const error = (await response.json().catch(() => null)) as ApiErrorResponse | null;
   return error?.details?.join(" ") || error?.message || "Could not load users. Please try again.";
@@ -34,6 +39,17 @@ export async function deleteUser(email: string): Promise<void> {
 export async function createUser(user: CreateUserRequest): Promise<ManagedUser> {
   const response = await fetch("/api/users", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(user),
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+  return (await response.json()) as ManagedUser;
+}
+
+export async function updateUser(currentEmail: string, user: UpdateUserRequest): Promise<ManagedUser> {
+  const response = await fetch(`/api/users/${encodeURIComponent(currentEmail)}`, {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
     body: JSON.stringify(user),
