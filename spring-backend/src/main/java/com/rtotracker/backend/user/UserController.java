@@ -89,9 +89,12 @@ public class UserController {
     @DeleteMapping("/{email}")
     @Operation(summary = "Delete a user")
     public ResponseEntity<Void> delete(@PathVariable String email, HttpServletRequest request) {
-        requireSuperAdmin(request);
+        User administrator = requireSuperAdmin(request);
 
         User target = userService.findByEmail(email);
+        if (administrator.getEmail().equals(target.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot delete your own account");
+        }
         boolean isProtected = target.getRoles().stream().anyMatch(role -> role.isProtectedRole());
         if (isProtected) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected users cannot be deleted");
@@ -100,7 +103,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    private void requireSuperAdmin(HttpServletRequest request) {
+    private User requireSuperAdmin(HttpServletRequest request) {
         User user = userService.findByEmail(AuthSession.requireEmail(request));
         boolean isSuperAdmin = user.getRoles().stream()
                 .map(Role::getCode)
@@ -108,6 +111,7 @@ public class UserController {
         if (!isSuperAdmin) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "SUPER_ADMIN access required");
         }
+        return user;
     }
 
     public record UserRequest(

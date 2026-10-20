@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { hasValidSession } from "./api/session";
+import { getSessionUser } from "./api/session";
 
 export async function proxy(request: NextRequest) {
   const sessionId = request.cookies.get("JSESSIONID")?.value;
-  const isAuthenticated = sessionId ? await hasValidSession(sessionId) : false;
+  const sessionUser = sessionId ? await getSessionUser(sessionId) : null;
+  const isAuthenticated = sessionUser !== null;
+  const isUsersRoute = request.nextUrl.pathname.startsWith("/users");
 
-  if ((request.nextUrl.pathname === "/" || request.nextUrl.pathname.startsWith("/users")) && !isAuthenticated) {
+  if ((request.nextUrl.pathname === "/" || isUsersRoute) && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

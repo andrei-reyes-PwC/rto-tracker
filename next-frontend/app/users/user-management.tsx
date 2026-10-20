@@ -24,7 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
-import { deleteUser, getUsers } from "@/api/users";
+import { createUser, deleteUser, getUsers } from "@/api/users";
+import { useAuth } from "@/providers/AuthProvider";
 import UserEditorSheet from "./user-editor-sheet";
 import type { AvailableRole, ManagedUser, UserEditorMode, UserEditorValues } from "./user-types";
 
@@ -37,6 +38,7 @@ const availableRoles: AvailableRole[] = [
 ];
 
 export default function UserManagement() {
+  const { user: signedInUser, isLoading: isAuthLoading } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -78,8 +80,25 @@ export default function UserManagement() {
     );
   }, [query, users]);
 
-  function handleEditorSave(_values: UserEditorValues) {
-    return "User changes are not connected yet. No backend data was changed.";
+  async function handleEditorSave(values: UserEditorValues) {
+    if (editor?.mode !== "create") {
+      return "Editing users is not connected yet. No backend data was changed.";
+    }
+
+    try {
+      await createUser({ email: values.email, password: values.password });
+      setEditor(null);
+      setError("");
+      setNotice(`${values.email} was created.`);
+      if (page === 0) {
+        await load();
+      } else {
+        setPage(0);
+      }
+      return null;
+    } catch (error: unknown) {
+      return error instanceof Error ? error.message : "Could not create this user. Please try again.";
+    }
   }
 
   async function confirmDelete() {
@@ -116,7 +135,7 @@ export default function UserManagement() {
 
       <div className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
         <Info className="mt-0.5 size-4 shrink-0" />
-        <p><span className="font-medium">Some actions are coming soon.</span> Add and edit are not connected yet. User management requires SUPER_ADMIN access.</p>
+        <p><span className="font-medium">User management requires SUPER_ADMIN access.</span> Add is connected; edit is not connected yet.</p>
       </div>
 
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
@@ -149,6 +168,7 @@ export default function UserManagement() {
             <div className="divide-y">
               {filteredUsers.map((managedUser) => {
                 const isProtected = managedUser.roles.includes("SUPER_ADMIN");
+                const isCurrentUser = signedInUser?.email.toLowerCase() === managedUser.email.toLowerCase();
                 return (
                   <div key={managedUser.email} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
@@ -159,7 +179,14 @@ export default function UserManagement() {
                     </div>
                     <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
                       <Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={isProtected} onClick={() => setEditor({ mode: "edit", user: managedUser })}><UserRoundPen /> Edit</Button>
-                      <Button variant="destructive" size="icon-sm" aria-label={`Delete ${managedUser.email}`} disabled={isProtected} onClick={() => setDeletingUser(managedUser)}><Trash2 /></Button>
+                      <Button
+                        variant="destructive"
+                        size="icon-sm"
+                        aria-label={`Delete ${managedUser.email}`}
+                        title={isCurrentUser ? "You cannot delete your own account" : undefined}
+                        disabled={isProtected || isCurrentUser || isAuthLoading}
+                        onClick={() => setDeletingUser(managedUser)}
+                      ><Trash2 /></Button>
                     </div>
                   </div>
                 );

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
+import { useAuth } from "@/providers/AuthProvider";
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -21,6 +22,8 @@ import {
 export default function Sidebar() {
   const { setOpenMobile } = useSidebar();
   const pathname = usePathname();
+  const { user } = useAuth();
+  const canManageUsers = user?.roles.includes("SUPER_ADMIN") ?? false;
 
   return (
     <ShadcnSidebar collapsible="icon" variant="sidebar">
@@ -48,14 +51,16 @@ export default function Sidebar() {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === "/users" || pathname.startsWith("/users/")} tooltip="Manage users">
-                <Link href="/users" onClick={() => setOpenMobile(false)} aria-label="Manage users">
-                  <Users />
-                  <span>Manage users</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {canManageUsers && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/users" || pathname.startsWith("/users/")} tooltip="Manage users">
+                  <Link href="/users" onClick={() => setOpenMobile(false)} aria-label="Manage users">
+                    <Users />
+                    <span>Manage users</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

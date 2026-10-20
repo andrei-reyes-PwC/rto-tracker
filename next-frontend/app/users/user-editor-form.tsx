@@ -15,7 +15,7 @@ type UserEditorFormProps = {
   initialRoles: string[];
   availableRoles: AvailableRole[];
   onCancel: () => void;
-  onSave: (values: UserEditorValues) => string | null;
+  onSave: (values: UserEditorValues) => string | null | Promise<string | null>;
 };
 
 export default function UserEditorForm({
@@ -31,6 +31,7 @@ export default function UserEditorForm({
   const [password, setPassword] = useState("");
   const [selectedRoles, setSelectedRoles] = useState(initialRoles);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const initialRolesKey = initialRoles.join("|");
   const assignableRoles = useMemo(
     () => availableRoles.filter((role) => !role.protectedRole),
@@ -51,7 +52,7 @@ export default function UserEditorForm({
       : [...current, role]);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     const normalizedEmail = email.trim().toLowerCase();
@@ -68,12 +69,19 @@ export default function UserEditorForm({
       return;
     }
 
-    const saveError = onSave({
-      email: normalizedEmail,
-      password,
-      roles: mode === "create" ? ["USER"] : selectedRoles,
-    });
-    if (saveError) setError(saveError);
+    setIsSubmitting(true);
+    try {
+      const saveError = await onSave({
+        email: normalizedEmail,
+        password,
+        roles: mode === "create" ? ["USER"] : selectedRoles,
+      });
+      if (saveError) setError(saveError);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Could not save this user. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -129,10 +137,10 @@ export default function UserEditorForm({
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
       <div className="flex gap-2 pt-1">
-        <Button type="submit">
-          {mode === "create" ? "Create user" : "Save changes"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Creating…" : mode === "create" ? "Create user" : "Save changes"}
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
       </div>

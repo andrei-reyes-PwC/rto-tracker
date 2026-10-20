@@ -21,9 +21,9 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `validation/` â€” Zod schemas and inferred form value types, organized by form.
 - `app/component/OfficePlanner.tsx` composes the schedule page; `ScheduleProvider.tsx` owns month data, loading/saving, and planner actions shared through `useSchedule()`. It reloads the active month when authenticated user data refreshes and clears cached data when the account changes.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation and authenticated email profile menu with logout.
-- `/users` loads the backend roster from paginated `GET /api/users` through the same-origin API proxy, with refresh, page navigation, selectable limits (10, 25, 50, or 100), and search within the current page; all `/api/users` operations require a backend `SUPER_ADMIN` session. Delete is connected; add/edit are not yet connected. The frontend also handles the legacy unpaged array response.
+- `/users` requires a valid session; its server page returns the route-level 404 UI to users without the `SUPER_ADMIN` role. The backend also protects all `/api/users` operations. It loads a paginated roster with refresh, page navigation, selectable limits (10, 25, 50, or 100), and search within the current page. Add and delete are connected; self-delete is blocked in the UI and backend; edit is not yet connected. The frontend also handles the legacy unpaged array response.
 - For future CRUD screens, follow `/users` for a responsive card-based layout, clear search and record actions, shared add/edit sheets, and confirmation dialogs for deletes; adapt the layout for mobile and desktop.
-- The sidebar shows the user management route to signed-in users.
+- The sidebar shows the user management route only to users with the `SUPER_ADMIN` role.
 - `components/ui/sidebar.tsx` â€” shadcn responsive sidebar primitives; `hooks/use-mobile.ts` supplies its mobile breakpoint.
 - `app/component/` â€” route-scoped planner and sections: heading, monthly summary, calendar, and event requirements.
 - `app/layout.tsx` â€” root HTML/layout, metadata, and Geist font setup.
@@ -46,7 +46,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 ## Current implementation state
 
-- The root, `/users`, and `/login` routes are guarded by the root `proxy.ts`, which validates the backend session through `/api/auth/me` and redirects based on authentication state. User management also checks the signed-in role in the UI; the backend enforces administrator access for every user CRUD operation. `AuthProvider` exposes the current user and auth actions across client components, including the sidebar profile and logout. A Next.js rewrite reverse-proxies `/api/*` to `BACKEND_API_URL` (default `http://localhost:8080`), preserving the backend session cookie without browser CORS.
+- The root, `/users`, and `/login` routes are guarded by the root `proxy.ts`, which reads the backend session through `/api/auth/me` and redirects based on authentication state. The `/users` server page renders its 404 boundary for authenticated users without `SUPER_ADMIN`; the backend independently protects every `/api/users` operation. `AuthProvider` exposes the current user and auth actions across client components, including the sidebar profile and logout. A Next.js rewrite reverse-proxies `/api/*` to `BACKEND_API_URL` (default `http://localhost:8080`), preserving the backend session cookie without browser CORS.
 
 - Use React Hook Form `Controller` for form fields, with Zod schemas and the Zod resolver for validation.
 

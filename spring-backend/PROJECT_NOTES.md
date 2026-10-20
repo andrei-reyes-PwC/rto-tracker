@@ -6,6 +6,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 
 - A standalone Spring Boot REST API built with Maven.
 - Spring Boot `4.1.1`, Java `25`, Spring MVC, Spring Data JPA, MySQL, Flyway, and springdoc OpenAPI are configured in `pom.xml`.
+- Spring Boot DevTools is an optional development dependency; with `mvn spring-boot:run`, the app restarts when compiled classpath files change. The root `.vscode/settings.json` enables Java auto-build on save.
 - Flyway creates the `users` table with email as its primary key, a nullable BCrypt password hash for compatibility with existing records, a role catalog, and a `user_roles` many-to-many association; Hibernate validates the mapped entities.
 - The API exposes `POST /api/auth/login`, user CRUD under `/api/users`, the role catalog under `/api/roles`, and authenticated office-day queries and monthly replacement under `/api/office-days`.
 - `GET /api/users` returns a Spring page ordered by email; `page` is zero-based (default `0`) and `size` defaults to `20`, with a maximum size of `100`.
@@ -16,7 +17,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 
 - `src/main/java/com/rtotracker/backend/user/` contains the user entity, repository, service, and CRUD controller.
 - `src/main/java/com/rtotracker/backend/role/` contains the role entity, repository, read service, and read-only `GET /api/roles` catalog endpoint.
-- User creation assigns `USER` by default; user and authentication responses include role codes. `SUPER_ADMIN` is seeded as a protected catalog role. User CRUD does not currently provide role assignment; every `/api/users` endpoint requires an authenticated `SUPER_ADMIN` session, and protected users cannot be deleted.
+- User creation assigns `USER` by default; user and authentication responses include role codes. `SUPER_ADMIN` is seeded as a protected catalog role. User CRUD does not currently provide role assignment; every `/api/users` endpoint requires an authenticated `SUPER_ADMIN` session, protected users cannot be deleted, and administrators cannot delete themselves.
 - `src/main/java/com/rtotracker/backend/office/` contains office-day persistence and authenticated per-user monthly schedule APIs.
 - `src/main/java/com/rtotracker/backend/auth/` contains login, current-session (`GET /api/auth/me`), logout (`POST /api/auth/logout`), and credential verification; logout invalidates the HTTP session.
 - `src/main/java/com/rtotracker/backend/WebCorsConfig.java` configures credentialed CORS globally for `/api/**`.

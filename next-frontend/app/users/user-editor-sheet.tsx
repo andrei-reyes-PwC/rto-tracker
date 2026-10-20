@@ -12,7 +12,7 @@ type UserEditorSheetProps = {
   initialRoles: string[];
   availableRoles: AvailableRole[];
   onOpenChange: (open: boolean) => void;
-  onSave: (values: UserEditorValues) => string | null;
+  onSave: (values: UserEditorValues) => string | null | Promise<string | null>;
 };
 
 export default function UserEditorSheet({
