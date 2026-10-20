@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
-import { getUsers } from "@/api/users";
+import { deleteUser, getUsers } from "@/api/users";
 import UserEditorSheet from "./user-editor-sheet";
 import type { AvailableRole, ManagedUser, UserEditorMode, UserEditorValues } from "./user-types";
 
@@ -44,6 +44,8 @@ export default function UserManagement() {
   const [pageSize, setPageSize] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const [query, setQuery] = useState("");
   const [editor, setEditor] = useState<{ mode: UserEditorMode; user?: ManagedUser } | null>(null);
   const [deletingUser, setDeletingUser] = useState<ManagedUser | null>(null);
@@ -80,6 +82,27 @@ export default function UserManagement() {
     return "User changes are not connected yet. No backend data was changed.";
   }
 
+  async function confirmDelete() {
+    if (!deletingUser || isDeleting) return;
+    setIsDeleting(true);
+    setError("");
+    setNotice("");
+    try {
+      await deleteUser(deletingUser.email);
+      setNotice(`${deletingUser.email} was deleted.`);
+      setDeletingUser(null);
+      if (users.length === 1 && page > 0) {
+        setPage((current) => current - 1);
+      } else {
+        await load();
+      }
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Could not delete this user. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   const content = (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -93,10 +116,11 @@ export default function UserManagement() {
 
       <div className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
         <Info className="mt-0.5 size-4 shrink-0" />
-        <p><span className="font-medium">Actions are coming soon.</span> Add, edit, and delete controls are not connected to the backend yet.</p>
+        <p><span className="font-medium">Some actions are coming soon.</span> Add and edit are not connected yet. User management requires SUPER_ADMIN access.</p>
       </div>
 
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
+      {notice && <div role="status" className="rounded-lg border border-emerald-600/20 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
 
       <Card className="min-w-0">
         <CardHeader className="gap-4 border-b">
@@ -191,13 +215,20 @@ export default function UserManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this user?</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete is not connected yet. {deletingUser?.email} will remain in the backend.
+              This permanently deletes {deletingUser?.email} from the backend.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Close</AlertDialogCancel>
-            <AlertDialogAction disabled onClick={(event) => event.preventDefault()}>
-              Delete user
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmDelete();
+              }}
+            >
+              {isDeleting ? "Deleting…" : "Delete user"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

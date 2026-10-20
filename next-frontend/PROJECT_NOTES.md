@@ -21,7 +21,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `validation/` â€” Zod schemas and inferred form value types, organized by form.
 - `app/component/OfficePlanner.tsx` composes the schedule page; `ScheduleProvider.tsx` owns month data, loading/saving, and planner actions shared through `useSchedule()`. It reloads the active month when authenticated user data refreshes and clears cached data when the account changes.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation and authenticated email profile menu with logout.
-- `/users` loads the backend roster from paginated `GET /api/users` through the same-origin API proxy, with refresh, page navigation, selectable limits (10, 25, 50, or 100), and search within the current page; the frontend also handles the legacy unpaged array response; user mutations are not yet connected.
+- `/users` loads the backend roster from paginated `GET /api/users` through the same-origin API proxy, with refresh, page navigation, selectable limits (10, 25, 50, or 100), and search within the current page; all `/api/users` operations require a backend `SUPER_ADMIN` session. Delete is connected; add/edit are not yet connected. The frontend also handles the legacy unpaged array response.
 - For future CRUD screens, follow `/users` for a responsive card-based layout, clear search and record actions, shared add/edit sheets, and confirmation dialogs for deletes; adapt the layout for mobile and desktop.
 - The sidebar shows the user management route to signed-in users.
 - `components/ui/sidebar.tsx` â€” shadcn responsive sidebar primitives; `hooks/use-mobile.ts` supplies its mobile breakpoint.

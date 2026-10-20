@@ -18,6 +18,14 @@ async function responseError(response: Response) {
   return error?.details?.join(" ") || error?.message || "Could not load users. Please try again.";
 }
 
+export async function deleteUser(email: string): Promise<void> {
+  const response = await fetch(`/api/users/${encodeURIComponent(email)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+}
+
 export async function getUsers(page: number, size: number): Promise<UserPage> {
   const params = new URLSearchParams({ page: String(page), size: String(size) });
   const response = await fetch(`/api/users?${params}`, {

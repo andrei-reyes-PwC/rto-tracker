@@ -1,19 +1,22 @@
 package com.rtotracker.backend.user;
 
+import com.rtotracker.backend.auth.AuthSession;
 import com.rtotracker.backend.role.Role;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Max;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.List;
@@ -46,20 +50,26 @@ public class UserController {
     @Operation(summary = "List users")
     public Page<UserResponse> findAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            HttpServletRequest request) {
+        requireSuperAdmin(request);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "email"));
         return userService.findAll(pageable);
     }
 
     @GetMapping("/{email}")
     @Operation(summary = "Get a user by email")
-    public UserResponse findByEmail(@PathVariable String email) {
+    public UserResponse findByEmail(@PathVariable String email, HttpServletRequest request) {
+        requireSuperAdmin(request);
         return UserResponse.from(userService.findByEmail(email));
     }
 
     @PostMapping
     @Operation(summary = "Create a user")
-    public ResponseEntity<UserResponse> create(@Valid @RequestBody UserRequest request) {
+    public ResponseEntity<UserResponse> create(
+            @Valid @RequestBody UserRequest request,
+            HttpServletRequest servletRequest) {
+        requireSuperAdmin(servletRequest);
         UserResponse created = UserResponse.from(userService.create(request.email(), request.password()));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{email}").buildAndExpand(created.email()).toUri();
@@ -70,15 +80,34 @@ public class UserController {
     @Operation(summary = "Change a user's email")
     public UserResponse update(
             @PathVariable String email,
-            @Valid @RequestBody UserRequest request) {
+            @Valid @RequestBody UserRequest request,
+            HttpServletRequest servletRequest) {
+        requireSuperAdmin(servletRequest);
         return UserResponse.from(userService.update(email, request.email()));
     }
 
     @DeleteMapping("/{email}")
     @Operation(summary = "Delete a user")
-    public ResponseEntity<Void> delete(@PathVariable String email) {
+    public ResponseEntity<Void> delete(@PathVariable String email, HttpServletRequest request) {
+        requireSuperAdmin(request);
+
+        User target = userService.findByEmail(email);
+        boolean isProtected = target.getRoles().stream().anyMatch(role -> role.isProtectedRole());
+        if (isProtected) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected users cannot be deleted");
+        }
         userService.delete(email);
         return ResponseEntity.noContent().build();
+    }
+
+    private void requireSuperAdmin(HttpServletRequest request) {
+        User user = userService.findByEmail(AuthSession.requireEmail(request));
+        boolean isSuperAdmin = user.getRoles().stream()
+                .map(Role::getCode)
+                .anyMatch("SUPER_ADMIN"::equals);
+        if (!isSuperAdmin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "SUPER_ADMIN access required");
+        }
     }
 
     public record UserRequest(
