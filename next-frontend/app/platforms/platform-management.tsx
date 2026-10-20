@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 type Editor = { mode: "create" } | { mode: "edit"; platform: Platform };
 
@@ -24,6 +25,7 @@ export default function PlatformManagement() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [deleting, setDeleting] = useState<Platform | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -51,10 +53,10 @@ export default function PlatformManagement() {
   useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = debouncedQuery.trim().toLowerCase();
     return normalized ? platforms.filter((platform) => platform.name.toLowerCase().includes(normalized)
       || platform.userEmails.some((email) => email.toLowerCase().includes(normalized))) : platforms;
-  }, [platforms, query]);
+  }, [platforms, debouncedQuery]);
 
   async function save(name: string, userEmails: string[]) {
     try {
@@ -105,7 +107,7 @@ export default function PlatformManagement() {
           <CardContent className="p-0">
             {loading ? <div className="flex items-center justify-center gap-2 px-6 py-16 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading platforms…</div>
               : filtered.length === 0 ? <div className="px-6 py-16 text-center"><Boxes className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{error ? "Platforms could not be loaded" : platforms.length ? "No platforms match this search" : "No platforms yet"}</p><p className="mt-1 text-sm text-muted-foreground">{error ? "Check your connection and try refreshing." : "Create a platform to group workspace users."}</p></div>
-                : <div className="divide-y">{filtered.map((platform) => <div key={platform.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-medium">{platform.name}</p><div className="mt-2 flex flex-wrap items-center gap-1.5"><Badge variant="secondary"><Users /> {platform.userEmails.length} {platform.userEmails.length === 1 ? "member" : "members"}</Badge>{platform.userEmails.slice(0, 5).map((email) => <Badge key={email} variant="outline">{email}</Badge>)}{platform.userEmails.length > 5 && <Badge variant="outline">+{platform.userEmails.length - 5} more</Badge>}</div></div><div className="flex w-full gap-2 sm:w-auto sm:shrink-0"><Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setEditor({ mode: "edit", platform })}><UserRoundPen /> Edit</Button><Button variant="destructive" size="icon-sm" aria-label={`Delete ${platform.name}`} onClick={() => setDeleting(platform)}><Trash2 /></Button></div></div>)}</div>}
+                : <div className="divide-y">{filtered.map((platform) => <div key={platform.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-medium">{platform.name}</p><div className="mt-2"><Badge variant="secondary"><Users /> {platform.userEmails.length} {platform.userEmails.length === 1 ? "user" : "users"}</Badge></div></div><div className="flex w-full gap-2 sm:w-auto sm:shrink-0"><Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setEditor({ mode: "edit", platform })}><UserRoundPen /> Edit</Button><Button variant="destructive" size="icon-sm" aria-label={`Delete ${platform.name}`} onClick={() => setDeleting(platform)}><Trash2 /></Button></div></div>)}</div>}
           </CardContent>
         </Card>
       </main>

@@ -15,6 +15,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `app/page.tsx` â€” planner route (`/`); Server Component that renders the planner.
 - `app/users/user-management.tsx` owns the preview roster; `user-editor-sheet.tsx` and `user-editor-form.tsx` provide the shared add/edit sheet and form.
 - `/platforms` is implemented in `app/platforms/`; its admin UI manages platform names and user membership through the backend `/api/platforms` CRUD API.
+- Platform list rows show each group's user count; member email addresses are managed in the edit sheet and are not displayed in the list.
 - `components/SidebarPageLayout.tsx` provides the shared sidebar shell and page header; routes pass their header content as a prop. `components/ui/sidebar.tsx` persists the expanded/collapsed preference in a cookie and restores it when a route mounts.
 - `app/login/login-form.tsx` â€” client-side login form using shadcn UI components and Zod validation; submits to the Spring API and includes the HTTP session cookie.
 - `api/` â€” frontend API client (login, current user, logout), backend proxy rewrite, backend URL, and session-check helpers.
@@ -22,7 +23,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `validation/` â€” Zod schemas and inferred form value types, organized by form.
 - `app/component/OfficePlanner.tsx` composes the schedule page; `ScheduleProvider.tsx` owns month data, loading/saving, and planner actions shared through `useSchedule()`. It reloads the active month when authenticated user data refreshes and clears cached data when the account changes.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation and authenticated email profile menu with logout.
-- `/users` requires a valid session; its server page returns the route-level 404 UI to users without the `SUPER_ADMIN` role. The backend also protects all `/api/users` operations. It loads a paginated roster with refresh, page navigation, selectable limits (10, 25, 50, or 100), filtering by platform across pages, and search within the current page. Add, edit, and delete are connected; edits update email and assignable roles while preserving the password and linked office-day records, and protected users and roles cannot be changed. Self-delete is blocked in the UI and backend. The frontend also handles the legacy unpaged array response.
+- `/users` requires a valid session; its server page returns the route-level 404 UI to users without the `SUPER_ADMIN` role. The backend also protects all `/api/users` operations. It loads a paginated roster with refresh, page navigation, selectable limits (10, 25, 50, or 100), filtering by platform across pages, and search within the current page. Each user row shows their platform groups above their roles. Add, edit, and delete are connected; edits update email and assignable roles while preserving the password and linked office-day records, and protected users and roles cannot be changed. Self-delete is blocked in the UI and backend. The frontend also handles the legacy unpaged array response.
 - For future CRUD screens, follow `/users` for a responsive card-based layout, clear search and record actions, shared add/edit sheets, and confirmation dialogs for deletes; adapt the layout for mobile and desktop.
 - The sidebar shows the user management route only to users with the `SUPER_ADMIN` role.
 - `components/ui/sidebar.tsx` â€” shadcn responsive sidebar primitives; `hooks/use-mobile.ts` supplies its mobile breakpoint.
@@ -64,3 +65,4 @@ Keep these notes concise and factual. When work changes architecture, routes, da
 - `api/office-days.ts` loads and replaces the authenticated user's monthly schedule through the same-origin API proxy. The planner keeps unsaved edits in client state and persists them with the backend on Save.
 - `api/users.ts` loads, creates, updates, and deletes backend users through the same-origin API proxy without caching list requests.
 - `api/platforms.ts` loads, creates, updates, and deletes platforms through the same-origin API proxy; the platform editor loads the paginated user roster to select members.
+- `hooks/use-debounced-value.ts` delays local search filtering by 300 ms; `/users` and `/platforms` use it for their search inputs.

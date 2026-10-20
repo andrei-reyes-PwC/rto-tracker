@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { createUser, deleteUser, getUsers, updateUser } from "@/api/users";
 import { getPlatforms, type Platform } from "@/api/platforms";
 import { useAuth } from "@/providers/AuthProvider";
@@ -51,6 +52,7 @@ export default function UserManagement() {
   const [notice, setNotice] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query);
   const [platformId, setPlatformId] = useState("all");
   const [editor, setEditor] = useState<{ mode: UserEditorMode; user?: ManagedUser } | null>(null);
   const [deletingUser, setDeletingUser] = useState<ManagedUser | null>(null);
@@ -80,13 +82,13 @@ export default function UserManagement() {
   }, [load]);
 
   const filteredUsers = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = debouncedQuery.trim().toLowerCase();
     if (!normalizedQuery) return users;
     return users.filter((managedUser) =>
       managedUser.email.toLowerCase().includes(normalizedQuery)
       || managedUser.roles.some((role) => role.toLowerCase().includes(normalizedQuery)),
     );
-  }, [query, users]);
+  }, [debouncedQuery, users]);
 
   async function handleEditorSave(values: UserEditorValues) {
     try {
@@ -182,10 +184,16 @@ export default function UserManagement() {
               {filteredUsers.map((managedUser) => {
                 const isProtected = managedUser.roles.includes("SUPER_ADMIN");
                 const isCurrentUser = signedInUser?.email.toLowerCase() === managedUser.email.toLowerCase();
+                const userPlatforms = platforms.filter((platform) => platform.userEmails.includes(managedUser.email));
                 return (
                   <div key={managedUser.email} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium" title={managedUser.email}>{managedUser.email}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {userPlatforms.length > 0
+                          ? userPlatforms.map((platform) => <Badge key={platform.id} variant="outline">{platform.name}</Badge>)
+                          : <span className="text-xs text-muted-foreground">No platform</span>}
+                      </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {managedUser.roles.map((role) => <Badge key={role} variant={role === "ADMIN" || role === "SUPER_ADMIN" ? "secondary" : "outline"}>{role === "SUPER_ADMIN" && <Shield aria-hidden="true" />}{role}</Badge>)}
                       </div>
