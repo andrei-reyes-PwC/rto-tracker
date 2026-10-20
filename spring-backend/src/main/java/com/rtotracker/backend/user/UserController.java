@@ -1,5 +1,6 @@
 package com.rtotracker.backend.user;
 
+import com.rtotracker.backend.role.Role;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -74,9 +75,10 @@ public class UserController {
             @NotBlank @Size(min = 8, max = 72) String password) {
     }
 
-    public record UserResponse(String email) {
+    public record UserResponse(String email, List<String> roles) {
         static UserResponse from(User user) {
-            return new UserResponse(user.getEmail());
+            return new UserResponse(user.getEmail(), user.getRoles().stream()
+                    .map(Role::getCode).sorted().toList());
         }
     }
 }

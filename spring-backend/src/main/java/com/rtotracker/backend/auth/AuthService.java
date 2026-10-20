@@ -29,4 +29,9 @@ public class AuthService {
         }
         return user;
     }
+
+    public User findByEmail(String email) {
+        return users.findById(email).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Session user no longer exists"));
+    }
 }

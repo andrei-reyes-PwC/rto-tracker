@@ -1,5 +1,6 @@
 package com.rtotracker.backend.auth;
 
+import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.user.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,12 +37,12 @@ public class AuthController {
             servletRequest.changeSessionId();
         }
         servletRequest.getSession(true).setAttribute(AuthSession.AUTHENTICATED_EMAIL_ATTRIBUTE, user.getEmail());
-        return new LoginResponse(user.getEmail());
+        return LoginResponse.from(user);
     }
 
     @GetMapping("/me")
     public LoginResponse currentUser(HttpServletRequest servletRequest) {
-        return new LoginResponse(AuthSession.requireEmail(servletRequest));
+        return LoginResponse.from(authService.findByEmail(AuthSession.requireEmail(servletRequest)));
     }
 
     @PostMapping("/logout")
@@ -66,6 +68,10 @@ public class AuthController {
             @NotBlank @Size(max = 72) String password) {
     }
 
-    public record LoginResponse(String email) {
+    public record LoginResponse(String email, List<String> roles) {
+        static LoginResponse from(User user) {
+            return new LoginResponse(user.getEmail(), user.getRoles().stream()
+                    .map(Role::getCode).sorted().toList());
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.rtotracker.backend.user;
 
+import com.rtotracker.backend.role.Role;
+import com.rtotracker.backend.role.RoleRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -8,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -15,10 +18,12 @@ public class UserService {
 
     private final UserRepository users;
     private final PasswordHashingService passwordHashingService;
+    private final RoleRepository roles;
 
-    public UserService(UserRepository users, PasswordHashingService passwordHashingService) {
+    public UserService(UserRepository users, PasswordHashingService passwordHashingService, RoleRepository roles) {
         this.users = users;
         this.passwordHashingService = passwordHashingService;
+        this.roles = roles;
     }
 
     @Transactional(readOnly = true)
@@ -37,7 +42,8 @@ public class UserService {
         if (users.existsById(normalizedEmail)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A user with this email already exists");
         }
-        return users.save(new User(normalizedEmail, passwordHashingService.hash(password)));
+        return users.save(new User(normalizedEmail, passwordHashingService.hash(password),
+                Set.of(defaultRole())));
     }
 
     public User update(String currentEmail, String replacementEmail) {
@@ -51,7 +57,7 @@ public class UserService {
         }
         users.delete(current);
         users.flush();
-        return users.save(new User(normalizedReplacement, current.getPasswordHash()));
+        return users.save(new User(normalizedReplacement, current.getPasswordHash(), current.getRoles()));
     }
 
     public void delete(String email) {
@@ -61,5 +67,10 @@ public class UserService {
 
     private static String normalize(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private Role defaultRole() {
+        return roles.findById("USER")
+                .orElseThrow(() -> new IllegalStateException("The USER role is missing from the role catalog"));
     }
 }

@@ -6,7 +6,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 
 - A standalone Spring Boot REST API built with Maven.
 - Spring Boot `4.1.1`, Java `25`, Spring MVC, Spring Data JPA, MySQL, Flyway, and springdoc OpenAPI are configured in `pom.xml`.
-- Flyway creates the `users` table with email as its primary key and adds a nullable BCrypt password hash for compatibility with existing records; Hibernate validates the mapped entity.
+- Flyway creates the `users` table with email as its primary key, a nullable BCrypt password hash for compatibility with existing records, a role catalog, and a `user_roles` many-to-many association; Hibernate validates the mapped entities.
 - The API exposes `POST /api/auth/login`, CRUD endpoints under `/api/users`, and authenticated office-day queries and monthly replacement under `/api/office-days`.
 - Swagger UI is available at `/swagger-ui.html`; startup prints its URL.
 - The default HTTP port is `8080`.
@@ -14,6 +14,8 @@ This file is the short working map for `spring-backend`. Read it before backend 
 ## Key files
 
 - `src/main/java/com/rtotracker/backend/user/` contains the user entity, repository, service, and CRUD controller.
+- `src/main/java/com/rtotracker/backend/role/` contains the role entity, repository, read service, and read-only `GET /api/roles` catalog endpoint.
+- User creation assigns `USER` by default; user and authentication responses include role codes. `SUPER_ADMIN` is seeded as a protected catalog role, and the public user CRUD API does not accept role assignments.
 - `src/main/java/com/rtotracker/backend/office/` contains office-day persistence and authenticated per-user monthly schedule APIs.
 - `src/main/java/com/rtotracker/backend/auth/` contains login, current-session (`GET /api/auth/me`), logout (`POST /api/auth/logout`), and credential verification; logout invalidates the HTTP session.
 - `src/main/java/com/rtotracker/backend/WebCorsConfig.java` configures credentialed CORS globally for `/api/**`.
