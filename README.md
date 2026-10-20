@@ -6,3 +6,5 @@ The repository contains two standalone applications:
 - [`spring-backend/`](spring-backend/README.md) — Spring Boot REST API.
 
 Each app has its own dependencies and run instructions. See the app README before starting it. Repository and subproject working guidance is in `AGENTS.md`; concise architecture maps are in each `PROJECT_NOTES.md`.
+
+The shared product requirements, user roles, and access rules are documented in [`REQUIREMENTS.md`](REQUIREMENTS.md).

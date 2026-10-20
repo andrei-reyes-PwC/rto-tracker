@@ -1,0 +1,82 @@
+# RTO Tracker Requirements
+
+This document is the shared source of truth for the system's users, access rules, and product behavior. It describes the behavior currently represented by the application and backend as reviewed on 2026-10-20. When a requirement changes, update this document first or in the same change as the implementation, and record unresolved product decisions under [Open questions](#open-questions).
+
+## 1. Users and access
+
+| User type | Access |
+| --- | --- |
+| Signed-out visitor | Can use the sign-in page. Visiting a protected page redirects to sign-in. |
+| `USER` | Can sign in, view and manage their own monthly office-day schedule, and sign out. They cannot use administrative user or platform management. |
+| `SUPER_ADMIN` | Has authenticated user capabilities and can manage users, roles assigned through user management, platforms, and platform memberships. |
+
+All authenticated users have a personal account identified by email. User accounts are created by an administrator; there is no public registration flow. New accounts receive the `USER` role by default. The system may attach multiple roles to an account, but `SUPER_ADMIN` is protected from assignment and modification through the user-management flow.
+
+### Access rules
+
+- The planner requires an authenticated session.
+- User and platform management require `SUPER_ADMIN`. The frontend hides these routes from unauthorized users; the backend independently enforces authorization for administrative API operations.
+- Office-day reads and updates require an authenticated session and always apply to the signed-in account. A caller cannot select another account as the schedule owner.
+- A `SUPER_ADMIN` cannot delete their own account. Protected users cannot be deleted or edited through user management.
+- Signing out invalidates the session.
+
+## 2. Feature requirements
+
+### Authentication and account session
+
+- **AUTH-01** — As an account holder, I can sign in with my email and password to access the planner and the features permitted by my role.
+- **AUTH-02** — As an account holder, I can see the identity, roles, and platform names associated with my active session.
+- **AUTH-03** — As an account holder, I can sign out, after which the session is no longer valid.
+- **AUTH-04** — Invalid credentials or an invalid session do not grant access to protected features.
+
+### Office planner
+
+- **PLAN-01** — As an authenticated user, I can view a monthly calendar and move between months or return to the current month.
+- **PLAN-02** — As an authenticated user, I can mark individual dates as office days, mark weekdays, or clear the selected month.
+- **PLAN-03** — As an authenticated user, I can save a month's office-day selections and see saved selections when I revisit that month.
+- **PLAN-04** — As an authenticated user, I can edit a month before saving; unsaved changes are treated as a draft and save failures are surfaced in the planner.
+- **PLAN-05** — The planner shows a weekday count and the next planned office day for the selected month and current date.
+- **PLAN-06** — The planner may show example company events and requirements. These are illustrative and are not currently sourced from a company calendar or an event-management feature.
+
+### User and role administration
+
+- **USER-01** — As a `SUPER_ADMIN`, I can view a paginated user list, search within the displayed results, and filter users by platform.
+- **USER-02** — As a `SUPER_ADMIN`, I can create a user with an email and password. The new user receives the `USER` role by default.
+- **USER-03** — As a `SUPER_ADMIN`, I can update an eligible user's email and assignable roles. Existing password and linked office-day records are preserved when the email changes.
+- **USER-04** — As a `SUPER_ADMIN`, I can delete an eligible user, subject to self-delete and protected-user restrictions.
+- **USER-05** — As a `SUPER_ADMIN`, I can view the available platform options and each listed user's platform memberships.
+- **USER-06** — User listing supports page navigation and page sizes of 10, 25, 50, or 100 in the management interface; the API accepts page sizes up to 100.
+- **USER-07** — User creation and update validate email and password/role inputs. Duplicate emails are rejected, and protected roles cannot be assigned through this flow.
+
+### Platform administration
+
+- **PLAT-01** — As a `SUPER_ADMIN`, I can view platforms and each platform's member count.
+- **PLAT-02** — As a `SUPER_ADMIN`, I can create and edit a platform by setting its name and assigning users by email. A user may belong to multiple platforms.
+- **PLAT-03** — As a `SUPER_ADMIN`, I can inspect a platform's member email addresses and remove a platform.
+- **PLAT-04** — Platform names are required and unique without regard to letter case. Membership references must identify existing users.
+- **PLAT-05** — Platform names appear in the signed-in user's session profile when the user belongs to those platforms.
+
+## 3. Product and system boundaries
+
+- The web application is a Next.js frontend; the REST API is a Spring Boot backend.
+- The frontend sends API requests through its same-origin `/api/*` proxy to the backend. Direct cross-origin API access is configured separately for the frontend origin.
+- MySQL stores users, roles, platform memberships, and office-day records. Flyway manages schema changes.
+- A user's office-day schedule is stored by date and queried or replaced by month. The account identity comes from the authenticated session.
+- The system currently provides no company-calendar integration, event authoring, or public self-service registration.
+
+## 4. Open questions
+
+These are product decisions not established by the current implementation. Resolve them before treating the corresponding behavior as a long-term product commitment.
+
+- What is the organization's definitive RTO policy: required number of office days, eligible weekdays, holidays, exceptions, and enforcement rules?
+- Should company events and mandatory RTO requirements come from an integrated calendar or an administrator-managed source? Who owns that information?
+- Should standard users have access to additional views such as team schedules, or remain limited to their own planner?
+- What account lifecycle is expected (password reset, account deactivation, invitation, and credential rotation)?
+- What should happen to a user's office-day history if an administrator deletes the account?
+- Should role assignment remain limited to the current protected-role rules, and which roles should exist beyond `USER` and `SUPER_ADMIN`?
+
+## 5. Change and review convention
+
+- Use the requirement IDs above in feature discussions and implementation reviews.
+- When a change alters user-visible behavior, permissions, persistence, or system boundaries, update this document alongside the affected code and project notes.
+- Keep implemented behavior and intended future behavior distinct. Add unresolved decisions to the open-questions section instead of silently treating assumptions as requirements.

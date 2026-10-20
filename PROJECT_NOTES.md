@@ -2,6 +2,8 @@
 
 This repository contains the RTO Tracker frontend and backend as separate applications.
 
+- `REQUIREMENTS.md` is the shared source of truth for user types, access rules, feature behavior, system boundaries, and unresolved product questions. Update it with changes to user-visible behavior or permissions.
+
 ## Projects
 
 - `next-frontend/` — Next.js App Router frontend. Read its `AGENTS.md` and `PROJECT_NOTES.md` before frontend work; npm commands and UI details are documented there.
