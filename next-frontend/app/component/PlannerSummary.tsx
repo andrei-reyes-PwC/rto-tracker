@@ -1,14 +1,13 @@
+"use client";
+
 import { CalendarDays, MapPin, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { useSchedule } from "@/app/component/ScheduleProvider";
 
-type PlannerSummaryProps = {
-  officeDayCount: number;
-  weekdayCount: number;
-  monthLabel: string;
-  nextOfficeDay: Date | null;
-};
+export default function PlannerSummary() {
+  const { officeDays, weekdayCount, monthLabel, nextOfficeDay } = useSchedule();
+  const officeDayCount = officeDays.length;
 
-export default function PlannerSummary({ officeDayCount, weekdayCount, monthLabel, nextOfficeDay }: PlannerSummaryProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       <Card className="gap-0 border-slate-200/80 shadow-none">

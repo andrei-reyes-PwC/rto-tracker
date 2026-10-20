@@ -2,16 +2,11 @@
 
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSchedule } from "@/app/component/ScheduleProvider";
 
-type PlannerHeadingProps = {
-  hasUnsavedChanges: boolean;
-  isLoading: boolean;
-  isSaving: boolean;
-  onSave: () => void;
-};
-
-export default function PlannerHeading({ hasUnsavedChanges, isLoading, isSaving, onSave }: PlannerHeadingProps) {
-  const status = isLoading
+export default function PlannerHeading() {
+  const { hasUnsavedChanges, isLoadingMonth, isSaving, saveSchedule } = useSchedule();
+  const status = isLoadingMonth
     ? "Loading schedule..."
     : isSaving
       ? "Saving schedule..."
@@ -28,7 +23,7 @@ export default function PlannerHeading({ hasUnsavedChanges, isLoading, isSaving,
       </div>
       <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
         <span aria-live="polite" className="text-xs font-medium text-slate-500">{status}</span>
-        <Button onClick={onSave} disabled={!hasUnsavedChanges || isLoading || isSaving} className="gap-2 bg-[#e65300] text-white shadow-sm hover:bg-[#c74600]"><Save className="size-4" /> {isSaving ? "Saving..." : "Save schedule"}</Button>
+        <Button onClick={saveSchedule} disabled={!hasUnsavedChanges || isLoadingMonth || isSaving} className="gap-2 bg-[#e65300] text-white shadow-sm hover:bg-[#c74600]"><Save className="size-4" /> {isSaving ? "Saving..." : "Save schedule"}</Button>
       </div>
     </div>
   );

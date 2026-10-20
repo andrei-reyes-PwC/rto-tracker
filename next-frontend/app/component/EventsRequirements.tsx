@@ -1,7 +1,10 @@
+"use client";
+
 import { Building2, CircleHelp } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSchedule } from "@/app/component/ScheduleProvider";
 
 export type PlannerEvent = {
   date: Date;
@@ -14,9 +17,9 @@ export type PlannerEvent = {
   required: boolean;
 };
 
-type EventsRequirementsProps = { events: PlannerEvent[]; monthLabel: string };
+export default function EventsRequirements() {
+  const { visibleEvents: events, monthLabel } = useSchedule();
 
-export default function EventsRequirements({ events, monthLabel }: EventsRequirementsProps) {
   return (
     <Card id="events" className="gap-0 border-slate-200/80 shadow-none">
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-5">

@@ -16,9 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import Sidebar from "@/components/Sidebar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import SidebarPageLayout from "@/components/SidebarPageLayout";
 import UserEditorSheet from "./user-editor-sheet";
 import type { AvailableRole, ManagedUser, UserEditorMode, UserEditorValues } from "./user-types";
 
@@ -204,15 +202,7 @@ export default function UserManagement() {
   );
 
   return (
-    <TooltipProvider>
-      <SidebarProvider>
-        <Sidebar />
-        <SidebarInset>
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger />
-            <div className="h-4 w-px bg-border" />
-            <span className="text-sm font-medium">Users</span>
-          </header>
+    <SidebarPageLayout headerContent={<span className="text-sm font-medium">Users</span>}>
           {content}
           <UserEditorSheet
             open={editor !== null}
@@ -242,8 +232,6 @@ export default function UserManagement() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </SidebarInset>
-      </SidebarProvider>
-    </TooltipProvider>
+    </SidebarPageLayout>
   );
 }
