@@ -8,6 +8,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 - Spring Boot `4.1.1`, Java `25`, Spring MVC, Spring Data JPA, MySQL, Flyway, and springdoc OpenAPI are configured in `pom.xml`.
 - Flyway creates the `users` table with email as its primary key, a nullable BCrypt password hash for compatibility with existing records, a role catalog, and a `user_roles` many-to-many association; Hibernate validates the mapped entities.
 - The API exposes `POST /api/auth/login`, user CRUD under `/api/users`, the role catalog under `/api/roles`, and authenticated office-day queries and monthly replacement under `/api/office-days`.
+- `GET /api/users` returns a Spring page ordered by email; `page` is zero-based (default `0`) and `size` defaults to `20`, with a maximum size of `100`.
 - Swagger UI is available at `/swagger-ui.html`; startup prints its URL.
 - The default HTTP port is `8080`.
 

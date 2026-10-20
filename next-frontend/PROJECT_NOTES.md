@@ -21,7 +21,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `validation/` â€” Zod schemas and inferred form value types, organized by form.
 - `app/component/OfficePlanner.tsx` composes the schedule page; `ScheduleProvider.tsx` owns month data, loading/saving, and planner actions shared through `useSchedule()`. It reloads the active month when authenticated user data refreshes and clears cached data when the account changes.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation and authenticated email profile menu with logout.
-- `/users` is currently a UI preview with a sample roster saved in browser local storage; it does not call backend user-management endpoints.
+- `/users` loads the backend roster from paginated `GET /api/users` through the same-origin API proxy, with refresh, page navigation, selectable limits (10, 25, 50, or 100), and search within the current page; the frontend also handles the legacy unpaged array response; user mutations are not yet connected.
 - For future CRUD screens, follow `/users` for a responsive card-based layout, clear search and record actions, shared add/edit sheets, and confirmation dialogs for deletes; adapt the layout for mobile and desktop.
 - The sidebar shows the user management route to signed-in users.
 - `components/ui/sidebar.tsx` â€” shadcn responsive sidebar primitives; `hooks/use-mobile.ts` supplies its mobile breakpoint.
@@ -61,3 +61,4 @@ This file is the short working map for future work in `next-frontend`. Read it f
 Keep these notes concise and factual. When work changes architecture, routes, data flow, integrations, or conventions, update the relevant section here.
 
 - `api/office-days.ts` loads and replaces the authenticated user's monthly schedule through the same-origin API proxy. The planner keeps unsaved edits in client state and persists them with the backend on Save.
+- `api/users.ts` loads a page of backend users through the same-origin API proxy without caching.

@@ -8,7 +8,14 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +31,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
+@Validated
 @RequestMapping("/api/users")
 @Tag(name = "Users", description = "Create and manage users identified by email")
 public class UserController {
@@ -35,8 +44,11 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "List users")
-    public List<UserResponse> findAll() {
-        return userService.findAll().stream().map(UserResponse::from).toList();
+    public Page<UserResponse> findAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "email"));
+        return userService.findAll(pageable);
     }
 
     @GetMapping("/{email}")
@@ -76,7 +88,7 @@ public class UserController {
     }
 
     public record UserResponse(String email, List<String> roles) {
-        static UserResponse from(User user) {
+        public static UserResponse from(User user) {
             return new UserResponse(user.getEmail(), user.getRoles().stream()
                     .map(Role::getCode).sorted().toList());
         }

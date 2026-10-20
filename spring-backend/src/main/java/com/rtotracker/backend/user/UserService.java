@@ -2,13 +2,14 @@ package com.rtotracker.backend.user;
 
 import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.role.RoleRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -27,8 +28,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<User> findAll() {
-        return users.findAll(Sort.by(Sort.Direction.ASC, "email"));
+    public Page<UserController.UserResponse> findAll(Pageable pageable) {
+        return users.findAll(pageable).map(UserController.UserResponse::from);
     }
 
     @Transactional(readOnly = true)
