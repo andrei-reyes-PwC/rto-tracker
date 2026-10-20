@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,15 +15,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
-    private static final String AUTHENTICATED_EMAIL = "authenticatedUserEmail";
 
     private final AuthService authService;
 
@@ -38,18 +34,13 @@ public class AuthController {
         if (servletRequest.getSession(false) != null) {
             servletRequest.changeSessionId();
         }
-        servletRequest.getSession(true).setAttribute(AUTHENTICATED_EMAIL, user.getEmail());
+        servletRequest.getSession(true).setAttribute(AuthSession.AUTHENTICATED_EMAIL_ATTRIBUTE, user.getEmail());
         return new LoginResponse(user.getEmail());
     }
 
     @GetMapping("/me")
     public LoginResponse currentUser(HttpServletRequest servletRequest) {
-        var session = servletRequest.getSession(false);
-        String email = session == null ? null : (String) session.getAttribute(AUTHENTICATED_EMAIL);
-        if (email == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
-        }
-        return new LoginResponse(email);
+        return new LoginResponse(AuthSession.requireEmail(servletRequest));
     }
 
     @PostMapping("/logout")
