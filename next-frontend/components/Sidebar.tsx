@@ -1,6 +1,8 @@
 "use client";
 
-import { CalendarDays } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { CalendarDays, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import {
   Sidebar as ShadcnSidebar,
@@ -18,6 +20,7 @@ import {
 
 export default function Sidebar() {
   const { setOpenMobile } = useSidebar();
+  const pathname = usePathname();
 
   return (
     <ShadcnSidebar collapsible="icon" variant="sidebar">
@@ -25,10 +28,10 @@ export default function Sidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip="AC Manila" className="h-12">
-              <a href="#calendar" aria-label="AC Manila RTO planner home">
+              <Link href="/" aria-label="AC Manila RTO planner home">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#e65300] text-[10px] font-bold text-white">PwC</span>
                 <span className="truncate text-[15px] font-semibold tracking-tight">AC Manila</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -38,11 +41,19 @@ export default function Sidebar() {
           <SidebarGroupLabel>Workspace</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive tooltip="My schedule">
-                <a href="#calendar" onClick={() => setOpenMobile(false)} aria-label="My schedule">
+              <SidebarMenuButton asChild isActive={pathname === "/"} tooltip="My schedule">
+                <Link href="/" onClick={() => setOpenMobile(false)} aria-label="My schedule">
                   <CalendarDays />
                   <span>My schedule</span>
-                </a>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/users" || pathname.startsWith("/users/")} tooltip="Manage users">
+                <Link href="/users" onClick={() => setOpenMobile(false)} aria-label="Manage users">
+                  <Users />
+                  <span>Manage users</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

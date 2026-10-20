@@ -5,7 +5,7 @@ export async function proxy(request: NextRequest) {
   const sessionId = request.cookies.get("JSESSIONID")?.value;
   const isAuthenticated = sessionId ? await hasValidSession(sessionId) : false;
 
-  if (request.nextUrl.pathname === "/" && !isAuthenticated) {
+  if ((request.nextUrl.pathname === "/" || request.nextUrl.pathname.startsWith("/users")) && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -17,5 +17,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login"],
+  matcher: ["/", "/login", "/users/:path*"],
 };
