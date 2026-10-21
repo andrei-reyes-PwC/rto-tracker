@@ -38,7 +38,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **PLAN-04** — As an authenticated user, I can edit a month before saving; unsaved changes are treated as a draft and save failures are surfaced in the planner.
 - **PLAN-05** — The planner shows a weekday count and the next planned office day for the selected month and current date.
 - **PLAN-06** — The planner may show example company events and requirements. These are illustrative and are not currently sourced from a company calendar or an event-management feature.
-- **PLAN-07** — As a `USER` assigned to a platform, I can select a calendar date and see the email addresses of other users in my platform who have a saved office plan for that day. Users without a platform do not see this view.
+- **PLAN-07** — As a `USER` assigned to a platform, I can see the daily count of other platform members with a saved office plan in each calendar cell and select a date to see their email addresses. Counts exclude my own plan; users without a platform do not see the counts or colleague list.
 
 ### User and role administration
 

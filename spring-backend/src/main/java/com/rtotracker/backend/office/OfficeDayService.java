@@ -49,6 +49,22 @@ public class OfficeDayService {
         return new PlatformOfficeDayQueryResponse(officeDate, currentUser.getPlatform().getName(), colleagues);
     }
 
+    @Transactional(readOnly = true)
+    public PlatformAttendanceQueryResponse getPlatformAttendance(String userEmail, YearMonth month) {
+        User currentUser = users.findById(userEmail).orElse(null);
+        if (currentUser == null || currentUser.getPlatform() == null) {
+            return new PlatformAttendanceQueryResponse(month, null, List.of());
+        }
+
+        List<PlatformDailyAttendance> dailyAttendance = officeDays.findPlatformAttendance(
+                        currentUser.getPlatform().getId(), userEmail,
+                        month.atDay(1), month.plusMonths(1).atDay(1))
+                .stream()
+                .map(day -> new PlatformDailyAttendance(day.getOfficeDate(), day.getAttendees()))
+                .toList();
+        return new PlatformAttendanceQueryResponse(month, currentUser.getPlatform().getName(), dailyAttendance);
+    }
+
     @Transactional
     public OfficeDayQueryResponse replaceMonth(String userEmail, YearMonth month, List<LocalDate> dates) {
         if (dates.stream().anyMatch(date -> !YearMonth.from(date).equals(month))) {
@@ -80,5 +96,14 @@ public class OfficeDayService {
     }
 
     public record PlatformOfficeDay(LocalDate date, String email) {
+    }
+
+    public record PlatformAttendanceQueryResponse(
+            YearMonth month,
+            String platformName,
+            List<PlatformDailyAttendance> attendance) {
+    }
+
+    public record PlatformDailyAttendance(LocalDate date, long attendees) {
     }
 }

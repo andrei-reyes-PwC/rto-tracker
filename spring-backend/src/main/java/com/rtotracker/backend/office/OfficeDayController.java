@@ -45,6 +45,14 @@ public class OfficeDayController {
                 AuthSession.requireEmail(request), parseDate(date));
     }
 
+    @GetMapping("/platform/attendance")
+    public OfficeDayService.PlatformAttendanceQueryResponse getPlatformAttendance(
+            @RequestParam String month,
+            HttpServletRequest request) {
+        return officeDayService.getPlatformAttendance(
+                AuthSession.requireEmail(request), parseMonth(month));
+    }
+
     @PutMapping
     public OfficeDayService.OfficeDayQueryResponse replaceMonth(
             @RequestParam String month,

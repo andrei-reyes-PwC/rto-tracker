@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Check,
   RotateCcw,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ export default function MonthlyCalendar() {
     monthName,
     calendarDays,
     officeDays,
+    platformAttendanceCounts,
     selectedPlatformDate,
     todayKey,
     isLoadingMonth,
@@ -59,6 +61,7 @@ export default function MonthlyCalendar() {
             const isOfficeDay = officeDays.includes(key);
             const isToday = key === todayKey;
             const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            const platformColleagues = platformAttendanceCounts?.[key] ?? 0;
             return (
               <div key={key} className={`group relative flex min-h-[78px] flex-col border-b border-r border-slate-100 p-1 transition sm:min-h-[112px] sm:p-3 ${isOfficeDay ? "bg-[#fff0e6]/70 hover:bg-[#fff0e6]" : "bg-white hover:bg-slate-50"} ${isWeekend ? "bg-slate-50/40" : ""} ${selectedPlatformDate === key ? "z-10 ring-2 ring-inset ring-[#e65300]" : ""}`}>
                 {user?.platform && <button type="button" aria-label={`Show platform office plans for ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)}`} aria-pressed={selectedPlatformDate === key} onClick={() => selectPlatformDate(key)} className="absolute inset-0 z-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#e65300]"><span className="sr-only">View platform RTO plans</span></button>}
@@ -67,6 +70,11 @@ export default function MonthlyCalendar() {
                     <span className={`flex size-7 items-center justify-center rounded-full text-xs ${isToday ? "bg-[#e65300] font-semibold text-white" : "font-medium text-slate-700"}`}>{date.getDate()}</span>
                     <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => toggleDay(key)} disabled={disabled} className="pointer-events-auto size-4 cursor-pointer accent-[#e65300]" />
                   </span>
+                  {user?.platform && platformAttendanceCounts && (
+                    <span aria-label={`${platformColleagues} colleagues planning an office day`} title={`${platformColleagues} colleagues planning an office day`} className={`mt-auto inline-flex items-center gap-1 self-start rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${platformColleagues > 0 ? "bg-orange-50 text-[#b83b00]" : "bg-slate-100 text-slate-500"}`}>
+                      <Users className="size-3" />{platformColleagues}
+                    </span>
+                  )}
                 </div>
               </div>
             );

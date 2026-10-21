@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { Building2, Coffee, Users } from "lucide-react";
-import { getOfficeDays, replaceOfficeDays } from "@/api/office-days";
+import { getOfficeDays, getPlatformMonthlyAttendance, replaceOfficeDays } from "@/api/office-days";
 import type { PlannerEvent } from "@/app/component/EventsRequirements";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -23,6 +23,7 @@ type ScheduleContextValue = {
   loadError: string;
   saveError: string;
   officeDays: string[];
+  platformAttendanceCounts: Record<string, number> | null;
   selectedPlatformDate: string | null;
   weekdayCount: number;
   monthLabel: string;
@@ -77,6 +78,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const [visibleMonthOverride, setVisibleMonthOverride] = useState<string | null>(null);
   const [savedByMonth, setSavedByMonth] = useState<Record<string, string[]>>({});
   const [draftByMonth, setDraftByMonth] = useState<Record<string, string[]>>({});
+  const [platformAttendanceByMonth, setPlatformAttendanceByMonth] = useState<Record<string, Record<string, number>>>({});
   const [selectedPlatformDate, setSelectedPlatformDate] = useState<string | null>(null);
   const [isLoadingMonth, setIsLoadingMonth] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -98,6 +100,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const month = visibleMonth.getMonth();
   const monthKey = getMonthKey(year, month);
   const officeDays = draftByMonth[monthKey] ?? savedByMonth[monthKey] ?? [];
+  const platformAttendanceCounts = platformAttendanceByMonth[monthKey] ?? null;
   const hasUnsavedChanges = draftByMonth[monthKey] !== undefined;
   const today = new Date(`${currentDateKey}T12:00:00`);
   const todayKey = dateKey(today);
@@ -121,6 +124,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       loadedMonths.current.clear();
       setSavedByMonth({});
       setDraftByMonth({});
+      setPlatformAttendanceByMonth({});
       setLoadError("");
       setSaveError("");
       setIsLoadingMonth(false);
@@ -135,6 +139,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       loadedMonths.current.clear();
       setSavedByMonth({});
       setDraftByMonth({});
+      setPlatformAttendanceByMonth({});
       setLoadError("");
       setSaveError("");
     } else if (userDataChanged) {
@@ -170,6 +175,35 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       isCurrentRequest = false;
     };
   }, [isAuthLoading, loadRetry, monthKey, user]);
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (!user?.platform) {
+      setPlatformAttendanceByMonth({});
+      return;
+    }
+
+    let isCurrentRequest = true;
+    setPlatformAttendanceByMonth((current) => {
+      const next = { ...current };
+      delete next[monthKey];
+      return next;
+    });
+
+    getPlatformMonthlyAttendance(monthKey)
+      .then((attendance) => {
+        if (!isCurrentRequest) return;
+        const counts = Object.fromEntries(attendance.attendance.map((day) => [day.date, day.attendees]));
+        setPlatformAttendanceByMonth((current) => ({ ...current, [monthKey]: counts }));
+      })
+      .catch(() => {
+        // Keep platform counts hidden when this optional team summary is unavailable.
+      });
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [isAuthLoading, loadRetry, monthKey, user?.email, user?.platform?.id]);
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
@@ -251,6 +285,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     loadError,
     saveError,
     officeDays,
+    platformAttendanceCounts,
     selectedPlatformDate,
     weekdayCount,
     monthLabel,

@@ -29,9 +29,31 @@ public interface OfficeDayRepository extends JpaRepository<OfficeDay, Long> {
             @Param("currentUserEmail") String currentUserEmail,
             @Param("officeDate") LocalDate officeDate);
 
+    @Query("""
+            select officeDay.officeDate as officeDate, count(officeDay.id) as attendees
+            from OfficeDay officeDay, User user
+            where user.email = officeDay.userEmail
+              and user.platform.id = :platformId
+              and user.email <> :currentUserEmail
+              and officeDay.officeDate >= :startInclusive
+              and officeDay.officeDate < :endExclusive
+            group by officeDay.officeDate
+            order by officeDay.officeDate asc
+            """)
+    List<PlatformDailyAttendanceProjection> findPlatformAttendance(
+            @Param("platformId") Long platformId,
+            @Param("currentUserEmail") String currentUserEmail,
+            @Param("startInclusive") LocalDate startInclusive,
+            @Param("endExclusive") LocalDate endExclusive);
+
     interface PlatformOfficeDayProjection {
         LocalDate getOfficeDate();
         String getUserEmail();
+    }
+
+    interface PlatformDailyAttendanceProjection {
+        LocalDate getOfficeDate();
+        long getAttendees();
     }
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
