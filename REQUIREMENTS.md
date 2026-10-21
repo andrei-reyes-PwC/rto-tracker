@@ -7,7 +7,7 @@ This document is the shared source of truth for the system's users, access rules
 | User type | Access |
 | --- | --- |
 | Signed-out visitor | Can use the sign-in page. Visiting a protected page redirects to sign-in. |
-| `USER` | Can sign in, view and manage their own monthly office-day schedule, and sign out. They cannot use administrative user or platform management. |
+| `USER` | Can sign in, view and manage their own monthly office-day schedule, view saved office days for other users in their platform, and sign out. They cannot use administrative user or platform management. |
 | `SUPER_ADMIN` | Has authenticated user capabilities and can manage users, roles assigned through user management, platforms, platform memberships, work schedules, and work schedule assignments. |
 
 All authenticated users have a personal account identified by email. User accounts are created by an administrator; there is no public registration flow. New accounts receive the `USER` role by default. The system may attach multiple roles to an account, but `SUPER_ADMIN` is protected from assignment and modification through the user-management flow.
@@ -17,6 +17,7 @@ All authenticated users have a personal account identified by email. User accoun
 - The planner requires an authenticated session.
 - User and platform management require `SUPER_ADMIN`. The frontend hides these routes from unauthorized users; the backend independently enforces authorization for administrative API operations.
 - Office-day reads and updates require an authenticated session and always apply to the signed-in account. A caller cannot select another account as the schedule owner.
+- Platform office-day reads require an authenticated session and return saved office dates only for colleagues sharing the signed-in user's platform; the caller cannot choose another platform, and their own schedule is excluded from this view.
 - A `SUPER_ADMIN` cannot delete their own account. Protected users cannot be deleted or edited through user management.
 - Signing out invalidates the session.
 
@@ -37,6 +38,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **PLAN-04** — As an authenticated user, I can edit a month before saving; unsaved changes are treated as a draft and save failures are surfaced in the planner.
 - **PLAN-05** — The planner shows a weekday count and the next planned office day for the selected month and current date.
 - **PLAN-06** — The planner may show example company events and requirements. These are illustrative and are not currently sourced from a company calendar or an event-management feature.
+- **PLAN-07** — As a `USER` assigned to a platform, I can select a calendar date and see the email addresses of other users in my platform who have a saved office plan for that day. Users without a platform do not see this view.
 
 ### User and role administration
 
@@ -75,6 +77,7 @@ All authenticated users have a personal account identified by email. User accoun
 - The frontend sends API requests through its same-origin `/api/*` proxy to the backend. Direct cross-origin API access is configured separately for the frontend origin.
 - MySQL stores users, roles, platform memberships, work schedules, and office-day records. Flyway manages schema changes.
 - A user's office-day schedule is stored by date and queried or replaced by month. The account identity comes from the authenticated session.
+- Platform office-day visibility is limited to same-platform colleagues and a selected date; only saved plans are shown.
 - The system currently provides no company-calendar integration, event authoring, or public self-service registration.
 
 ## 4. Open questions

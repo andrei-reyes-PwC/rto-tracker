@@ -23,6 +23,7 @@ type ScheduleContextValue = {
   loadError: string;
   saveError: string;
   officeDays: string[];
+  selectedPlatformDate: string | null;
   weekdayCount: number;
   monthLabel: string;
   monthName: string;
@@ -38,6 +39,7 @@ type ScheduleContextValue = {
   goToToday: () => void;
   setWeekdays: () => void;
   clearMonth: () => void;
+  selectPlatformDate: (date: string) => void;
 };
 
 const serverDateSnapshot = "2000-01-01";
@@ -75,6 +77,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const [visibleMonthOverride, setVisibleMonthOverride] = useState<string | null>(null);
   const [savedByMonth, setSavedByMonth] = useState<Record<string, string[]>>({});
   const [draftByMonth, setDraftByMonth] = useState<Record<string, string[]>>({});
+  const [selectedPlatformDate, setSelectedPlatformDate] = useState<string | null>(null);
   const [isLoadingMonth, setIsLoadingMonth] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -100,6 +103,12 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const todayKey = dateKey(today);
   const monthLabel = new Intl.DateTimeFormat("en", { month: "long" }).format(visibleMonth);
   const monthName = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(visibleMonth);
+
+  useEffect(() => {
+    if (selectedPlatformDate && !selectedPlatformDate.startsWith(`${monthKey}-`)) {
+      setSelectedPlatformDate(null);
+    }
+  }, [monthKey, selectedPlatformDate]);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -224,10 +233,15 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const changeMonth = useCallback((offset: number) => {
     const nextMonth = new Date(year, month + offset, 1);
+    setSelectedPlatformDate(null);
     setVisibleMonthOverride(getMonthKey(nextMonth.getFullYear(), nextMonth.getMonth()));
   }, [year, month]);
 
-  const goToToday = useCallback(() => setVisibleMonthOverride(null), []);
+  const goToToday = useCallback(() => {
+    setSelectedPlatformDate(null);
+    setVisibleMonthOverride(null);
+  }, []);
+  const selectPlatformDate = useCallback((date: string) => setSelectedPlatformDate(date), []);
   const retryLoading = useCallback(() => setLoadRetry((attempt) => attempt + 1), []);
 
   const value: ScheduleContextValue = {
@@ -237,6 +251,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     loadError,
     saveError,
     officeDays,
+    selectedPlatformDate,
     weekdayCount,
     monthLabel,
     monthName,
@@ -252,6 +267,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     goToToday,
     setWeekdays,
     clearMonth,
+    selectPlatformDate,
   };
 
   return <ScheduleContext.Provider value={value}>{children}</ScheduleContext.Provider>;

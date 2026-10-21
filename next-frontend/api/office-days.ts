@@ -3,6 +3,12 @@ export type OfficeDaySchedule = {
   officeDays: string[];
 };
 
+export type PlatformOfficeDaySchedule = {
+  date: string;
+  platformName: string | null;
+  colleagues: { date: string; email: string }[];
+};
+
 type ApiErrorResponse = {
   message?: string;
   details?: string[];
@@ -22,6 +28,17 @@ export async function getOfficeDays(month: string): Promise<OfficeDaySchedule> {
     throw new Error(await responseError(response, "Could not load your schedule. Please try again."));
   }
   return (await response.json()) as OfficeDaySchedule;
+}
+
+export async function getPlatformOfficeDays(date: string): Promise<PlatformOfficeDaySchedule> {
+  const response = await fetch(`/api/office-days/platform?date=${encodeURIComponent(date)}`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error(await responseError(response, "Could not load your platform's office plans. Please try again."));
+  }
+  return (await response.json()) as PlatformOfficeDaySchedule;
 }
 
 export async function replaceOfficeDays(

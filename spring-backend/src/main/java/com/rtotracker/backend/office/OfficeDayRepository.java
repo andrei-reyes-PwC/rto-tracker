@@ -15,6 +15,25 @@ public interface OfficeDayRepository extends JpaRepository<OfficeDay, Long> {
 
     List<OfficeDay> findAllByOfficeDateBetweenOrderByOfficeDateAsc(LocalDate startInclusive, LocalDate endInclusive);
 
+    @Query("""
+            select officeDay.officeDate as officeDate, officeDay.userEmail as userEmail
+            from OfficeDay officeDay, User user
+            where user.email = officeDay.userEmail
+              and user.platform.id = :platformId
+              and user.email <> :currentUserEmail
+              and officeDay.officeDate = :officeDate
+            order by officeDay.officeDate asc, officeDay.userEmail asc
+            """)
+    List<PlatformOfficeDayProjection> findPlatformOfficeDaysForDate(
+            @Param("platformId") Long platformId,
+            @Param("currentUserEmail") String currentUserEmail,
+            @Param("officeDate") LocalDate officeDate);
+
+    interface PlatformOfficeDayProjection {
+        LocalDate getOfficeDate();
+        String getUserEmail();
+    }
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             delete from OfficeDay officeDay

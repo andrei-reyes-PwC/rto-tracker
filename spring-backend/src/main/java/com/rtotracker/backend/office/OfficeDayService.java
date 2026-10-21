@@ -1,5 +1,7 @@
 package com.rtotracker.backend.office;
 
+import com.rtotracker.backend.user.User;
+import com.rtotracker.backend.user.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,9 +16,11 @@ import java.util.TreeSet;
 public class OfficeDayService {
 
     private final OfficeDayRepository officeDays;
+    private final UserRepository users;
 
-    public OfficeDayService(OfficeDayRepository officeDays) {
+    public OfficeDayService(OfficeDayRepository officeDays, UserRepository users) {
         this.officeDays = officeDays;
+        this.users = users;
     }
 
     @Transactional(readOnly = true)
@@ -28,6 +32,21 @@ public class OfficeDayService {
                 .map(OfficeDay::getOfficeDate)
                 .toList();
         return new OfficeDayQueryResponse(month, personalOfficeDays);
+    }
+
+    @Transactional(readOnly = true)
+    public PlatformOfficeDayQueryResponse getPlatformSchedule(String userEmail, LocalDate officeDate) {
+        User currentUser = users.findById(userEmail).orElse(null);
+        if (currentUser == null || currentUser.getPlatform() == null) {
+            return new PlatformOfficeDayQueryResponse(officeDate, null, List.of());
+        }
+
+        List<PlatformOfficeDay> colleagues = officeDays.findPlatformOfficeDaysForDate(
+                        currentUser.getPlatform().getId(), userEmail, officeDate)
+                .stream()
+                .map(day -> new PlatformOfficeDay(day.getOfficeDate(), day.getUserEmail()))
+                .toList();
+        return new PlatformOfficeDayQueryResponse(officeDate, currentUser.getPlatform().getName(), colleagues);
     }
 
     @Transactional
@@ -52,5 +71,14 @@ public class OfficeDayService {
     public record OfficeDayQueryResponse(
             YearMonth month,
             List<LocalDate> officeDays) {
+    }
+
+    public record PlatformOfficeDayQueryResponse(
+            LocalDate date,
+            String platformName,
+            List<PlatformOfficeDay> colleagues) {
+    }
+
+    public record PlatformOfficeDay(LocalDate date, String email) {
     }
 }

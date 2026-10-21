@@ -3,15 +3,13 @@
 import {
   ArrowLeft,
   ArrowRight,
-  Building2,
-  CalendarDays,
   Check,
-  MapPin,
   RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSchedule } from "@/app/component/ScheduleProvider";
+import { useAuth } from "@/providers/AuthProvider";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -20,12 +18,13 @@ function dateKey(date: Date) {
 }
 
 export default function MonthlyCalendar() {
+  const { user } = useAuth();
   const {
     monthName,
     calendarDays,
     officeDays,
+    selectedPlatformDate,
     todayKey,
-    allMonthEvents,
     isLoadingMonth,
     isSaving,
     loadError,
@@ -34,13 +33,14 @@ export default function MonthlyCalendar() {
     goToToday,
     setWeekdays,
     clearMonth,
+    selectPlatformDate,
   } = useSchedule();
   const disabled = isLoadingMonth || Boolean(loadError) || isSaving;
 
   return (
     <Card id="calendar" className="gap-0 border-slate-200/80 shadow-none">
       <CardHeader className="flex flex-col justify-between gap-4 pb-5 sm:flex-row sm:items-center">
-        <div><CardTitle className="text-base">Monthly calendar</CardTitle><CardDescription className="mt-1">Check a date to mark it as an office day</CardDescription></div>
+        <div><CardTitle className="text-base">Monthly calendar</CardTitle><CardDescription className="mt-1">Click any date to see who else on your platform plans to be in. Use the checkbox to edit your own plan.</CardDescription></div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => changeMonth(-1)}><ArrowLeft className="size-4" /></Button>
           <p className="min-w-36 text-center text-sm font-semibold">{monthName}</p>
@@ -59,18 +59,16 @@ export default function MonthlyCalendar() {
             const isOfficeDay = officeDays.includes(key);
             const isToday = key === todayKey;
             const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-            const event = allMonthEvents.find((item) => dateKey(item.date) === key);
             return (
-              <label key={key} className={`group relative flex min-h-[78px] cursor-pointer flex-col border-b border-r border-slate-100 p-2 transition sm:min-h-[112px] sm:p-3 ${isOfficeDay ? "bg-[#fff0e6]/70 hover:bg-[#fff0e6]" : "bg-white hover:bg-slate-50"} ${isWeekend ? "bg-slate-50/40" : ""}`}>
-                <span className="flex items-center justify-between">
-                  <span className={`flex size-7 items-center justify-center rounded-full text-xs ${isToday ? "bg-[#e65300] font-semibold text-white" : "font-medium text-slate-700"}`}>{date.getDate()}</span>
-                  <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => toggleDay(key)} disabled={disabled} className="size-4 cursor-pointer accent-[#e65300]" />
-                </span>
-                <span className={`mt-auto flex items-center gap-1 text-[10px] font-medium sm:text-xs ${isOfficeDay ? "text-[#b83b00]" : "text-slate-300 group-hover:text-slate-400"}`}>
-                  {isOfficeDay ? <><MapPin className="size-3" /> Office</> : event?.required ? <><Building2 className="size-3" /> Required</> : event ? <><CalendarDays className="size-3" /> Event</> : <span className="opacity-0 group-hover:opacity-100">+ Add plan</span>}
-                </span>
-                {isToday && <span className="absolute bottom-2 right-2 text-[9px] font-semibold uppercase tracking-wide text-[#c74600] sm:bottom-3 sm:right-3">Today</span>}
-              </label>
+              <div key={key} className={`group relative flex min-h-[78px] flex-col border-b border-r border-slate-100 p-1 transition sm:min-h-[112px] sm:p-3 ${isOfficeDay ? "bg-[#fff0e6]/70 hover:bg-[#fff0e6]" : "bg-white hover:bg-slate-50"} ${isWeekend ? "bg-slate-50/40" : ""} ${selectedPlatformDate === key ? "z-10 ring-2 ring-inset ring-[#e65300]" : ""}`}>
+                {user?.platform && <button type="button" aria-label={`Show platform office plans for ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)}`} aria-pressed={selectedPlatformDate === key} onClick={() => selectPlatformDate(key)} className="absolute inset-0 z-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#e65300]"><span className="sr-only">View platform RTO plans</span></button>}
+                <div className="pointer-events-none relative z-10 flex h-full flex-1 flex-col">
+                  <span className="flex items-center justify-between">
+                    <span className={`flex size-7 items-center justify-center rounded-full text-xs ${isToday ? "bg-[#e65300] font-semibold text-white" : "font-medium text-slate-700"}`}>{date.getDate()}</span>
+                    <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => toggleDay(key)} disabled={disabled} className="pointer-events-auto size-4 cursor-pointer accent-[#e65300]" />
+                  </span>
+                </div>
+              </div>
             );
           })}
         </div>

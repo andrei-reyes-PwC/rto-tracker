@@ -37,6 +37,14 @@ public class OfficeDayController {
                 AuthSession.requireEmail(request), parseMonth(month));
     }
 
+    @GetMapping("/platform")
+    public OfficeDayService.PlatformOfficeDayQueryResponse getPlatformOfficeDays(
+            @RequestParam String date,
+            HttpServletRequest request) {
+        return officeDayService.getPlatformSchedule(
+                AuthSession.requireEmail(request), parseDate(date));
+    }
+
     @PutMapping
     public OfficeDayService.OfficeDayQueryResponse replaceMonth(
             @RequestParam String month,
@@ -53,6 +61,15 @@ public class OfficeDayController {
         } catch (DateTimeParseException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "month must use the YYYY-MM format", exception);
+        }
+    }
+
+    private LocalDate parseDate(String value) {
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "date must use the YYYY-MM-DD format", exception);
         }
     }
 

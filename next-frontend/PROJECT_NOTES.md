@@ -23,7 +23,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `api/` â€” frontend API client (login, current user, logout), backend proxy rewrite, backend URL, and session-check helpers.
 - `providers/AuthProvider.tsx` â€” app-wide client auth context exposing current user, loading/authenticated/logout-pending state, refresh, and logout through `useAuth()`.
 - `validation/` â€” Zod schemas and inferred form value types, organized by form.
-- `app/component/OfficePlanner.tsx` composes the schedule page; `ScheduleProvider.tsx` owns month data, loading/saving, and planner actions shared through `useSchedule()`. It reloads the active month when authenticated user data refreshes and clears cached data when the account changes.
+- `app/component/OfficePlanner.tsx` composes the schedule page; `ScheduleProvider.tsx` owns month data, loading/saving, and planner actions shared through `useSchedule()`. It reloads the active month when authenticated user data refreshes and clears cached data when the account changes. Selecting a calendar date opens `PlatformOfficeDays.tsx`, which shows saved office plans by email for other members of the current user's platform on that date.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation and authenticated email profile menu with logout.
 - `components/sidebar/ProfileMenu.tsx` displays the authenticated user's optional platform name below their email; `/api/auth/me` returns a singular nullable `platform` object.
 - `/users` requires a valid session; its server page returns the route-level 404 UI to users without the `SUPER_ADMIN` role. The backend also protects all `/api/users` operations. The page loads users from the paginated `/api/users/manage` endpoint and loads platform filter options once from `/api/platforms/options`; paging, filtering, and refresh requests do not reload filter options. The UI supports refresh, page navigation, selectable limits (10, 25, 50, or 100), filtering by platform across pages, and search within the current page. Each user row shows their platform above their roles. Add, edit, and delete are connected; edits update email and assignable roles while preserving the password and linked office-day records, and protected users and roles cannot be changed. Self-delete is blocked in the UI and backend. The platform editor continues to use `/api/users` for roster-only queries.
@@ -65,7 +65,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 Keep these notes concise and factual. When work changes architecture, routes, data flow, integrations, or conventions, update the relevant section here.
 
-- `api/office-days.ts` loads and replaces the authenticated user's monthly schedule through the same-origin API proxy. The planner keeps unsaved edits in client state and persists them with the backend on Save.
+- `api/office-days.ts` loads and replaces the authenticated user's monthly schedule and fetches same-platform attendance for a selected date through the same-origin API proxy. The planner keeps unsaved edits in client state and persists them with the backend on Save.
 - `api/users.ts` loads, creates, updates, and deletes backend users through the same-origin API proxy without caching list requests.
 - `api/platforms.ts` loads platform summaries with member counts, platform filter options, and platform details; the platform editor fetches member details and the user roster only when opened.
 - `api/work-schedules.ts` loads, creates, updates, and deletes work schedules through the same-origin API proxy.

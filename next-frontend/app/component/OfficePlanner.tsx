@@ -6,6 +6,7 @@ import EventsRequirements from "@/app/component/EventsRequirements";
 import MonthlyCalendar from "@/app/component/MonthlyCalendar";
 import PlannerHeading from "@/app/component/PlannerHeading";
 import PlannerSummary from "@/app/component/PlannerSummary";
+import PlatformOfficeDays from "@/app/component/PlatformOfficeDays";
 import { ScheduleProvider, useSchedule } from "@/app/component/ScheduleProvider";
 
 function ScheduleContent() {
@@ -33,7 +34,10 @@ function ScheduleContent() {
         <PlannerSummary />
         <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
           <MonthlyCalendar />
-          <EventsRequirements />
+          <div className="space-y-7">
+            <PlatformOfficeDays />
+            <EventsRequirements />
+          </div>
         </div>
         <p className="pb-3 text-center text-xs text-slate-400">
           Your office days are saved to your work account.
