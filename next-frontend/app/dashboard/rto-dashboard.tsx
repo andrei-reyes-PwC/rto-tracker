@@ -1,30 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BarChart3, CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, Users } from "lucide-react";
-import { getWeeklyRtoSummary, type WeeklyRtoSummary } from "@/api/rto-dashboard";
+import { RtoDashboardProvider, useRtoDashboard } from "@/providers/RtoDashboardProvider";
+import { BarChart3, CalendarDays, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import type { WeeklyRtoSummary } from "@/api/rto-dashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
-
-function toDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function mondayOf(date: Date) {
-  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
-  return toDateKey(monday);
-}
-
-function addDays(dateKey: string, count: number) {
-  const date = new Date(`${dateKey}T12:00:00`);
-  date.setDate(date.getDate() + count);
-  return toDateKey(date);
-}
+import { Skeleton } from "@/components/ui/skeleton";
+import DataLoadError from "@/components/DataLoadError";
 
 function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat(undefined, options).format(new Date(`${dateKey}T12:00:00`));
@@ -35,23 +18,11 @@ function formatNumber(value: number) {
 }
 
 export default function RtoDashboard() {
-  const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
-  const [summary, setSummary] = useState<WeeklyRtoSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  return <RtoDashboardProvider><RtoDashboardContent /></RtoDashboardProvider>;
+}
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError("");
-    getWeeklyRtoSummary(weekStart)
-      .then((result) => { if (active) setSummary(result); })
-      .catch((loadError: unknown) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : "Could not load the RTO dashboard.");
-      })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [weekStart]);
+function RtoDashboardContent() {
+  const { weekStart, summary, loading, error, retry, previousWeek, nextWeek, currentWeek, addDays } = useRtoDashboard();
 
   const weekLabel = summary
     ? `${formatDate(summary.weekStart, { month: "short", day: "numeric" })} – ${formatDate(summary.weekEnd, { month: "short", day: "numeric", year: "numeric" })}`
@@ -67,17 +38,15 @@ export default function RtoDashboard() {
             <p className="mt-2 text-sm text-muted-foreground">Saved office-day plans for the selected Monday–Friday week.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" aria-label="Previous week" onClick={() => setWeekStart((current) => addDays(current, -7))}><ChevronLeft /></Button>
+            <Button variant="outline" size="icon" aria-label="Previous week" onClick={previousWeek}><ChevronLeft /></Button>
             <span className="min-w-40 text-center text-sm font-medium">{weekLabel}</span>
-            <Button variant="outline" size="icon" aria-label="Next week" onClick={() => setWeekStart((current) => addDays(current, 7))}><ChevronRight /></Button>
-            <Button variant="outline" onClick={() => setWeekStart(mondayOf(new Date()))}><CalendarDays /><span className="hidden sm:inline">This week</span></Button>
+            <Button variant="outline" size="icon" aria-label="Next week" onClick={nextWeek}><ChevronRight /></Button>
+            <Button variant="outline" onClick={currentWeek}><CalendarDays /><span className="hidden sm:inline">This week</span></Button>
           </div>
         </div>
 
-        {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
-        {loading && !summary ? (
-          <div className="flex items-center justify-center gap-2 rounded-xl border bg-card px-6 py-20 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading RTO plans…</div>
-        ) : summary ? (
+        {error && <DataLoadError message={error} onRetry={retry} retrying={loading} />}
+        {loading ? <DashboardSkeleton /> : summary ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
               <Card>
@@ -116,6 +85,29 @@ export default function RtoDashboard() {
         ) : null}
       </main>
     </SidebarPageLayout>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div role="status" aria-label="Loading RTO dashboard" aria-busy="true" className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {[0, 1].map((item) => <Card key={item}><CardHeader><Skeleton className="h-4 w-36" /></CardHeader><CardContent><Skeleton className="h-9 w-24" /><Skeleton className="mt-2 h-3 w-52" /></CardContent></Card>)}
+      </div>
+      <Card>
+        <CardHeader><Skeleton className="h-5 w-36" /><Skeleton className="h-4 w-64" /></CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {[0, 1, 2, 3, 4].map((item) => <div key={item} className="space-y-3 rounded-xl border p-4"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-16" /><Skeleton className="h-3 w-20" /></div>)}
+        </CardContent>
+      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {[0, 1].map((card) => <Card key={card}><CardHeader><Skeleton className="h-5 w-40" /><Skeleton className="h-4 w-56" /></CardHeader><CardContent className="space-y-4">{[0, 1, 2, 3].map((row) => <Skeleton key={row} className="h-4 w-full" />)}</CardContent></Card>)}
+      </div>
+      <div className="grid gap-4">
+        {[0, 1].map((card) => <Card key={card}><CardHeader><Skeleton className="h-5 w-56" /></CardHeader><CardContent className="space-y-3">{[0, 1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-8 w-full" />)}</CardContent></Card>)}
+      </div>
+      <span className="sr-only">Loading RTO dashboard</span>
+    </div>
   );
 }
 

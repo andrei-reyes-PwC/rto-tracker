@@ -47,11 +47,12 @@ export async function login(credentials: LoginCredentials): Promise<LoginResult>
   }
 }
 
-export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
+export async function getCurrentUser(signal?: AbortSignal): Promise<AuthenticatedUser | null> {
   try {
     const response = await fetch("/api/auth/me", {
       credentials: "include",
       cache: "no-store",
+      signal,
     });
     if (!response.ok) return null;
     return (await response.json()) as AuthenticatedUser;

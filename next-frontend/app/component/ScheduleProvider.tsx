@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { Building2, Coffee, Users } from "lucide-react";
-import { getOfficeDays, getPlatformMonthlyAttendance, replaceOfficeDays } from "@/api/office-days";
+import { getOfficeDays, replaceOfficeDays } from "@/api/office-days";
 import type { PlannerEvent } from "@/app/component/EventsRequirements";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -28,6 +28,7 @@ type ScheduleContextValue = {
   weekdayCount: number;
   monthLabel: string;
   monthName: string;
+  isCurrentDateReady: boolean;
   nextOfficeDay: Date | null;
   calendarDays: (Date | null)[];
   todayKey: string;
@@ -92,6 +93,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     readClientDateSnapshot,
     () => serverDateSnapshot,
   );
+  const isCurrentDateReady = currentDateKey !== serverDateSnapshot;
 
   const monthSelection = visibleMonthOverride ?? currentDateKey;
   const [selectedYear, selectedMonthNumber] = monthSelection.split("-").map(Number);
@@ -153,57 +155,28 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    let isCurrentRequest = true;
+    const controller = new AbortController();
     setIsLoadingMonth(true);
     setLoadError("");
 
-    getOfficeDays(monthKey)
+    getOfficeDays(monthKey, controller.signal)
       .then((schedule) => {
-        if (!isCurrentRequest) return;
+        if (controller.signal.aborted) return;
         loadedMonths.current.add(monthKey);
         setSavedByMonth((current) => ({ ...current, [monthKey]: schedule.officeDays }));
+        const counts = Object.fromEntries(schedule.platformAttendance.map((day) => [day.date, day.attendees]));
+        setPlatformAttendanceByMonth((current) => ({ ...current, [monthKey]: counts }));
       })
       .catch((error: unknown) => {
-        if (!isCurrentRequest) return;
+        if (controller.signal.aborted) return;
         setLoadError(error instanceof Error ? error.message : "Could not load this month's schedule.");
       })
       .finally(() => {
-        if (isCurrentRequest) setIsLoadingMonth(false);
+        if (!controller.signal.aborted) setIsLoadingMonth(false);
       });
 
-    return () => {
-      isCurrentRequest = false;
-    };
+    return () => controller.abort();
   }, [isAuthLoading, loadRetry, monthKey, user]);
-
-  useEffect(() => {
-    if (isAuthLoading) return;
-    if (!user?.platform) {
-      setPlatformAttendanceByMonth({});
-      return;
-    }
-
-    let isCurrentRequest = true;
-    setPlatformAttendanceByMonth((current) => {
-      const next = { ...current };
-      delete next[monthKey];
-      return next;
-    });
-
-    getPlatformMonthlyAttendance(monthKey)
-      .then((attendance) => {
-        if (!isCurrentRequest) return;
-        const counts = Object.fromEntries(attendance.attendance.map((day) => [day.date, day.attendees]));
-        setPlatformAttendanceByMonth((current) => ({ ...current, [monthKey]: counts }));
-      })
-      .catch(() => {
-        // Keep platform counts hidden when this optional team summary is unavailable.
-      });
-
-    return () => {
-      isCurrentRequest = false;
-    };
-  }, [isAuthLoading, loadRetry, monthKey, user?.email, user?.platform?.id]);
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
@@ -290,6 +263,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     weekdayCount,
     monthLabel,
     monthName,
+    isCurrentDateReady,
     nextOfficeDay,
     calendarDays,
     todayKey,

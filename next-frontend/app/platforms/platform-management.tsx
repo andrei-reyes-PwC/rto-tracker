@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Boxes, LoaderCircle, Plus, RefreshCw, Search, Trash2, UserRoundPen, Users } from "lucide-react";
-import { createPlatform, deletePlatform, getPlatform, getPlatforms, updatePlatform, type Platform, type PlatformDetails } from "@/api/platforms";
-import { getAllUsers } from "@/api/users";
+import { useMemo, useState, type FormEvent } from "react";
+import { Boxes, Plus, RefreshCw, Search, Trash2, UserRoundPen, Users } from "lucide-react";
+import type { PlatformDetails } from "@/api/platforms";
 import type { ManagedUser } from "@/app/users/user-types";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -16,59 +15,25 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { useIsMobile } from "@/hooks/use-mobile";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import CrudActionNotice from "@/components/CrudActionNotice";
+import CrudListSkeleton from "@/components/CrudListSkeleton";
+import DataLoadError from "@/components/DataLoadError";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { PlatformManagementProvider, usePlatformManagement } from "@/providers/PlatformManagementProvider";
 
 type Editor = { mode: "create" } | { mode: "edit"; platform: PlatformDetails };
 const pageSizeOptions = [10, 25, 50];
 
 export default function PlatformManagement() {
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
-  const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [isLoadingEditorData, setIsLoadingEditorData] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  return <PlatformManagementProvider><PlatformManagementContent /></PlatformManagementProvider>;
+}
+
+function PlatformManagementContent() {
+  const { platforms, users, isLoadingEditorData, loading, loadError, editorLoadError, error, notice, setNotice, editor, closeEditor, deleting, setDeleting, isDeleting, load, openEditor, retryEditorLoad, save, confirmDelete } = usePlatformManagement();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const [deleting, setDeleting] = useState<Platform | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const isMobile = useIsMobile();
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      setPlatforms(await getPlatforms());
-    } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load platforms. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
-
-  async function openEditor(mode: "create" | "edit", platform?: Platform) {
-    setIsLoadingEditorData(true);
-    setError("");
-    setEditor(null);
-    try {
-      const [allUsers, details] = await Promise.all([
-        getAllUsers(),
-        mode === "edit" && platform ? getPlatform(platform.id) : Promise.resolve(null),
-      ]);
-      setUsers(allUsers);
-      if (mode === "edit" && details) setEditor({ mode, platform: details });
-      else setEditor({ mode: "create" });
-    } catch (editorError: unknown) {
-      setError(editorError instanceof Error ? editorError.message : "Could not load users for this platform.");
-    } finally {
-      setIsLoadingEditorData(false);
-    }
-  }
 
   const filtered = useMemo(() => {
     const normalized = debouncedQuery.trim().toLowerCase();
@@ -78,39 +43,6 @@ export default function PlatformManagement() {
   const currentPage = Math.min(page, Math.max(totalPages - 1, 0));
   const visiblePlatforms = filtered.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
-  useEffect(() => { setPage(0); }, [debouncedQuery, pageSize]);
-  useEffect(() => {
-    setPage((current) => Math.min(current, Math.max(totalPages - 1, 0)));
-  }, [totalPages]);
-
-  async function save(name: string, userEmails: string[]) {
-    try {
-      if (editor?.mode === "create") await createPlatform({ name, userEmails });
-      else if (editor?.mode === "edit") await updatePlatform(editor.platform.id, { name, userEmails });
-      else return "Choose a platform to save.";
-      setEditor(null);
-      setNotice(`“${name}” was ${editor.mode === "create" ? "created" : "updated"}.`);
-      await load();
-      return null;
-    } catch (saveError: unknown) {
-      return saveError instanceof Error ? saveError.message : "Could not save this platform. Please try again.";
-    }
-  }
-
-  async function confirmDelete() {
-    if (!deleting || isDeleting) return;
-    setIsDeleting(true);
-    setError("");
-    try {
-      await deletePlatform(deleting.id);
-      setNotice(`“${deleting.name}” was deleted.`);
-      setDeleting(null);
-      await load();
-    } catch (deleteError: unknown) {
-      setError(deleteError instanceof Error ? deleteError.message : "Could not delete this platform.");
-    } finally { setIsDeleting(false); }
-  }
-
   return (
     <SidebarPageLayout headerContent={<span className="text-sm font-medium">Platforms</span>}>
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
@@ -118,6 +50,8 @@ export default function PlatformManagement() {
           <div><p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p><h1 className="text-3xl font-semibold tracking-tight">Platform management</h1><p className="mt-2 text-sm text-muted-foreground">Group users into platforms and manage their membership.</p></div>
           <Button disabled={isLoadingEditorData} onClick={() => void openEditor("create")}><Plus /> Add platform</Button>
         </div>
+        {loadError && <DataLoadError message={loadError} onRetry={() => void load()} retrying={loading} />}
+        {editorLoadError && <DataLoadError message={editorLoadError} onRetry={retryEditorLoad} retrying={isLoadingEditorData} />}
         {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
         {notice && <CrudActionNotice message={notice} onDismiss={() => setNotice("")} />}
         <Card>
@@ -130,8 +64,8 @@ export default function PlatformManagement() {
             <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs"><div className="relative"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search platforms" aria-label="Search platforms" className="pl-9" /></div></div>
           </CardHeader>
           <CardContent className="p-0">
-            {loading ? <div className="flex items-center justify-center gap-2 px-6 py-16 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading platforms…</div>
-              : filtered.length === 0 ? <div className="px-6 py-16 text-center"><Boxes className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{error ? "Platforms could not be loaded" : platforms.length ? "No platforms match this search" : "No platforms yet"}</p><p className="mt-1 text-sm text-muted-foreground">{error ? "Check your connection and try refreshing." : "Create a platform to group workspace users."}</p></div>
+            {loading ? <CrudListSkeleton label="Loading platforms" />
+              : filtered.length === 0 ? <div className="px-6 py-16 text-center"><Boxes className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Platforms could not be loaded" : platforms.length ? "No platforms match this search" : "No platforms yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try again." : "Create a platform to group workspace users."}</p></div>
                 : <div className="divide-y">{visiblePlatforms.map((platform) => <div key={platform.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-medium">{platform.name}</p><div className="mt-2"><Badge variant="secondary"><Users /> {platform.userCount} {platform.userCount === 1 ? "user" : "users"}</Badge></div></div><div className="flex w-full gap-2 sm:w-auto sm:shrink-0"><Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={isLoadingEditorData} onClick={() => void openEditor("edit", platform)}><UserRoundPen /> Edit</Button><Button variant="destructive" size="icon-sm" aria-label={`Delete ${platform.name}`} disabled={isLoadingEditorData} onClick={() => setDeleting(platform)}><Trash2 /></Button></div></div>)}</div>}
           </CardContent>
           <div className="flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -139,7 +73,7 @@ export default function PlatformManagement() {
               <p className="text-sm text-muted-foreground">Page {totalPages === 0 ? 0 : currentPage + 1} of {totalPages}</p>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Rows per page</span>
-                <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))} disabled={loading}>
+                <Select value={String(pageSize)} onValueChange={(value) => { setPage(0); setPageSize(Number(value)); }} disabled={loading}>
                   <SelectTrigger className="w-[84px]" aria-label="Rows per page"><SelectValue /></SelectTrigger>
                   <SelectContent align="end">{pageSizeOptions.map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
                 </Select>
@@ -152,34 +86,27 @@ export default function PlatformManagement() {
           </div>
         </Card>
       </main>
-      <PlatformEditor open={editor !== null} editor={editor} users={users} isMobile={isMobile} onClose={() => setEditor(null)} onSave={save} />
+      {editor && <PlatformEditor editor={editor} users={users} isMobile={isMobile} onClose={closeEditor} onSave={save} />}
       <AlertDialog open={deleting !== null} onOpenChange={(open) => { if (!open) setDeleting(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete this platform?</AlertDialogTitle><AlertDialogDescription>This deletes “{deleting?.name}” and its membership links. User accounts are kept.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel><AlertDialogAction disabled={isDeleting} className="bg-destructive text-white hover:bg-destructive/90" onClick={(event) => { event.preventDefault(); void confirmDelete(); }}>{isDeleting ? "Deleting…" : "Delete platform"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </SidebarPageLayout>
   );
 }
 
-function PlatformEditor({ open, editor, users, isMobile, onClose, onSave }: {
-  open: boolean; editor: Editor | null; users: ManagedUser[]; isMobile: boolean;
+function PlatformEditor({ editor, users, isMobile, onClose, onSave }: {
+  editor: Editor; users: ManagedUser[]; isMobile: boolean;
   onClose: () => void; onSave: (name: string, userEmails: string[]) => Promise<string | null>;
 }) {
-  const [name, setName] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
+  const [name, setName] = useState(editor.mode === "edit" ? editor.platform.name : "");
+  const [selected, setSelected] = useState<string[]>(editor.mode === "edit" ? editor.platform.userEmails : []);
   const [filter, setFilter] = useState("");
   const debouncedFilter = useDebouncedValue(filter);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    setName(editor?.mode === "edit" ? editor.platform.name : "");
-    setSelected(editor?.mode === "edit" ? editor.platform.userEmails : []);
-    setFilter(""); setError("");
-  }, [open, editor]);
-
   const visibleUsers = useMemo(() => {
     const normalized = debouncedFilter.trim().toLowerCase();
     return normalized ? users.filter((user) => user.email.toLowerCase().includes(normalized)) : users;
   }, [debouncedFilter, users]);
-  const currentPlatformId = editor?.mode === "edit" ? editor.platform.id : null;
+  const currentPlatformId = editor.mode === "edit" ? editor.platform.id : null;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -190,5 +117,5 @@ function PlatformEditor({ open, editor, users, isMobile, onClose, onSave }: {
     finally { setSubmitting(false); }
   }
 
-  return <Sheet open={open} onOpenChange={(nextOpen) => { if (!nextOpen && !submitting) onClose(); }}><SheetContent side={isMobile ? "bottom" : "right"} className="max-h-[88dvh] w-full overflow-y-auto rounded-t-2xl p-0 sm:max-w-md sm:rounded-none md:h-full md:max-h-none"><SheetHeader className="border-b px-6 py-5"><SheetTitle>{editor?.mode === "edit" ? "Edit platform" : "Add a platform"}</SheetTitle><SheetDescription>Choose a name and the users who belong to this group. Each user can belong to one platform.</SheetDescription></SheetHeader><form className="space-y-5 px-6 py-5" onSubmit={submit}><div className="space-y-2"><Label htmlFor="platform-name">Platform name</Label><Input id="platform-name" required maxLength={20} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Technology" aria-describedby="platform-name-limit" /><p id="platform-name-limit" className="text-xs text-muted-foreground">Required, up to 20 characters.</p></div><fieldset className="space-y-3"><legend className="text-sm font-medium">Members ({selected.length})</legend><Input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Filter users by email" aria-label="Filter users" />{users.length === 0 ? <p className="text-sm text-muted-foreground">No users are available.</p> : <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border p-2">{visibleUsers.map((user) => { const otherPlatform = user.platform?.id !== currentPlatformId ? user.platform : null; const checked = selected.includes(user.email); return <label key={user.email} className={`flex items-center gap-3 rounded-md px-2 py-2 text-sm ${otherPlatform ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-muted/60"}`}><input type="checkbox" checked={checked} disabled={Boolean(otherPlatform)} onChange={() => setSelected((current) => current.includes(user.email) ? current.filter((email) => email !== user.email) : [...current, user.email])} className="size-4 accent-[#e65300]" /><span className="min-w-0 flex-1 truncate">{user.email}</span>{otherPlatform && <span className="shrink-0 text-xs text-muted-foreground">{otherPlatform.name}</span>}</label>; })}</div>}</fieldset>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex gap-2 pt-1"><Button type="submit" disabled={submitting}>{submitting ? "Saving…" : editor?.mode === "edit" ? "Save changes" : "Create platform"}</Button><Button type="button" variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button></div></form></SheetContent></Sheet>;
+  return <Sheet open onOpenChange={(nextOpen) => { if (!nextOpen && !submitting) onClose(); }}><SheetContent side={isMobile ? "bottom" : "right"} className="max-h-[88dvh] w-full overflow-y-auto rounded-t-2xl p-0 sm:max-w-md sm:rounded-none md:h-full md:max-h-none"><SheetHeader className="border-b px-6 py-5"><SheetTitle>{editor.mode === "edit" ? "Edit platform" : "Add a platform"}</SheetTitle><SheetDescription>Choose a name and the users who belong to this group. Each user can belong to one platform.</SheetDescription></SheetHeader><form className="space-y-5 px-6 py-5" onSubmit={submit}><div className="space-y-2"><Label htmlFor="platform-name">Platform name</Label><Input id="platform-name" required maxLength={20} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Technology" aria-describedby="platform-name-limit" /><p id="platform-name-limit" className="text-xs text-muted-foreground">Required, up to 20 characters.</p></div><fieldset className="space-y-3"><legend className="text-sm font-medium">Members ({selected.length})</legend><Input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Filter users by email" aria-label="Filter users" />{users.length === 0 ? <p className="text-sm text-muted-foreground">No users are available.</p> : <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border p-2">{visibleUsers.map((user) => { const otherPlatform = user.platform?.id !== currentPlatformId ? user.platform : null; const checked = selected.includes(user.email); return <label key={user.email} className={`flex items-center gap-3 rounded-md px-2 py-2 text-sm ${otherPlatform ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-muted/60"}`}><input type="checkbox" checked={checked} disabled={Boolean(otherPlatform)} onChange={() => setSelected((current) => current.includes(user.email) ? current.filter((email) => email !== user.email) : [...current, user.email])} className="size-4 accent-[#e65300]" /><span className="min-w-0 flex-1 truncate">{user.email}</span>{otherPlatform && <span className="shrink-0 text-xs text-muted-foreground">{otherPlatform.name}</span>}</label>; })}</div>}</fieldset>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex gap-2 pt-1"><Button type="submit" disabled={submitting}>{submitting ? "Saving…" : editor.mode === "edit" ? "Save changes" : "Create platform"}</Button><Button type="button" variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button></div></form></SheetContent></Sheet>;
 }

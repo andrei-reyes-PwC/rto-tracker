@@ -3,16 +3,14 @@ export type OfficeDaySchedule = {
   officeDays: string[];
 };
 
+export type MonthlyOfficeDaySchedule = OfficeDaySchedule & {
+  platformAttendance: { date: string; attendees: number }[];
+};
+
 export type PlatformOfficeDaySchedule = {
   date: string;
   platformName: string | null;
   colleagues: { date: string; email: string }[];
-};
-
-export type PlatformMonthlyAttendance = {
-  month: string;
-  platformName: string | null;
-  attendance: { date: string; attendees: number }[];
 };
 
 type ApiErrorResponse = {
@@ -25,37 +23,28 @@ async function responseError(response: Response, fallback: string) {
   return error?.details?.join(" ") || error?.message || fallback;
 }
 
-export async function getOfficeDays(month: string): Promise<OfficeDaySchedule> {
+export async function getOfficeDays(month: string, signal?: AbortSignal): Promise<MonthlyOfficeDaySchedule> {
   const response = await fetch(`/api/office-days?month=${encodeURIComponent(month)}`, {
     credentials: "include",
     cache: "no-store",
+    signal,
   });
   if (!response.ok) {
     throw new Error(await responseError(response, "Could not load your schedule. Please try again."));
   }
-  return (await response.json()) as OfficeDaySchedule;
+  return (await response.json()) as MonthlyOfficeDaySchedule;
 }
 
-export async function getPlatformOfficeDays(date: string): Promise<PlatformOfficeDaySchedule> {
+export async function getPlatformOfficeDays(date: string, signal?: AbortSignal): Promise<PlatformOfficeDaySchedule> {
   const response = await fetch(`/api/office-days/platform?date=${encodeURIComponent(date)}`, {
     credentials: "include",
     cache: "no-store",
+    signal,
   });
   if (!response.ok) {
     throw new Error(await responseError(response, "Could not load your platform's office plans. Please try again."));
   }
   return (await response.json()) as PlatformOfficeDaySchedule;
-}
-
-export async function getPlatformMonthlyAttendance(month: string): Promise<PlatformMonthlyAttendance> {
-  const response = await fetch(`/api/office-days/platform/attendance?month=${encodeURIComponent(month)}`, {
-    credentials: "include",
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    throw new Error(await responseError(response, "Could not load platform attendance. Please try again."));
-  }
-  return (await response.json()) as PlatformMonthlyAttendance;
 }
 
 export async function replaceOfficeDays(

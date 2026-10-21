@@ -20,7 +20,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   isLoggingOut: boolean;
-  refreshUser: () => Promise<AuthenticatedUser | null>;
+  refreshUser: (signal?: AbortSignal) => Promise<AuthenticatedUser | null>;
   logout: () => Promise<boolean>;
 };
 
@@ -31,9 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const refreshUser = useCallback(async () => {
+  const refreshUser = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
-    const currentUser = await getCurrentUser();
+    const currentUser = await getCurrentUser(signal);
+    if (signal?.aborted) return null;
     setUser(currentUser);
     setIsLoading(false);
     return currentUser;
@@ -53,7 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refreshUser();
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => { void refreshUser(controller.signal); }, 0);
+    return () => { window.clearTimeout(timer); controller.abort(); };
   }, [refreshUser]);
 
   const value = useMemo(

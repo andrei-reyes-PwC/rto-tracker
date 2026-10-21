@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { LoaderCircle, Plus, RefreshCw, Search, Shield, Trash2, UserRoundPen, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, RefreshCw, Search, Shield, Trash2, UserRoundPen, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,12 +25,12 @@ import {
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import CrudActionNotice from "@/components/CrudActionNotice";
+import CrudListSkeleton from "@/components/CrudListSkeleton";
+import DataLoadError from "@/components/DataLoadError";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { getPlatformOptions, type PlatformOption } from "@/api/platforms";
-import { createUser, deleteUser, getManageUsers, updateUser } from "@/api/users";
-import { useAuth } from "@/providers/AuthProvider";
+import { UserManagementProvider, useUserManagement } from "@/providers/UserManagementProvider";
 import UserEditorSheet from "./user-editor-sheet";
-import type { AvailableRole, ManagedUser, UserEditorMode, UserEditorValues } from "./user-types";
+import type { AvailableRole } from "./user-types";
 
 const defaultRoleCodes = ["USER"];
 const pageSizeOptions = [10, 25, 50, 100];
@@ -41,53 +41,13 @@ const availableRoles: AvailableRole[] = [
 ];
 
 export default function UserManagement() {
-  const { user: signedInUser, isLoading: isAuthLoading } = useAuth();
-  const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [platforms, setPlatforms] = useState<PlatformOption[]>([]);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
+  return <UserManagementProvider><UserManagementContent /></UserManagementProvider>;
+}
+
+function UserManagementContent() {
+  const { users, platforms, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingPlatforms, loadError, retryLoad, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId } = useUserManagement();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query);
-  const [platformId, setPlatformId] = useState("all");
-  const [editor, setEditor] = useState<{ mode: UserEditorMode; user?: ManagedUser } | null>(null);
-  const [deletingUser, setDeletingUser] = useState<ManagedUser | null>(null);
-
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError("");
-    try {
-      const selectedPlatformId = platformId === "all" ? undefined : Number(platformId);
-      const result = await getManageUsers(page, pageSize, selectedPlatformId);
-      setUsers(result.content);
-      setPlatforms(result.platforms ?? []);
-      setTotalUsers(result.totalElements);
-      setTotalPages(result.totalPages);
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Could not load users. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize, platformId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
-    let active = true;
-    getPlatformOptions()
-      .then((options) => { if (active) setPlatforms(options); })
-      .catch((error: unknown) => {
-        if (active) setError(error instanceof Error ? error.message : "Could not load platform filters.");
-      });
-    return () => { active = false; };
-  }, []);
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = debouncedQuery.trim().toLowerCase();
@@ -97,51 +57,6 @@ export default function UserManagement() {
       || managedUser.roles.some((role) => role.toLowerCase().includes(normalizedQuery)),
     );
   }, [debouncedQuery, users]);
-
-  async function handleEditorSave(values: UserEditorValues) {
-    try {
-      if (editor?.mode === "create") {
-        await createUser({ email: values.email, password: values.password });
-      } else if (editor?.mode === "edit" && editor.user) {
-        await updateUser(editor.user.email, { email: values.email, roles: values.roles });
-      } else {
-        return "Select a user to edit and try again.";
-      }
-
-      setEditor(null);
-      setError("");
-      setNotice(`${values.email} was ${editor.mode === "create" ? "created" : "updated"}.`);
-      if (page === 0) {
-        await load();
-      } else {
-        setPage(0);
-      }
-      return null;
-    } catch (error: unknown) {
-      return error instanceof Error ? error.message : "Could not save this user. Please try again.";
-    }
-  }
-
-  async function confirmDelete() {
-    if (!deletingUser || isDeleting) return;
-    setIsDeleting(true);
-    setError("");
-    setNotice("");
-    try {
-      await deleteUser(deletingUser.email);
-      setNotice(`${deletingUser.email} was deleted.`);
-      setDeletingUser(null);
-      if (users.length === 1 && page > 0) {
-        setPage((current) => current - 1);
-      } else {
-        await load();
-      }
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Could not delete this user. Please try again.");
-    } finally {
-      setIsDeleting(false);
-    }
-  }
 
   const content = (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
@@ -154,6 +69,7 @@ export default function UserManagement() {
         <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add user</Button>
       </div>
 
+      {loadError && <DataLoadError message={loadError} onRetry={retryLoad} retrying={isLoading || isLoadingPlatforms} />}
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
       {notice && <CrudActionNotice message={notice} onDismiss={() => setNotice("")} />}
 
@@ -166,7 +82,7 @@ export default function UserManagement() {
               <span className="font-semibold">{totalUsers}</span>
               <span className="text-muted-foreground">{totalUsers === 1 ? "user" : "users"}</span>
             </div>
-            <Button variant="outline" size="sm" className="shrink-0 rounded-xl" disabled={isLoading} onClick={() => void load()}><RefreshCw /> Refresh</Button>
+            <Button variant="outline" size="sm" className="shrink-0 rounded-xl" disabled={isLoading || isLoadingPlatforms} onClick={retryLoad}><RefreshCw /> Refresh</Button>
           </CardAction>
           <div className="col-span-2 flex w-full flex-col gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xl sm:flex-row">
             <div className="relative w-full sm:max-w-xs">
@@ -184,9 +100,9 @@ export default function UserManagement() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center gap-2 px-6 py-16 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" /> Loading roster…</div>
+            <CrudListSkeleton label="Loading user roster" rows={6} />
           ) : filteredUsers.length === 0 ? (
-            <div className="px-6 py-16 text-center"><Users className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{error ? "Users could not be loaded" : users.length ? "No users match this search" : "No users yet"}</p><p className="mt-1 text-sm text-muted-foreground">{error ? "Check your connection and try refreshing." : "No accounts are available."}</p></div>
+            <div className="px-6 py-16 text-center"><Users className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Users could not be loaded" : users.length ? "No users match this search" : "No users yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try refreshing." : "No accounts are available."}</p></div>
           ) : (
             <div className="divide-y">
               {filteredUsers.map((managedUser) => {
@@ -267,7 +183,7 @@ export default function UserManagement() {
         initialRoles={editor?.user?.roles ?? defaultRoleCodes}
         availableRoles={availableRoles}
         onOpenChange={(open) => { if (!open) setEditor(null); }}
-        onSave={handleEditorSave}
+        onSave={saveUser}
       />
       <AlertDialog open={deletingUser !== null} onOpenChange={(open) => { if (!open) setDeletingUser(null); }}>
         <AlertDialogContent>

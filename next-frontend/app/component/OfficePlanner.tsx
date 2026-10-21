@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import DataLoadError from "@/components/DataLoadError";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import EventsRequirements from "@/app/component/EventsRequirements";
 import MonthlyCalendar from "@/app/component/MonthlyCalendar";
@@ -10,7 +10,7 @@ import PlatformOfficeDays from "@/app/component/PlatformOfficeDays";
 import { ScheduleProvider, useSchedule } from "@/app/component/ScheduleProvider";
 
 function ScheduleContent() {
-  const { loadError, saveError, retryLoading } = useSchedule();
+  const { isLoadingMonth, loadError, saveError, retryLoading } = useSchedule();
 
   return (
     <SidebarPageLayout
@@ -21,16 +21,8 @@ function ScheduleContent() {
     >
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
         <PlannerHeading />
-        {(loadError || saveError) && (
-          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            <span>{loadError || saveError}</span>
-            {loadError && (
-              <Button variant="outline" size="sm" onClick={retryLoading}>
-                Retry
-              </Button>
-            )}
-          </div>
-        )}
+        {loadError && <DataLoadError message={loadError} onRetry={retryLoading} retrying={isLoadingMonth} />}
+        {saveError && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{saveError} Your changes are still here; you can try saving again.</div>}
         <PlannerSummary />
         <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
           <MonthlyCalendar />

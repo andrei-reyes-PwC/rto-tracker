@@ -24,11 +24,12 @@ async function responseError(response: Response) {
   return error?.details?.join(" ") || error?.message || "Could not load the RTO dashboard. Please try again.";
 }
 
-export async function getWeeklyRtoSummary(weekStart: string): Promise<WeeklyRtoSummary> {
+export async function getWeeklyRtoSummary(weekStart: string, signal?: AbortSignal): Promise<WeeklyRtoSummary> {
   const params = new URLSearchParams({ weekStart });
   const response = await fetch(`/api/dashboard/rto?${params}`, {
     credentials: "include",
     cache: "no-store",
+    signal,
   });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as WeeklyRtoSummary;

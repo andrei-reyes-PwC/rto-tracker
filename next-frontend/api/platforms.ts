@@ -18,20 +18,20 @@ async function responseError(response: Response) {
   return error?.details?.join(" ") || error?.message || "Could not complete this platform request. Please try again.";
 }
 
-export async function getPlatforms(): Promise<Platform[]> {
-  const response = await fetch("/api/platforms", { credentials: "include", cache: "no-store" });
+export async function getPlatforms(signal?: AbortSignal): Promise<Platform[]> {
+  const response = await fetch("/api/platforms", { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as Platform[];
 }
 
-export async function getPlatformOptions(): Promise<PlatformOption[]> {
-  const response = await fetch("/api/platforms/options", { credentials: "include", cache: "no-store" });
+export async function getPlatformOptions(signal?: AbortSignal): Promise<PlatformOption[]> {
+  const response = await fetch("/api/platforms/options", { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as PlatformOption[];
 }
 
-export async function getPlatform(id: number): Promise<PlatformDetails> {
-  const response = await fetch(`/api/platforms/${id}`, { credentials: "include", cache: "no-store" });
+export async function getPlatform(id: number, signal?: AbortSignal): Promise<PlatformDetails> {
+  const response = await fetch(`/api/platforms/${id}`, { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as PlatformDetails;
 }

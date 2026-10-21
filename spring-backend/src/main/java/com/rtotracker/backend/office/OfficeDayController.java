@@ -30,10 +30,10 @@ public class OfficeDayController {
     }
 
     @GetMapping
-    public OfficeDayService.OfficeDayQueryResponse getOfficeDays(
+    public OfficeDayService.MonthlyScheduleQueryResponse getOfficeDays(
             @RequestParam String month,
             HttpServletRequest request) {
-        return officeDayService.getSchedule(
+        return officeDayService.getMonthlySchedule(
                 AuthSession.requireEmail(request), parseMonth(month));
     }
 

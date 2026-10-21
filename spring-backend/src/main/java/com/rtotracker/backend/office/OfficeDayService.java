@@ -35,6 +35,23 @@ public class OfficeDayService {
     }
 
     @Transactional(readOnly = true)
+    public MonthlyScheduleQueryResponse getMonthlySchedule(String userEmail, YearMonth month) {
+        OfficeDayQueryResponse schedule = getSchedule(userEmail, month);
+        User currentUser = users.findById(userEmail).orElse(null);
+        if (currentUser == null || currentUser.getPlatform() == null) {
+            return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), List.of());
+        }
+
+        List<PlatformDailyAttendance> attendance = officeDays.findPlatformAttendance(
+                        currentUser.getPlatform().getId(), userEmail,
+                        month.atDay(1), month.plusMonths(1).atDay(1))
+                .stream()
+                .map(day -> new PlatformDailyAttendance(day.getOfficeDate(), day.getAttendees()))
+                .toList();
+        return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), attendance);
+    }
+
+    @Transactional(readOnly = true)
     public PlatformOfficeDayQueryResponse getPlatformSchedule(String userEmail, LocalDate officeDate) {
         User currentUser = users.findById(userEmail).orElse(null);
         if (currentUser == null || currentUser.getPlatform() == null) {
@@ -89,6 +106,12 @@ public class OfficeDayService {
             List<LocalDate> officeDays) {
     }
 
+    public record MonthlyScheduleQueryResponse(
+            YearMonth month,
+            List<LocalDate> officeDays,
+            List<PlatformDailyAttendance> platformAttendance) {
+    }
+
     public record PlatformOfficeDayQueryResponse(
             LocalDate date,
             String platformName,
@@ -98,12 +121,12 @@ public class OfficeDayService {
     public record PlatformOfficeDay(LocalDate date, String email) {
     }
 
+    public record PlatformDailyAttendance(LocalDate date, long attendees) {
+    }
+
     public record PlatformAttendanceQueryResponse(
             YearMonth month,
             String platformName,
             List<PlatformDailyAttendance> attendance) {
-    }
-
-    public record PlatformDailyAttendance(LocalDate date, long attendees) {
     }
 }
