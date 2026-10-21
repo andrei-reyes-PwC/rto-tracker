@@ -2,6 +2,7 @@ export type ManagedUser = {
   email: string;
   roles: string[];
   platform: { id: number; name: string } | null;
+  workSchedule: { id: number; name: string } | null;
 };
 
 export type AvailableRole = {

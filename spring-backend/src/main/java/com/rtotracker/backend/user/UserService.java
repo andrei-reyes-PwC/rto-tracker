@@ -92,6 +92,7 @@ public class UserService {
 
         User replacementUser = new User(normalizedReplacement, current.getPasswordHash(), replacementRoles);
         replacementUser.setPlatform(current.getPlatform());
+        replacementUser.setWorkSchedule(current.getWorkSchedule());
         User replacement = users.save(replacementUser);
         users.flush();
         officeDays.updateUserEmail(current.getEmail(), normalizedReplacement);

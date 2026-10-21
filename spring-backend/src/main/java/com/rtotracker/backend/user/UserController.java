@@ -3,6 +3,7 @@ package com.rtotracker.backend.user;
 import com.rtotracker.backend.auth.AuthSession;
 import com.rtotracker.backend.platform.Platform;
 import com.rtotracker.backend.platform.PlatformService;
+import com.rtotracker.backend.workschedule.WorkSchedule;
 import com.rtotracker.backend.role.Role;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -83,7 +84,7 @@ public class UserController {
                 : Sort.unsorted());
         Page<UserResponse> users = userService.findAll(pageable, platformId);
         List<ManagedUserResponse> content = users.getContent().stream()
-                .map(user -> new ManagedUserResponse(user.email(), user.roles(), user.platform()))
+                .map(user -> new ManagedUserResponse(user.email(), user.roles(), user.platform(), user.workSchedule()))
                 .toList();
         return new UserManagementPageResponse(content, users.getTotalElements(), users.getTotalPages(),
                 users.getNumber(), users.getSize());
@@ -170,7 +171,14 @@ public class UserController {
                                              int number, int size) {
     }
 
-    public record ManagedUserResponse(String email, List<String> roles, PlatformOption platform) {
+    public record ManagedUserResponse(String email, List<String> roles, PlatformOption platform,
+                                      WorkScheduleOption workSchedule) {
+    }
+
+    public record WorkScheduleOption(Long id, String name) {
+        static WorkScheduleOption from(WorkSchedule workSchedule) {
+            return workSchedule == null ? null : new WorkScheduleOption(workSchedule.getId(), workSchedule.getName());
+        }
     }
 
     public record PlatformOption(Long id, String name) {
@@ -183,11 +191,13 @@ public class UserController {
         }
     }
 
-    public record UserResponse(String email, List<String> roles, PlatformOption platform) {
+    public record UserResponse(String email, List<String> roles, PlatformOption platform,
+                               WorkScheduleOption workSchedule) {
         public static UserResponse from(User user) {
             return new UserResponse(user.getEmail(), user.getRoles().stream()
                     .map(Role::getCode).sorted().toList(), user.getPlatform() == null ? null
-                    : new PlatformOption(user.getPlatform().getId(), user.getPlatform().getName()));
+                    : new PlatformOption(user.getPlatform().getId(), user.getPlatform().getName()),
+                    WorkScheduleOption.from(user.getWorkSchedule()));
         }
     }
 }
