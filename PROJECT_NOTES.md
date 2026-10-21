@@ -11,6 +11,7 @@ This repository contains the RTO Tracker frontend and backend as separate applic
 - The frontend Next.js server reverse-proxies `/api/*` to Spring using `BACKEND_API_URL` (default `http://localhost:8080`), checks session state through `GET /api/auth/me` for route guards and the sidebar profile, and invalidates the session through `POST /api/auth/logout`; Spring also has global credentialed CORS for direct API requests.
 - Platform membership is managed in the frontend at `/platforms` and persisted by Spring's authenticated `/api/platforms` CRUD endpoints. A user can belong to at most one platform; the platform foreign key is nullable on `users`.
 - Work schedules are managed at `/work-schedules` and persisted by Spring's authenticated `/api/work-schedules` CRUD endpoints. A user can have zero or one work schedule; the nullable `users.work_schedule_id` foreign key is cleared if the work schedule is deleted.
+- The SUPER_ADMIN RTO dashboard at `/dashboard` reports saved office-day plans for a selected Monday–Friday week, with daily totals and breakdowns by current platform and work schedule.
 
 ## Repository conventions
 

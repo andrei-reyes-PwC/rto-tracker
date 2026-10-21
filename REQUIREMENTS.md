@@ -63,6 +63,12 @@ All authenticated users have a personal account identified by email. User accoun
 - **WSCH-03** — A user may have zero or one work schedule; a work schedule may be assigned to multiple users.
 - **WSCH-04** — Deleting a work schedule keeps its user accounts and clears their work schedule assignment.
 
+### RTO dashboard
+
+- **DASH-01** — As a `SUPER_ADMIN`, I can review saved office-day plans for a selected Monday–Friday week.
+- **DASH-02** — The dashboard shows attendance for each weekday, total planned RTO days, distinct attendees, and total and daily breakdowns by each attendee's current platform and work schedule.
+- **DASH-03** — Users with no platform or work schedule are included in the corresponding unassigned breakdown.
+
 ## 3. Product and system boundaries
 
 - The web application is a Next.js frontend; the REST API is a Spring Boot backend.

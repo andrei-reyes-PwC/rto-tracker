@@ -13,6 +13,8 @@ public interface OfficeDayRepository extends JpaRepository<OfficeDay, Long> {
     List<OfficeDay> findAllByUserEmailAndOfficeDateGreaterThanEqualAndOfficeDateLessThanOrderByOfficeDateAsc(
             String userEmail, LocalDate startInclusive, LocalDate endExclusive);
 
+    List<OfficeDay> findAllByOfficeDateBetweenOrderByOfficeDateAsc(LocalDate startInclusive, LocalDate endInclusive);
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             delete from OfficeDay officeDay
