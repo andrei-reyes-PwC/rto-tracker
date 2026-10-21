@@ -65,7 +65,7 @@ export default function UserManagement() {
       const selectedPlatformId = platformId === "all" ? undefined : Number(platformId);
       const result = await getManageUsers(page, pageSize, selectedPlatformId);
       setUsers(result.content);
-      setPlatforms(result.platforms);
+      setPlatforms(result.platforms ?? []);
       setTotalUsers(result.totalElements);
       setTotalPages(result.totalPages);
     } catch (error: unknown) {
@@ -199,8 +199,11 @@ export default function UserManagement() {
                       <p className="truncate text-sm font-medium" title={managedUser.email}>{managedUser.email}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {userPlatform
-                          ? <Badge variant="outline">{userPlatform.name}</Badge>
-                          : <span className="text-xs text-muted-foreground">No platform</span>}
+                          ? <Badge variant="outline">Platform: {userPlatform.name}</Badge>
+                          : <span className="text-xs text-muted-foreground">Platform: None</span>}
+                        {managedUser.workSchedule
+                          ? <Badge variant="outline">Schedule: {managedUser.workSchedule.name}</Badge>
+                          : <span className="text-xs text-muted-foreground">No work schedule</span>}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {managedUser.roles.map((role) => <Badge key={role} variant={role === "ADMIN" || role === "SUPER_ADMIN" ? "secondary" : "outline"}>{role === "SUPER_ADMIN" && <Shield aria-hidden="true" />}{role}</Badge>)}

@@ -71,6 +71,16 @@ export default function Sidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
+            {canManageUsers && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/work-schedules" || pathname.startsWith("/work-schedules/")} tooltip="Manage work schedules">
+                  <Link href="/work-schedules" onClick={() => setOpenMobile(false)} aria-label="Manage work schedules">
+                    <CalendarDays />
+                    <span>Manage work schedules</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
