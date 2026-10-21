@@ -82,13 +82,11 @@ public class UserController {
                 ? Sort.by(Sort.Direction.ASC, "email")
                 : Sort.unsorted());
         Page<UserResponse> users = userService.findAll(pageable, platformId);
-        List<PlatformOption> options = platformService.findAllOptions().stream()
-                .map(platform -> new PlatformOption(platform.getId(), platform.getName())).toList();
         List<ManagedUserResponse> content = users.getContent().stream()
                 .map(user -> new ManagedUserResponse(user.email(), user.roles(), user.platform()))
                 .toList();
         return new UserManagementPageResponse(content, users.getTotalElements(), users.getTotalPages(),
-                users.getNumber(), users.getSize(), options);
+                users.getNumber(), users.getSize());
     }
 
     @GetMapping("/{email}")
@@ -169,7 +167,7 @@ public class UserController {
     }
 
     public record UserManagementPageResponse(List<ManagedUserResponse> content, long totalElements, int totalPages,
-                                             int number, int size, List<PlatformOption> platforms) {
+                                             int number, int size) {
     }
 
     public record ManagedUserResponse(String email, List<String> roles, PlatformOption platform) {

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import type { PlatformOption } from "@/api/platforms";
+import { getPlatformOptions, type PlatformOption } from "@/api/platforms";
 import { createUser, deleteUser, getManageUsers, updateUser } from "@/api/users";
 import { useAuth } from "@/providers/AuthProvider";
 import UserEditorSheet from "./user-editor-sheet";
@@ -77,6 +77,16 @@ export default function UserManagement() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let active = true;
+    getPlatformOptions()
+      .then((options) => { if (active) setPlatforms(options); })
+      .catch((error: unknown) => {
+        if (active) setError(error instanceof Error ? error.message : "Could not load platform filters.");
+      });
+    return () => { active = false; };
+  }, []);
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = debouncedQuery.trim().toLowerCase();

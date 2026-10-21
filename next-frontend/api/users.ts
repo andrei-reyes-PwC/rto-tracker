@@ -12,7 +12,7 @@ export type UserPage = {
   totalPages: number;
   number: number;
   size: number;
-  platforms: PlatformOption[];
+  platforms?: PlatformOption[];
 };
 
 export type CreateUserRequest = {
@@ -114,7 +114,7 @@ export async function getManageUsers(page: number, size: number, platformId?: nu
   if (!response.ok) throw new Error(await responseError(response));
 
   const result = await response.json() as UserPage;
-  if (!result || !Array.isArray(result.content) || !Array.isArray(result.platforms)) {
+  if (!result || !Array.isArray(result.content)) {
     throw new Error("The users service returned an unexpected response. Please refresh and try again.");
   }
   return result;

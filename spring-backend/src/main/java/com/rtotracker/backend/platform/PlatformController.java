@@ -49,6 +49,15 @@ public class PlatformController {
                 .toList();
     }
 
+    @GetMapping("/options")
+    @Operation(summary = "List platform options for filters")
+    public List<PlatformOption> findAllOptions(HttpServletRequest request) {
+        requireSuperAdmin(request);
+        return platformService.findAllOptions().stream()
+                .map(platform -> new PlatformOption(platform.getId(), platform.getName()))
+                .toList();
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get a platform and its members")
     public PlatformResponse findById(@PathVariable Long id, HttpServletRequest request) {
@@ -102,5 +111,8 @@ public class PlatformController {
     }
 
     public record PlatformSummary(Long id, String name, long userCount) {
+    }
+
+    public record PlatformOption(Long id, String name) {
     }
 }

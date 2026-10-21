@@ -24,6 +24,12 @@ export async function getPlatforms(): Promise<Platform[]> {
   return (await response.json()) as Platform[];
 }
 
+export async function getPlatformOptions(): Promise<PlatformOption[]> {
+  const response = await fetch("/api/platforms/options", { credentials: "include", cache: "no-store" });
+  if (!response.ok) throw new Error(await responseError(response));
+  return (await response.json()) as PlatformOption[];
+}
+
 export async function getPlatform(id: number): Promise<PlatformDetails> {
   const response = await fetch(`/api/platforms/${id}`, { credentials: "include", cache: "no-store" });
   if (!response.ok) throw new Error(await responseError(response));
