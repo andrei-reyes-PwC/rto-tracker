@@ -14,7 +14,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 - `app/page.tsx` â€” planner route (`/`); Server Component that renders the planner.
 - `app/users/user-management.tsx` owns the preview roster; `user-editor-sheet.tsx` and `user-editor-form.tsx` provide the shared add/edit sheet and form.
-- `/platforms` is implemented in `app/platforms/`; its admin list loads platform summaries with user counts in one query, and loads the user roster and member details only when the editor opens.
+- `/platforms` is implemented in `app/platforms/`; its admin list loads platform summaries with user counts in one query, and loads the user roster and member details only when the editor opens. The editor prevents assigning users who belong to another platform; each user may belong to at most one platform.
 - Platform list rows show each group's user count; member email addresses are managed in the edit sheet and are not displayed in the list.
 - `components/SidebarPageLayout.tsx` provides the shared sidebar shell and page header; routes pass their header content as a prop. `components/ui/sidebar.tsx` persists the expanded/collapsed preference in a cookie and restores it when a route mounts.
 - `app/login/login-form.tsx` â€” client-side login form using shadcn UI components and Zod validation; submits to the Spring API and includes the HTTP session cookie.
@@ -23,7 +23,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `validation/` â€” Zod schemas and inferred form value types, organized by form.
 - `app/component/OfficePlanner.tsx` composes the schedule page; `ScheduleProvider.tsx` owns month data, loading/saving, and planner actions shared through `useSchedule()`. It reloads the active month when authenticated user data refreshes and clears cached data when the account changes.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation and authenticated email profile menu with logout.
-- `components/sidebar/ProfileMenu.tsx` displays platform names from the authenticated user context below their email in the account dropdown; `/api/auth/me` includes those names.
+- `components/sidebar/ProfileMenu.tsx` displays the authenticated user's optional platform name below their email; `/api/auth/me` returns a singular nullable `platform` object.
 - `/users` requires a valid session; its server page returns the route-level 404 UI to users without the `SUPER_ADMIN` role. The backend also protects all `/api/users` operations. The page loads from the paginated `/api/users/manage` endpoint, which returns only platform options (`id`, `name`) and memberships for users on the current page. The UI supports refresh, page navigation, selectable limits (10, 25, 50, or 100), filtering by platform across pages, and search within the current page. Each user row shows their platform groups above their roles. Add, edit, and delete are connected; edits update email and assignable roles while preserving the password and linked office-day records, and protected users and roles cannot be changed. Self-delete is blocked in the UI and backend. The platform editor continues to use `/api/users` for roster-only queries.
 - For future CRUD screens, follow `/users` for a responsive card-based layout, clear search and record actions, shared add/edit sheets, and confirmation dialogs for deletes; adapt the layout for mobile and desktop.
 - The sidebar shows the user management route only to users with the `SUPER_ADMIN` role.

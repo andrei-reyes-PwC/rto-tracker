@@ -35,24 +35,19 @@ public class PlatformService {
     }
 
     @Transactional(readOnly = true)
-    public List<PlatformRepository.UserPlatformProjection> findMembershipsForUsers(List<String> emails) {
-        return emails.isEmpty() ? List.of() : platforms.findMembershipsForUsers(emails);
-    }
-
-    @Transactional(readOnly = true)
     public List<Platform> findAll() {
         return platforms.findAll(Sort.by(Sort.Direction.ASC, "name"));
     }
 
     @Transactional(readOnly = true)
     public Platform findById(Long id) {
-        return platforms.findById(id)
+        return platforms.findByIdWithUsers(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found"));
     }
 
     @Transactional(readOnly = true)
-    public List<String> findNamesForUser(String email) {
-        return platforms.findAllForUser(email).stream().map(Platform::getName).toList();
+    public java.util.Optional<PlatformRepository.PlatformOptionProjection> findForUser(String email) {
+        return platforms.findForUser(email);
     }
 
     public Platform create(String name, List<String> userEmails) {
@@ -60,7 +55,7 @@ public class PlatformService {
         if (platforms.existsByNameIgnoreCase(normalizedName)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A platform with this name already exists");
         }
-        return platforms.save(new Platform(normalizedName, findUsers(userEmails)));
+        return platforms.save(new Platform(normalizedName, findUsers(userEmails, null)));
     }
 
     public Platform update(Long id, String name, List<String> userEmails) {
@@ -70,7 +65,7 @@ public class PlatformService {
         if (platforms.existsByNameIgnoreCaseAndIdNot(normalizedName, id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A platform with this name already exists");
         }
-        platform.update(normalizedName, findUsers(userEmails));
+        platform.update(normalizedName, findUsers(userEmails, id));
         return platform;
     }
 
@@ -80,7 +75,7 @@ public class PlatformService {
         platforms.delete(platform);
     }
 
-    private Set<User> findUsers(List<String> requestedEmails) {
+    private Set<User> findUsers(List<String> requestedEmails, Long currentPlatformId) {
         Set<String> emails = requestedEmails.stream()
                 .map(email -> email.trim().toLowerCase(java.util.Locale.ROOT))
                 .collect(Collectors.toSet());
@@ -90,6 +85,12 @@ public class PlatformService {
         List<User> foundUsers = users.findAllById(emails);
         if (foundUsers.size() != emails.size()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more selected users do not exist");
+        }
+        boolean alreadyAssigned = foundUsers.stream().anyMatch(user -> user.getPlatform() != null
+                && !user.getPlatform().getId().equals(currentPlatformId));
+        if (alreadyAssigned) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Each user can belong to only one platform");
         }
         return Set.copyOf(foundUsers);
     }

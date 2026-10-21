@@ -1,6 +1,7 @@
 package com.rtotracker.backend.user;
 
 import com.rtotracker.backend.role.Role;
+import com.rtotracker.backend.platform.Platform;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -8,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.util.HashSet;
@@ -29,6 +31,10 @@ public class User {
             joinColumns = @JoinColumn(name = "user_email", referencedColumnName = "email"),
             inverseJoinColumns = @JoinColumn(name = "role_code", referencedColumnName = "code"))
     private Set<Role> roles = new HashSet<>();
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "platform_id")
+    private Platform platform;
 
     protected User() {
     }
@@ -58,5 +64,13 @@ public class User {
 
     public void setRoles(Set<Role> roles) {
         this.roles = new HashSet<>(roles);
+    }
+
+    public Platform getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(Platform platform) {
+        this.platform = platform;
     }
 }

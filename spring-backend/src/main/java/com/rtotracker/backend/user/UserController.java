@@ -35,10 +35,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @Validated
@@ -87,14 +84,8 @@ public class UserController {
         Page<UserResponse> users = userService.findAll(pageable, platformId);
         List<PlatformOption> options = platformService.findAllOptions().stream()
                 .map(platform -> new PlatformOption(platform.getId(), platform.getName())).toList();
-        Map<String, List<PlatformOption>> membershipsByEmail = new LinkedHashMap<>();
-        platformService.findMembershipsForUsers(users.getContent().stream().map(UserResponse::email).toList())
-                .forEach(membership -> membershipsByEmail
-                        .computeIfAbsent(membership.getUserEmail(), ignored -> new ArrayList<>())
-                        .add(new PlatformOption(membership.getId(), membership.getName())));
         List<ManagedUserResponse> content = users.getContent().stream()
-                .map(user -> new ManagedUserResponse(user.email(), user.roles(),
-                        membershipsByEmail.getOrDefault(user.email(), List.of())))
+                .map(user -> new ManagedUserResponse(user.email(), user.roles(), user.platform()))
                 .toList();
         return new UserManagementPageResponse(content, users.getTotalElements(), users.getTotalPages(),
                 users.getNumber(), users.getSize(), options);
@@ -181,7 +172,7 @@ public class UserController {
                                              int number, int size, List<PlatformOption> platforms) {
     }
 
-    public record ManagedUserResponse(String email, List<String> roles, List<PlatformOption> platforms) {
+    public record ManagedUserResponse(String email, List<String> roles, PlatformOption platform) {
     }
 
     public record PlatformOption(Long id, String name) {
@@ -194,10 +185,11 @@ public class UserController {
         }
     }
 
-    public record UserResponse(String email, List<String> roles) {
+    public record UserResponse(String email, List<String> roles, PlatformOption platform) {
         public static UserResponse from(User user) {
             return new UserResponse(user.getEmail(), user.getRoles().stream()
-                    .map(Role::getCode).sorted().toList());
+                    .map(Role::getCode).sorted().toList(), user.getPlatform() == null ? null
+                    : new PlatformOption(user.getPlatform().getId(), user.getPlatform().getName()));
         }
     }
 }

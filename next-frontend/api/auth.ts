@@ -6,7 +6,7 @@ export type LoginCredentials = {
 export type AuthenticatedUser = {
   email: string;
   roles: string[];
-  platforms: string[];
+  platform: { id: number; name: string } | null;
 };
 
 type ApiErrorResponse = {

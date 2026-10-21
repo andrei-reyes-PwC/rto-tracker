@@ -121,10 +121,10 @@ export async function getManageUsers(page: number, size: number, platformId?: nu
 }
 
 export async function getAllUsers(): Promise<ManagedUser[]> {
-  const firstPage = await getUsers(0, 100, undefined, false);
+  const firstPage = await getManageUsers(0, 100);
   const allUsers = [...firstPage.content];
   for (let page = 1; page < firstPage.totalPages; page += 1) {
-    const result = await getUsers(page, 100, undefined, false);
+    const result = await getManageUsers(page, 100);
     allUsers.push(...result.content);
   }
   return allUsers;

@@ -1,7 +1,7 @@
 package com.rtotracker.backend.auth;
 
-import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.platform.PlatformService;
+import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.user.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -49,7 +49,8 @@ public class AuthController {
     }
 
     private LoginResponse responseFor(User user) {
-        return LoginResponse.from(user, platformService.findNamesForUser(user.getEmail()));
+        return LoginResponse.from(user, platformService.findForUser(user.getEmail())
+                .map(platform -> new PlatformResponse(platform.getId(), platform.getName())).orElse(null));
     }
 
     @PostMapping("/logout")
@@ -75,10 +76,13 @@ public class AuthController {
             @NotBlank @Size(max = 72) String password) {
     }
 
-    public record LoginResponse(String email, List<String> roles, List<String> platforms) {
-        static LoginResponse from(User user, List<String> platforms) {
+    public record LoginResponse(String email, List<String> roles, PlatformResponse platform) {
+        static LoginResponse from(User user, PlatformResponse platform) {
             return new LoginResponse(user.getEmail(), user.getRoles().stream()
-                    .map(Role::getCode).sorted().toList(), platforms);
+                    .map(Role::getCode).sorted().toList(), platform);
         }
+    }
+
+    public record PlatformResponse(Long id, String name) {
     }
 }

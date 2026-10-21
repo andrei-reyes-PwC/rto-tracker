@@ -181,14 +181,14 @@ export default function UserManagement() {
               {filteredUsers.map((managedUser) => {
                 const isProtected = managedUser.roles.includes("SUPER_ADMIN");
                 const isCurrentUser = signedInUser?.email.toLowerCase() === managedUser.email.toLowerCase();
-                const userPlatforms = managedUser.platforms ?? [];
+                const userPlatform = managedUser.platform;
                 return (
                   <div key={managedUser.email} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium" title={managedUser.email}>{managedUser.email}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
-                        {userPlatforms.length > 0
-                          ? userPlatforms.map((platform) => <Badge key={platform.id} variant="outline">{platform.name}</Badge>)
+                        {userPlatform
+                          ? <Badge variant="outline">{userPlatform.name}</Badge>
                           : <span className="text-xs text-muted-foreground">No platform</span>}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">

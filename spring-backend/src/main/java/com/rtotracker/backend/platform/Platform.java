@@ -7,9 +7,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import java.util.HashSet;
@@ -26,10 +24,7 @@ public class Platform {
     @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "platform_users",
-            joinColumns = @JoinColumn(name = "platform_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_email", referencedColumnName = "email"))
+    @OneToMany(mappedBy = "platform", fetch = FetchType.LAZY)
     private Set<User> users = new HashSet<>();
 
     protected Platform() {
@@ -37,7 +32,7 @@ public class Platform {
 
     public Platform(String name, Set<User> users) {
         this.name = name;
-        this.users = new HashSet<>(users);
+        updateMembers(users);
     }
 
     public Long getId() {
@@ -54,6 +49,18 @@ public class Platform {
 
     public void update(String name, Set<User> users) {
         this.name = name;
-        this.users = new HashSet<>(users);
+        updateMembers(users);
+    }
+
+    private void updateMembers(Set<User> updatedUsers) {
+        for (User user : users) {
+            if (!updatedUsers.contains(user)) {
+                user.setPlatform(null);
+            }
+        }
+        this.users = new HashSet<>(updatedUsers);
+        for (User user : this.users) {
+            user.setPlatform(this);
+        }
     }
 }

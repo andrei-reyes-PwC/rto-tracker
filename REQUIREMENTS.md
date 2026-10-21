@@ -25,7 +25,7 @@ All authenticated users have a personal account identified by email. User accoun
 ### Authentication and account session
 
 - **AUTH-01** — As an account holder, I can sign in with my email and password to access the planner and the features permitted by my role.
-- **AUTH-02** — As an account holder, I can see the identity, roles, and platform names associated with my active session.
+- **AUTH-02** — As an account holder, I can see the identity, roles, and optional platform associated with my active session.
 - **AUTH-03** — As an account holder, I can sign out, after which the session is no longer valid.
 - **AUTH-04** — Invalid credentials or an invalid session do not grant access to protected features.
 
@@ -44,14 +44,14 @@ All authenticated users have a personal account identified by email. User accoun
 - **USER-02** — As a `SUPER_ADMIN`, I can create a user with an email and password. The new user receives the `USER` role by default.
 - **USER-03** — As a `SUPER_ADMIN`, I can update an eligible user's email and assignable roles. Existing password and linked office-day records are preserved when the email changes.
 - **USER-04** — As a `SUPER_ADMIN`, I can delete an eligible user, subject to self-delete and protected-user restrictions.
-- **USER-05** — As a `SUPER_ADMIN`, I can view the available platform options and each listed user's platform memberships.
+- **USER-05** — As a `SUPER_ADMIN`, I can view the available platform options and each listed user's optional platform.
 - **USER-06** — User listing supports page navigation and page sizes of 10, 25, 50, or 100 in the management interface; the API accepts page sizes up to 100.
 - **USER-07** — User creation and update validate email and password/role inputs. Duplicate emails are rejected, and protected roles cannot be assigned through this flow.
 
 ### Platform administration
 
 - **PLAT-01** — As a `SUPER_ADMIN`, I can view platforms and each platform's member count.
-- **PLAT-02** — As a `SUPER_ADMIN`, I can create and edit a platform by setting its name and assigning users by email. A user may belong to multiple platforms.
+- **PLAT-02** — As a `SUPER_ADMIN`, I can create and edit a platform by setting its name and assigning users by email. A user may belong to zero or one platform; a platform may contain multiple users.
 - **PLAT-03** — As a `SUPER_ADMIN`, I can inspect a platform's member email addresses and remove a platform.
 - **PLAT-04** — Platform names are required and unique without regard to letter case. Membership references must identify existing users.
 - **PLAT-05** — Platform names appear in the signed-in user's session profile when the user belongs to those platforms.
