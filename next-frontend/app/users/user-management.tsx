@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
+import CrudActionNotice from "@/components/CrudActionNotice";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { getPlatformOptions, type PlatformOption } from "@/api/platforms";
 import { createUser, deleteUser, getManageUsers, updateUser } from "@/api/users";
@@ -154,7 +155,7 @@ export default function UserManagement() {
       </div>
 
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
-      {notice && <div role="status" className="rounded-lg border border-emerald-600/20 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
+      {notice && <CrudActionNotice message={notice} onDismiss={() => setNotice("")} />}
 
       <Card className="min-w-0">
         <CardHeader className="gap-4 border-b">

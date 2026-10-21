@@ -53,7 +53,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **PLAT-01** — As a `SUPER_ADMIN`, I can view platforms and each platform's member count.
 - **PLAT-02** — As a `SUPER_ADMIN`, I can create and edit a platform by setting its name and assigning users by email. A user may belong to zero or one platform; a platform may contain multiple users.
 - **PLAT-03** — As a `SUPER_ADMIN`, I can inspect a platform's member email addresses and remove a platform.
-- **PLAT-04** — Platform names are required and unique without regard to letter case. Membership references must identify existing users.
+- **PLAT-04** — Platform names are required, limited to 20 characters, and unique without regard to letter case. Membership references must identify existing users.
 - **PLAT-05** — Platform names appear in the signed-in user's session profile when the user belongs to those platforms.
 
 ## 3. Product and system boundaries

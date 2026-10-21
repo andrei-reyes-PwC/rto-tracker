@@ -99,7 +99,7 @@ public class PlatformController {
         return user;
     }
 
-    public record PlatformRequest(@NotBlank @Size(max = 100) String name,
+    public record PlatformRequest(@NotBlank @Size(max = 20) String name,
                                   @NotNull List<@NotBlank @Size(max = 254) String> userEmails) {
     }
 

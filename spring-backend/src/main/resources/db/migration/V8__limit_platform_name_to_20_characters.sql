@@ -1,0 +1,2 @@
+ALTER TABLE platforms
+    MODIFY COLUMN name VARCHAR(20) NOT NULL;
