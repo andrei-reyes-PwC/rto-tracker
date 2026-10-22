@@ -1,6 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
-import { CalendarDays, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { CalendarDays, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
 import { type CalendarEvent, type EventInput } from "@/api/events";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,13 +18,17 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { EventManagementProvider, useEventManagement } from "@/providers/EventManagementProvider";
 
 function today() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function formatEventDate(date: string) {
+  return new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+    .format(new Date(`${date}T12:00:00`));
+}
 type Draft = EventInput;
 const pageSizeOptions = [10, 25, 50];
 function fresh(): Draft { return { date: today(), title: "", kind: "Company event", time: "All day", place: "", required: false, scope: "GLOBAL", platformId: null }; }
 export default function EventManagement() { return <EventManagementProvider><Content /></EventManagementProvider>; }
 
 function Content() {
-  const { events, platforms, search, setSearch, loading, error: loadError, notice, setNotice, load, save, remove } = useEventManagement();
+  const { events, platforms, search, setSearch, eventDate, setEventDate, loading, error: loadError, notice, setNotice, load, save, remove } = useEventManagement();
   const [editor, setEditor] = useState<CalendarEvent | "new" | null>(null);
   const [deleting, setDeleting] = useState<CalendarEvent | null>(null);
   const [error, setError] = useState("");
@@ -67,9 +71,12 @@ function Content() {
           <div className="flex items-center gap-2 text-sm"><CalendarDays className="size-4 text-[#b83b00]" /><span className="font-semibold">{events.length}</span><span className="text-muted-foreground">{events.length === 1 ? "event" : "events"}</span></div>
           <Button variant="outline" size="sm" disabled={loading} onClick={() => void load()}><RefreshCw /> Refresh</Button>
         </CardAction>
-        <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs"><div className="relative"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(e) => { setPage(0); setSearch(e.target.value); }} placeholder="Search events" aria-label="Search events" className="pl-9" /></div></div>
+        <div className="col-span-2 flex w-full flex-col gap-2 sm:col-span-2 sm:col-start-1 sm:row-start-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-sm sm:flex-1"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(e) => { setPage(0); setSearch(e.target.value); }} placeholder="Search events" aria-label="Search events" className="pl-9" /></div>
+          <div className="flex items-center gap-1"><Input type="date" value={eventDate} onChange={(e) => { setPage(0); setEventDate(e.target.value); }} aria-label="Filter events by date" className="w-fit" />{eventDate && <Button type="button" variant="ghost" size="icon" aria-label="Clear date filter" title="Clear date filter" onClick={() => { setPage(0); setEventDate(""); }}><X /></Button>}</div>
+        </div>
       </CardHeader><CardContent className="p-0">
-        {loading ? <CrudListSkeleton label="Loading events" /> : matching.length === 0 ? <div className="px-6 py-16 text-center"><CalendarDays className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{search.trim() ? "No events match this search" : "No events yet"}</p><p className="mt-1 text-sm text-muted-foreground">Add an event to show it in the schedule planner.</p></div> : <div className="divide-y">{visibleEvents.map((e) => <div key={e.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold">{e.title}</p><p className="mt-1 text-xs text-muted-foreground">{e.date} · {e.time} · {e.place}</p><div className="mt-2 flex flex-wrap gap-2"><Badge variant="outline">{e.kind}</Badge><Badge variant="secondary">{e.scope === "GLOBAL" ? "Global" : e.platformName}</Badge>{e.required && <Badge variant="destructive">Required in office</Badge>}</div></div><div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => { setError(""); setEditor(e); }}>Edit</Button><Button variant="destructive" size="icon-sm" aria-label={"Delete " + e.title} onClick={() => setDeleting(e)}><Trash2 /></Button></div></div>)}</div>}
+        {loading ? <CrudListSkeleton label="Loading events" /> : matching.length === 0 ? <div className="px-6 py-16 text-center"><CalendarDays className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{search.trim() || eventDate ? "No events match these filters" : "No events yet"}</p><p className="mt-1 text-sm text-muted-foreground">Add an event to show it in the schedule planner.</p></div> : <div className="divide-y">{visibleEvents.map((e) => <div key={e.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold">{e.title}</p><p className="mt-1 text-xs text-muted-foreground">{formatEventDate(e.date)} · {e.time} · {e.place}</p><div className="mt-2 flex flex-wrap gap-2"><Badge variant="outline">{e.kind}</Badge><Badge variant="secondary">{e.scope === "GLOBAL" ? "Global" : e.platformName}</Badge>{e.required && <Badge variant="destructive">Required in office</Badge>}</div></div><div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => { setError(""); setEditor(e); }}>Edit</Button><Button variant="destructive" size="icon-sm" aria-label={"Delete " + e.title} onClick={() => setDeleting(e)}><Trash2 /></Button></div></div>)}</div>}
       </CardContent>
       <div className="flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">

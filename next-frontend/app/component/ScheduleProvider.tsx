@@ -11,7 +11,6 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Building2, Coffee, Users } from "lucide-react";
 import { getOfficeDays, replaceOfficeDays } from "@/api/office-days";
 import { getCalendarEvents } from "@/api/events";
 import type { PlannerEvent } from "@/app/component/EventsRequirements";
@@ -192,8 +191,6 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         setEvents(result.map((event) => ({
           ...event,
           date: new Date(`${event.date}T12:00:00`),
-          icon: event.required ? Building2 : event.kind.toLowerCase().includes("team") ? Coffee : Users,
-          tone: event.required ? "bg-rose-50 text-rose-700" : event.kind.toLowerCase().includes("team") ? "bg-amber-50 text-amber-700" : "bg-violet-50 text-violet-700",
         })));
       })
       .catch(() => { if (!controller.signal.aborted) setEvents([]); });
@@ -217,7 +214,9 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const nextOfficeDay = plannedDates.find((date) => dateKey(date) >= todayKey) ?? null;
 
   const allMonthEvents = events;
-  const visibleEvents = allMonthEvents.filter((event) => dateKey(event.date) >= todayKey);
+  const visibleEvents = allMonthEvents
+    .filter((event) => dateKey(event.date) >= todayKey)
+    .sort((first, second) => first.date.getTime() - second.date.getTime() || first.id - second.id);
 
   const updateOfficeDays = useCallback((update: (current: string[]) => string[]) => {
     setDraftByMonth((current) => ({

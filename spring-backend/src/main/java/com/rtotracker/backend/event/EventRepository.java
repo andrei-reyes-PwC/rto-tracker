@@ -8,15 +8,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
-    @Query("select e from Event e left join fetch e.platform left join e.platform platform where :search = '' "
+    @Query("select e from Event e left join fetch e.platform left join e.platform platform "
+            + "where (:date is null or e.date = :date) and (:search = '' "
             + "or lower(e.title) like concat('%', :search, '%') "
             + "or lower(e.kind) like concat('%', :search, '%') "
             + "or lower(e.place) like concat('%', :search, '%') "
             + "or lower(e.time) like concat('%', :search, '%') "
             + "or lower(e.scope) like concat('%', :search, '%') "
-            + "or lower(platform.name) like concat('%', :search, '%') "
+            + "or lower(platform.name) like concat('%', :search, '%')) "
             + "order by e.date asc, e.id asc")
-    List<Event> findAllWithPlatform(@Param("search") String search);
+    List<Event> findAllWithPlatform(@Param("search") String search, @Param("date") LocalDate date);
     @Query("select e from Event e left join fetch e.platform where e.id = :id")
     Optional<Event> findWithPlatformById(@Param("id") Long id);
     @Query("select e from Event e left join fetch e.platform where e.date >= :start and e.date < :end "

@@ -13,9 +13,10 @@ export async function getCalendarEvents(month: string, signal?: AbortSignal): Pr
   if (!response.ok) throw new Error(await fail(response));
   return await response.json() as CalendarEvent[];
 }
-export async function getManageEvents(search = "", signal?: AbortSignal): Promise<CalendarEvent[]> {
+export async function getManageEvents(search = "", date?: string, signal?: AbortSignal): Promise<CalendarEvent[]> {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
+  if (date) params.set("date", date);
   const response = await fetch(`/api/events/manage?${params}`, { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await fail(response));
   return await response.json() as CalendarEvent[];

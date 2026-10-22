@@ -38,7 +38,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **PLAN-03** — As an authenticated user, I can save a month's office-day selections and see saved selections when I revisit that month.
 - **PLAN-04** — As an authenticated user, I can edit a month before saving; unsaved changes are treated as a draft and save failures are surfaced in the planner.
 - **PLAN-05** — The planner shows a weekday count and the next planned office day for the selected month and current date.
-- **PLAN-06** — The planner shows events managed by administrators for the selected month, including global events and events scoped to the user's platform.
+- **PLAN-06** — The planner shows upcoming events managed by administrators in chronological order for the selected month, including global events and events scoped to the user's platform. Each event shows its day of the month, time, and location.
 - **PLAN-07** — As a `USER` assigned to a platform, I can see the daily count of other platform members with a saved office plan in each calendar cell and select a date to see their email addresses. Counts exclude my own plan; users without a platform do not see the counts or colleague list.
 
 ### User and role administration
@@ -73,6 +73,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **EVNT-02** — An event can be global or scoped to one platform; a platform-scoped event must reference an existing platform.
 - **EVNT-03** — As an authenticated user, I see global events and events scoped to my own platform in the selected planner month.
 - **EVNT-04** — Deleting a platform also deletes its platform-scoped events.
+- **EVNT-05** — As a `SUPER_ADMIN`, I can filter the event management list by an optional date and clear the date filter to show events from all dates.
 
 ### RTO dashboard
 

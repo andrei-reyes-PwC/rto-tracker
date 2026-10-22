@@ -6,8 +6,8 @@ import { getPlatformOptions, type PlatformOption } from "@/api/platforms";
 import { useCrudSearch } from "@/hooks/use-crud-search";
 
 type ContextValue = {
-  events: CalendarEvent[]; platforms: PlatformOption[]; search: string; setSearch: (search: string) => void; loading: boolean; error: string; notice: string;
-  load: (search?: string, signal?: AbortSignal) => Promise<void>; save: (input: EventInput, id?: number) => Promise<string | null>;
+  events: CalendarEvent[]; platforms: PlatformOption[]; search: string; setSearch: (search: string) => void; eventDate: string; setEventDate: (date: string) => void; loading: boolean; error: string; notice: string;
+  load: (search?: string, date?: string, signal?: AbortSignal) => Promise<void>; save: (input: EventInput, id?: number) => Promise<string | null>;
   remove: (event: CalendarEvent) => Promise<string | null>; setNotice: (notice: string) => void;
 };
 const Context = createContext<ContextValue | null>(null);
@@ -18,21 +18,22 @@ export function EventManagementProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const { search, setSearch, debouncedSearch } = useCrudSearch();
-  const load = useCallback(async (query = debouncedSearch, signal?: AbortSignal) => {
+  const load = useCallback(async (query = debouncedSearch, date = eventDate, signal?: AbortSignal) => {
     setLoading(true); setError("");
     try {
-      const nextEvents = await getManageEvents(query, signal);
+      const nextEvents = await getManageEvents(query, date || undefined, signal);
       if (!signal?.aborted) setEvents(nextEvents);
     } catch (cause) {
       if (!signal?.aborted) setError(cause instanceof Error ? cause.message : "Could not load events.");
     } finally { if (!signal?.aborted) setLoading(false); }
-  }, [debouncedSearch]);
+  }, [debouncedSearch, eventDate]);
   useEffect(() => {
     const controller = new AbortController();
-    const timer = window.setTimeout(() => { void load(debouncedSearch, controller.signal); }, 0);
+    const timer = window.setTimeout(() => { void load(debouncedSearch, eventDate, controller.signal); }, 0);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [load, debouncedSearch]);
+  }, [load, debouncedSearch, eventDate]);
   useEffect(() => {
     const controller = new AbortController();
     getPlatformOptions(controller.signal).then((options) => {
@@ -46,17 +47,17 @@ export function EventManagementProvider({ children }: { children: ReactNode }) {
     try {
       await saveEvent(input, id);
       setNotice(`“${input.title}” was ${id === undefined ? "created" : "updated"}.`);
-      await load(debouncedSearch); return null;
+      await load(debouncedSearch, eventDate); return null;
     } catch (cause) { return cause instanceof Error ? cause.message : "Could not save this event."; }
-  }, [load, debouncedSearch]);
+  }, [load, debouncedSearch, eventDate]);
   const remove = useCallback(async (event: CalendarEvent) => {
     try {
       await deleteEvent(event.id);
       setNotice(`“${event.title}” was deleted.`);
-      await load(debouncedSearch); return null;
+      await load(debouncedSearch, eventDate); return null;
     } catch (cause) { return cause instanceof Error ? cause.message : "Could not delete this event."; }
-  }, [load, debouncedSearch]);
-  const value = useMemo(() => ({ events, platforms, search, setSearch, loading, error, notice, load, save, remove, setNotice }), [events, platforms, search, setSearch, loading, error, notice, load, save, remove]);
+  }, [load, debouncedSearch, eventDate]);
+  const value = useMemo(() => ({ events, platforms, search, setSearch, eventDate, setEventDate, loading, error, notice, load, save, remove, setNotice }), [events, platforms, search, setSearch, eventDate, loading, error, notice, load, save, remove]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

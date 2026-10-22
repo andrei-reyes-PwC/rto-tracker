@@ -1,7 +1,6 @@
 "use client";
 
 import { Building2, CircleHelp } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSchedule } from "@/app/component/ScheduleProvider";
@@ -13,8 +12,6 @@ export type PlannerEvent = {
   kind: string;
   time: string;
   place: string;
-  icon: LucideIcon;
-  tone: string;
   required: boolean;
 };
 
@@ -23,7 +20,7 @@ function formatEventDate(date: Date) {
 }
 
 export default function EventsRequirements() {
-  const { visibleEvents: events, monthLabel } = useSchedule();
+  const { visibleEvents: events, monthLabel, todayKey } = useSchedule();
 
   return (
     <Card id="events" className="gap-0 border-slate-200/80 shadow-none">
@@ -35,13 +32,13 @@ export default function EventsRequirements() {
         {events.length ? (
           <div className="space-y-2">
             {events.map((event) => {
-              const Icon = event.icon;
+              const isToday = formatEventDate(event.date) === todayKey;
               return (
                 <div key={event.id} className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-start ${event.required ? "border-rose-200 bg-rose-50/40" : "border-slate-200 bg-white"}`}>
-                  <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${event.tone}`}><Icon className="size-4" /></div>
+                  <time dateTime={formatEventDate(event.date)} className={`flex size-10 shrink-0 items-center justify-center rounded-lg text-lg font-semibold tabular-nums ${isToday ? "bg-[#e65300] text-white ring-2 ring-[#e65300]/20" : "bg-slate-100 text-slate-700"}`}>{event.date.getDate()}</time>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{event.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{formatEventDate(event.date)} · {event.time} · {event.place}</p>
+                    <p className="mt-1 text-xs text-slate-500">{event.time} · {event.place}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
                     <Badge variant={event.required ? "destructive" : "outline"} className="h-5">{event.kind}</Badge>
