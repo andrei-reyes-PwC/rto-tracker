@@ -1,9 +1,7 @@
 package com.rtotracker.backend.workschedule;
 
-import com.rtotracker.backend.auth.AuthSession;
-import com.rtotracker.backend.role.Role;
+import com.rtotracker.backend.auth.AdminAuthorizationService;
 import com.rtotracker.backend.user.User;
-import com.rtotracker.backend.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +20,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -33,17 +30,17 @@ import java.util.List;
 public class WorkScheduleController {
 
     private final WorkScheduleService workScheduleService;
-    private final UserService userService;
+    private final AdminAuthorizationService authorization;
 
-    public WorkScheduleController(WorkScheduleService workScheduleService, UserService userService) {
+    public WorkScheduleController(WorkScheduleService workScheduleService, AdminAuthorizationService authorization) {
         this.workScheduleService = workScheduleService;
-        this.userService = userService;
+        this.authorization = authorization;
     }
 
     @GetMapping
     @Operation(summary = "List work schedules")
     public List<WorkScheduleSummary> findAll(HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         return workScheduleService.findAllSummaries().stream()
                 .map(schedule -> new WorkScheduleSummary(schedule.getId(), schedule.getName(), schedule.getUserCount()))
                 .toList();
@@ -52,7 +49,7 @@ public class WorkScheduleController {
     @GetMapping("/{id}")
     @Operation(summary = "Get a work schedule and its users")
     public WorkScheduleResponse findById(@PathVariable Long id, HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         return WorkScheduleResponse.from(workScheduleService.findById(id));
     }
 
@@ -60,7 +57,7 @@ public class WorkScheduleController {
     @Operation(summary = "Create a work schedule")
     public ResponseEntity<WorkScheduleResponse> create(@Valid @RequestBody WorkScheduleRequest request,
                                                        HttpServletRequest servletRequest) {
-        requireSuperAdmin(servletRequest);
+        authorization.requireSuperAdmin(servletRequest);
         WorkScheduleResponse created = WorkScheduleResponse.from(
                 workScheduleService.create(request.name(), request.userEmails()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -70,24 +67,16 @@ public class WorkScheduleController {
     @Operation(summary = "Update a work schedule and its users")
     public WorkScheduleResponse update(@PathVariable Long id, @Valid @RequestBody WorkScheduleRequest request,
                                       HttpServletRequest servletRequest) {
-        requireSuperAdmin(servletRequest);
+        authorization.requireSuperAdmin(servletRequest);
         return WorkScheduleResponse.from(workScheduleService.update(id, request.name(), request.userEmails()));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a work schedule")
     public ResponseEntity<Void> delete(@PathVariable Long id, HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         workScheduleService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private User requireSuperAdmin(HttpServletRequest request) {
-        User user = userService.findByEmail(AuthSession.requireEmail(request));
-        if (user.getRoles().stream().map(Role::getCode).noneMatch("SUPER_ADMIN"::equals)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "SUPER_ADMIN access required");
-        }
-        return user;
     }
 
     public record WorkScheduleRequest(@NotBlank @Size(max = 10) String name,

@@ -1,27 +1,25 @@
 package com.rtotracker.backend.workschedule;
 
 import com.rtotracker.backend.user.User;
-import com.rtotracker.backend.user.UserRepository;
+import com.rtotracker.backend.user.UserSelectionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class WorkScheduleService {
 
     private final WorkScheduleRepository workSchedules;
-    private final UserRepository users;
+    private final UserSelectionService userSelection;
 
-    public WorkScheduleService(WorkScheduleRepository workSchedules, UserRepository users) {
+    public WorkScheduleService(WorkScheduleRepository workSchedules, UserSelectionService userSelection) {
         this.workSchedules = workSchedules;
-        this.users = users;
+        this.userSelection = userSelection;
     }
 
     @Transactional(readOnly = true)
@@ -53,16 +51,7 @@ public class WorkScheduleService {
     }
 
     private Set<User> findUsers(List<String> requestedEmails, Long currentScheduleId) {
-        Set<String> emails = requestedEmails.stream()
-                .map(email -> email.trim().toLowerCase(Locale.ROOT))
-                .collect(Collectors.toSet());
-        if (emails.contains("")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User emails must not be blank");
-        }
-        List<User> foundUsers = users.findAllById(emails);
-        if (foundUsers.size() != emails.size()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more selected users do not exist");
-        }
+        Set<User> foundUsers = userSelection.findExistingByEmails(requestedEmails);
         boolean alreadyAssigned = foundUsers.stream().anyMatch(user -> user.getWorkSchedule() != null
                 && !user.getWorkSchedule().getId().equals(currentScheduleId));
         if (alreadyAssigned) {

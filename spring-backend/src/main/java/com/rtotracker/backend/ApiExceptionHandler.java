@@ -3,6 +3,7 @@ package com.rtotracker.backend;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,6 +42,13 @@ public class ApiExceptionHandler {
         String reason = exception.getReason() == null ? status.getReasonPhrase() : exception.getReason();
         return ResponseEntity.status(status).body(new ApiError(
                 status.value(), status.getReasonPhrase(), reason, List.of()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataConflict(DataIntegrityViolationException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
+                HttpStatus.CONFLICT.value(), HttpStatus.CONFLICT.getReasonPhrase(),
+                "The request conflicts with existing data.", List.of()));
     }
 
     public record ApiError(int status, String error, String message, List<String> details) {

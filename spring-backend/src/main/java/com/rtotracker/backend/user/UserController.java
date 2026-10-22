@@ -1,6 +1,6 @@
 package com.rtotracker.backend.user;
 
-import com.rtotracker.backend.auth.AuthSession;
+import com.rtotracker.backend.auth.AdminAuthorizationService;
 import com.rtotracker.backend.platform.Platform;
 import com.rtotracker.backend.platform.PlatformService;
 import com.rtotracker.backend.workschedule.WorkSchedule;
@@ -46,10 +46,13 @@ public class UserController {
 
     private final UserService userService;
     private final PlatformService platformService;
+    private final AdminAuthorizationService authorization;
 
-    public UserController(UserService userService, PlatformService platformService) {
+    public UserController(UserService userService, PlatformService platformService,
+                          AdminAuthorizationService authorization) {
         this.userService = userService;
         this.platformService = platformService;
+        this.authorization = authorization;
     }
 
     @GetMapping
@@ -60,7 +63,7 @@ public class UserController {
             @RequestParam(required = false) @Min(1) Long platformId,
             @RequestParam(defaultValue = "true") boolean includePlatforms,
             HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         Pageable pageable = PageRequest.of(page, size, platformId == null
                 ? Sort.by(Sort.Direction.ASC, "email")
                 : Sort.unsorted());
@@ -78,7 +81,7 @@ public class UserController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestParam(required = false) @Min(1) Long platformId,
             HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         Pageable pageable = PageRequest.of(page, size, platformId == null
                 ? Sort.by(Sort.Direction.ASC, "email")
                 : Sort.unsorted());
@@ -93,7 +96,7 @@ public class UserController {
     @GetMapping("/{email}")
     @Operation(summary = "Get a user by email")
     public UserResponse findByEmail(@PathVariable String email, HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         return UserResponse.from(userService.findByEmail(email));
     }
 
@@ -102,7 +105,7 @@ public class UserController {
     public ResponseEntity<UserResponse> create(
             @Valid @RequestBody UserRequest request,
             HttpServletRequest servletRequest) {
-        requireSuperAdmin(servletRequest);
+        authorization.requireSuperAdmin(servletRequest);
         UserResponse created = UserResponse.from(userService.create(request.email(), request.password()));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{email}").buildAndExpand(created.email()).toUri();
@@ -115,14 +118,14 @@ public class UserController {
             @PathVariable String email,
             @Valid @RequestBody UserUpdateRequest request,
             HttpServletRequest servletRequest) {
-        requireSuperAdmin(servletRequest);
+        authorization.requireSuperAdmin(servletRequest);
         return UserResponse.from(userService.update(email, request.email(), request.roles()));
     }
 
     @DeleteMapping("/{email}")
     @Operation(summary = "Delete a user")
     public ResponseEntity<Void> delete(@PathVariable String email, HttpServletRequest request) {
-        User administrator = requireSuperAdmin(request);
+        User administrator = authorization.requireSuperAdmin(request);
 
         User target = userService.findByEmail(email);
         if (administrator.getEmail().equals(target.getEmail())) {
@@ -134,17 +137,6 @@ public class UserController {
         }
         userService.delete(email);
         return ResponseEntity.noContent().build();
-    }
-
-    private User requireSuperAdmin(HttpServletRequest request) {
-        User user = userService.findByEmail(AuthSession.requireEmail(request));
-        boolean isSuperAdmin = user.getRoles().stream()
-                .map(Role::getCode)
-                .anyMatch("SUPER_ADMIN"::equals);
-        if (!isSuperAdmin) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "SUPER_ADMIN access required");
-        }
-        return user;
     }
 
     public record UserRequest(

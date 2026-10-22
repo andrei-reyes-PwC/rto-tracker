@@ -1,9 +1,7 @@
 package com.rtotracker.backend.platform;
 
-import com.rtotracker.backend.auth.AuthSession;
-import com.rtotracker.backend.role.Role;
+import com.rtotracker.backend.auth.AdminAuthorizationService;
 import com.rtotracker.backend.user.User;
-import com.rtotracker.backend.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +20,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -33,17 +30,17 @@ import java.util.List;
 public class PlatformController {
 
     private final PlatformService platformService;
-    private final UserService userService;
+    private final AdminAuthorizationService authorization;
 
-    public PlatformController(PlatformService platformService, UserService userService) {
+    public PlatformController(PlatformService platformService, AdminAuthorizationService authorization) {
         this.platformService = platformService;
-        this.userService = userService;
+        this.authorization = authorization;
     }
 
     @GetMapping
     @Operation(summary = "List platforms")
     public List<PlatformSummary> findAll(HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         return platformService.findAllSummaries().stream()
                 .map(platform -> new PlatformSummary(platform.getId(), platform.getName(), platform.getUserCount()))
                 .toList();
@@ -52,7 +49,7 @@ public class PlatformController {
     @GetMapping("/options")
     @Operation(summary = "List platform options for filters")
     public List<PlatformOption> findAllOptions(HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         return platformService.findAllOptions().stream()
                 .map(platform -> new PlatformOption(platform.getId(), platform.getName()))
                 .toList();
@@ -61,7 +58,7 @@ public class PlatformController {
     @GetMapping("/{id}")
     @Operation(summary = "Get a platform and its members")
     public PlatformResponse findById(@PathVariable Long id, HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         return PlatformResponse.from(platformService.findById(id));
     }
 
@@ -69,7 +66,7 @@ public class PlatformController {
     @Operation(summary = "Create a platform")
     public ResponseEntity<PlatformResponse> create(@Valid @RequestBody PlatformRequest request,
                                                     HttpServletRequest servletRequest) {
-        requireSuperAdmin(servletRequest);
+        authorization.requireSuperAdmin(servletRequest);
         PlatformResponse created = PlatformResponse.from(
                 platformService.create(request.name(), request.userEmails()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -79,24 +76,16 @@ public class PlatformController {
     @Operation(summary = "Update a platform and its members")
     public PlatformResponse update(@PathVariable Long id, @Valid @RequestBody PlatformRequest request,
                                    HttpServletRequest servletRequest) {
-        requireSuperAdmin(servletRequest);
+        authorization.requireSuperAdmin(servletRequest);
         return PlatformResponse.from(platformService.update(id, request.name(), request.userEmails()));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a platform")
     public ResponseEntity<Void> delete(@PathVariable Long id, HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         platformService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private User requireSuperAdmin(HttpServletRequest request) {
-        User user = userService.findByEmail(AuthSession.requireEmail(request));
-        if (user.getRoles().stream().map(Role::getCode).noneMatch("SUPER_ADMIN"::equals)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "SUPER_ADMIN access required");
-        }
-        return user;
     }
 
     public record PlatformRequest(@NotBlank @Size(max = 20) String name,

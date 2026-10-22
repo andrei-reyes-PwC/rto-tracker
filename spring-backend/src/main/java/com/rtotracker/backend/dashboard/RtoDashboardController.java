@@ -1,9 +1,7 @@
 package com.rtotracker.backend.dashboard;
 
-import com.rtotracker.backend.auth.AuthSession;
-import com.rtotracker.backend.role.Role;
+import com.rtotracker.backend.auth.AdminAuthorizationService;
 import com.rtotracker.backend.user.User;
-import com.rtotracker.backend.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,11 +24,12 @@ import java.time.LocalDate;
 public class RtoDashboardController {
 
     private final RtoDashboardService dashboardService;
-    private final UserService userService;
+    private final AdminAuthorizationService authorization;
 
-    public RtoDashboardController(RtoDashboardService dashboardService, UserService userService) {
+    public RtoDashboardController(RtoDashboardService dashboardService,
+                                  AdminAuthorizationService authorization) {
         this.dashboardService = dashboardService;
-        this.userService = userService;
+        this.authorization = authorization;
     }
 
     @GetMapping
@@ -38,18 +37,11 @@ public class RtoDashboardController {
     public RtoDashboardService.WeeklyRtoSummary getWeeklySummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart,
             HttpServletRequest request) {
-        requireSuperAdmin(request);
+        authorization.requireSuperAdmin(request);
         if (weekStart.getDayOfWeek() != DayOfWeek.MONDAY) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "weekStart must be a Monday");
         }
         return dashboardService.getWeeklySummary(weekStart);
     }
 
-    private User requireSuperAdmin(HttpServletRequest request) {
-        User user = userService.findByEmail(AuthSession.requireEmail(request));
-        if (user.getRoles().stream().map(Role::getCode).noneMatch("SUPER_ADMIN"::equals)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "SUPER_ADMIN access required");
-        }
-        return user;
-    }
 }

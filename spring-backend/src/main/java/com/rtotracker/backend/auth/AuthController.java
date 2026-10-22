@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,10 +28,13 @@ public class AuthController {
 
     private final AuthService authService;
     private final PlatformService platformService;
+    private final boolean secureSessionCookie;
 
-    public AuthController(AuthService authService, PlatformService platformService) {
+    public AuthController(AuthService authService, PlatformService platformService,
+                          @Value("${server.servlet.session.cookie.secure:false}") boolean secureSessionCookie) {
         this.authService = authService;
         this.platformService = platformService;
+        this.secureSessionCookie = secureSessionCookie;
     }
 
     @PostMapping("/login")
@@ -63,6 +67,7 @@ public class AuthController {
                 .path("/")
                 .httpOnly(true)
                 .sameSite("Lax")
+                .secure(secureSessionCookie)
                 .maxAge(Duration.ZERO)
                 .build();
         return ResponseEntity.noContent()
