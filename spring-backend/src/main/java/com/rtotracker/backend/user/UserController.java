@@ -175,7 +175,7 @@ public class UserController {
     public record UserUpdateRequest(
             @NotBlank @Email @Pattern(regexp = "^[^@\\s]+@(?:[^@.\\s]+\\.)+[^@.\\s]+$")
             @Size(max = 254) String email,
-            @NotEmpty List<@NotBlank String> roles) {
+            @NotEmpty List<@NotBlank @Size(max = 50) String> roles) {
     }
 
     public record UserPageResponse(List<UserResponse> content, long totalElements, int totalPages,

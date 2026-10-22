@@ -4,6 +4,7 @@
 - Keep each subproject's `PROJECT_NOTES.md` current when its structure, dependencies, routes, data flow, or conventions change.
 - Keep this repository's `PROJECT_NOTES.md` current when the top-level project layout or integration between apps changes.
 - Keep documentation concise and factual. Follow the local framework's current conventions and documentation when changing framework code.
+- Give every persisted string a deliberate maximum length based on its purpose and frontend use. Enforce limits in backend validation and database columns, and mirror them in editable UI fields. Default new persisted strings to 25 characters unless the feature specifies otherwise; retain appropriate exceptions such as email addresses and password hashes.
 
 ## Recurring cleanup and refactor workflow
 

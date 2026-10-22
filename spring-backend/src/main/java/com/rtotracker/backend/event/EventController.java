@@ -109,7 +109,8 @@ public class EventController {
 
     public record EventRequest(@NotNull LocalDate date, @NotBlank @Size(max = 50) String title,
             @NotBlank @Size(max = 40) String kind, @NotBlank @Size(max = 30) String time,
-            @NotBlank @Size(max = 120) String place, boolean required, @NotBlank String scope, Long platformId) { }
+            @NotBlank @Size(max = 120) String place, boolean required,
+            @NotBlank @Size(max = 20) String scope, Long platformId) { }
     public record EventResponse(Long id, LocalDate date, String title, String kind, String time, String place,
             boolean required, String scope, Long platformId, String platformName) {
         static EventResponse from(Event event) {
