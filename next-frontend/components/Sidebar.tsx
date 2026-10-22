@@ -23,7 +23,8 @@ export default function Sidebar() {
   const { setOpenMobile } = useSidebar();
   const pathname = usePathname();
   const { user } = useAuth();
-  const canManageUsers = user?.roles.includes("SUPER_ADMIN") ?? false;
+  const isSuperAdmin = user?.roles.includes("SUPER_ADMIN") ?? false;
+  const canViewRtoDashboard = isSuperAdmin || (user?.roles.includes("ADMIN") ?? false);
 
   return (
     <ShadcnSidebar collapsible="icon" variant="sidebar">
@@ -53,18 +54,19 @@ export default function Sidebar() {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
-        {canManageUsers && (
+        {canViewRtoDashboard && (
           <SidebarGroup>
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
             <SidebarMenu>
-              <SidebarMenuItem>
+              {canViewRtoDashboard && <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/dashboard" || pathname.startsWith("/dashboard/")} tooltip="RTO dashboard">
                   <Link href="/dashboard" onClick={() => setOpenMobile(false)} aria-label="RTO dashboard">
                     <BarChart3 />
                     <span>RTO dashboard</span>
                   </Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem>}
+              {isSuperAdmin && <>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/users" || pathname.startsWith("/users/")} tooltip="Manage users">
                   <Link href="/users" onClick={() => setOpenMobile(false)} aria-label="Manage users">
@@ -97,6 +99,7 @@ export default function Sidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              </>}
             </SidebarMenu>
           </SidebarGroup>
         )}

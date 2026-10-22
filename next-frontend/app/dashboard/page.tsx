@@ -12,7 +12,7 @@ export default async function DashboardPage() {
 
   const user = await getSessionUser(sessionId);
   if (!user) redirect("/login");
-  if (!user.roles.includes("SUPER_ADMIN")) notFound();
+  if (!user.roles.includes("ADMIN") && !user.roles.includes("SUPER_ADMIN")) notFound();
 
   return <RtoDashboard />;
 }

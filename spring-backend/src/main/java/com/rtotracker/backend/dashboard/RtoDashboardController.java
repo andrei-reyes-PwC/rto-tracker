@@ -36,7 +36,7 @@ public class RtoDashboardController {
     public RtoDashboardService.WeeklyRtoSummary getWeeklySummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart,
             HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
+        authorization.requireDashboardAccess(request);
         if (weekStart.getDayOfWeek() != DayOfWeek.MONDAY) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "weekStart must be a Monday");
         }

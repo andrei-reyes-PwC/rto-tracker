@@ -26,4 +26,14 @@ public class AdminAuthorizationService {
         }
         return user;
     }
+
+    public User requireDashboardAccess(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean canViewDashboard = user.getRoles().stream().map(Role::getCode)
+                .anyMatch(code -> "ADMIN".equals(code) || "SUPER_ADMIN".equals(code));
+        if (!canViewDashboard) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ADMIN access required");
+        }
+        return user;
+    }
 }
