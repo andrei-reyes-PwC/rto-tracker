@@ -25,8 +25,10 @@ export default function SidebarPageLayout({
         <Sidebar />
         <SidebarInset className={cn("min-h-0 min-w-0 overflow-hidden", insetClassName)}>
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger />
-            <div className="h-4 w-px bg-border" />
+            <div className="flex shrink-0 items-center gap-0.5">
+              <SidebarTrigger />
+              <div className="h-4 w-px bg-border" />
+            </div>
             {headerContent}
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto">

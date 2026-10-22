@@ -1,7 +1,7 @@
 "use client";
 
 import { RtoDashboardProvider, useRtoDashboard } from "@/providers/RtoDashboardProvider";
-import { BarChart3, CalendarDays, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import type { WeeklyRtoSummary } from "@/api/rto-dashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,6 @@ import DataLoadError from "@/components/DataLoadError";
 function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat(undefined, options).format(new Date(`${dateKey}T12:00:00`));
 }
-
 function formatNumber(value: number) {
   return new Intl.NumberFormat().format(value);
 }
@@ -48,33 +47,14 @@ function RtoDashboardContent() {
         {error && <DataLoadError message={error} onRetry={retry} retrying={loading} />}
         {loading ? <DashboardSkeleton /> : summary ? (
           <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Card>
-                <CardHeader className="grid-cols-[auto_1fr] items-center gap-3 space-y-0 pb-2"><BarChart3 className="size-4 shrink-0 text-[#b83b00]" /><CardTitle className="text-sm font-medium">Planned RTO days</CardTitle></CardHeader>
-                <CardContent><p className="text-3xl font-semibold">{formatNumber(summary.totalRtoDays)}</p><p className="mt-1 text-xs text-muted-foreground">Saved user office-day selections across five weekdays</p></CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="grid-cols-[auto_1fr] items-center gap-3 space-y-0 pb-2"><Users className="size-4 shrink-0 text-[#b83b00]" /><CardTitle className="text-sm font-medium">Unique attendees</CardTitle></CardHeader>
-                <CardContent><p className="text-3xl font-semibold">{formatNumber(summary.uniqueAttendees)}</p><p className="mt-1 text-xs text-muted-foreground">People with at least one saved office day this week</p></CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader><CardTitle>Daily attendance</CardTitle><CardDescription>Number of users with a saved office day on each weekday.</CardDescription></CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {summary.daily.map((day) => (
-                  <div key={day.date} className="rounded-xl border bg-muted/20 p-4">
-                    <p className="text-sm font-medium">{formatDate(day.date, { weekday: "long" })}</p>
-                    <p className="mt-2 text-2xl font-semibold">{formatNumber(day.attendees)}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(day.date, { month: "short", day: "numeric" })}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <BreakdownCard title="By platform" description="RTO days and distinct attendees grouped by each user’s platform." rows={summary.byPlatform} />
-              <BreakdownCard title="By work schedule" description="RTO days and distinct attendees grouped by each user’s assigned work schedule." rows={summary.byWorkSchedule} />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {summary.daily.map((day) => (
+                <div key={day.date} className="rounded-xl border bg-muted/20 p-4">
+                  <p className="text-sm font-medium">{formatDate(day.date, { weekday: "long" })}</p>
+                  <p className="mt-2 text-2xl font-semibold">{formatNumber(day.attendees)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(day.date, { month: "short", day: "numeric" })}</p>
+                </div>
+              ))}
             </div>
 
             <div className="grid gap-4">
@@ -91,17 +71,8 @@ function RtoDashboardContent() {
 function DashboardSkeleton() {
   return (
     <div role="status" aria-label="Loading RTO dashboard" aria-busy="true" className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[0, 1].map((item) => <Card key={item}><CardHeader><Skeleton className="h-4 w-36" /></CardHeader><CardContent><Skeleton className="h-9 w-24" /><Skeleton className="mt-2 h-3 w-52" /></CardContent></Card>)}
-      </div>
-      <Card>
-        <CardHeader><Skeleton className="h-5 w-36" /><Skeleton className="h-4 w-64" /></CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {[0, 1, 2, 3, 4].map((item) => <div key={item} className="space-y-3 rounded-xl border p-4"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-16" /><Skeleton className="h-3 w-20" /></div>)}
-        </CardContent>
-      </Card>
-      <div className="grid gap-4 lg:grid-cols-2">
-        {[0, 1].map((card) => <Card key={card}><CardHeader><Skeleton className="h-5 w-40" /><Skeleton className="h-4 w-56" /></CardHeader><CardContent className="space-y-4">{[0, 1, 2, 3].map((row) => <Skeleton key={row} className="h-4 w-full" />)}</CardContent></Card>)}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {[0, 1, 2, 3, 4].map((item) => <div key={item} className="space-y-3 rounded-xl border p-4"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-16" /><Skeleton className="h-3 w-20" /></div>)}
       </div>
       <div className="grid gap-4">
         {[0, 1].map((card) => <Card key={card}><CardHeader><Skeleton className="h-5 w-56" /></CardHeader><CardContent className="space-y-3">{[0, 1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-8 w-full" />)}</CardContent></Card>)}
@@ -127,38 +98,50 @@ function DailyBreakdownCard({ title, groups, daily }: {
       <CardHeader><CardTitle>{title}</CardTitle><CardDescription>Saved office-day attendees for each weekday, split by group.</CardDescription></CardHeader>
       <CardContent className="p-0">
         {groups.length === 0 ? <p className="px-6 py-8 text-center text-sm text-muted-foreground">No saved RTO plans for this week.</p> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-y bg-muted/30 text-xs text-muted-foreground"><tr><th className="px-5 py-3 font-medium">Day</th>{groups.map((group) => <th key={group.id ?? group.name} className="min-w-32 px-5 py-3 text-right font-medium">{group.name}</th>)}<th className="min-w-32 bg-[#fff3e8] px-5 py-3 text-right font-bold text-[#8a2c00]">Daily total</th></tr></thead>
-              <tbody className="divide-y">{daily.map((day) => {
-                const dayTotal = groups.reduce((sum, group) => sum + (group.daily.find((groupDay) => groupDay.date === day.date)?.attendees ?? 0), 0);
-                return <tr key={day.date}><th scope="row" className="whitespace-nowrap px-5 py-3 font-medium">{formatDate(day.date, { weekday: "short", month: "short", day: "numeric" })}</th>{groups.map((group) => <td key={group.id ?? group.name} className="px-5 py-3 text-right">{formatNumber(group.daily.find((groupDay) => groupDay.date === day.date)?.attendees ?? 0)}</td>)}<td className="bg-[#fff3e8] px-5 py-3 text-right font-bold text-[#8a2c00]">{formatNumber(dayTotal)}</td></tr>;
-              })}</tbody>
-              <tfoot className="border-t-2 border-[#b83b00]/30 bg-[#fff3e8] text-[#8a2c00]"><tr><th scope="row" className="px-5 py-3 text-left font-bold">Week total</th>{groupTotals.map((group) => <td key={group.key} className="px-5 py-3 text-right text-base font-bold">{formatNumber(group.total)}</td>)}<td className="px-5 py-3 text-right text-base font-extrabold">{formatNumber(grandTotal)}</td></tr></tfoot>
+          <>
+          <div className="space-y-3 p-4 md:hidden">
+            {daily.map((day) => {
+              const dayTotal = groups.reduce((sum, group) => sum + (group.daily.find((groupDay) => groupDay.date === day.date)?.attendees ?? 0), 0);
+              return <section key={day.date} className="rounded-xl border bg-muted/10 p-4">
+                <div className="flex items-center justify-between gap-3 border-b pb-3">
+                  <h3 className="text-sm font-semibold">{formatDate(day.date, { weekday: "short", month: "short", day: "numeric" })}</h3>
+                  <p className="text-sm font-bold text-[#8a2c00]">{formatNumber(dayTotal)} total</p>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {groups.map((group) => <div key={group.id ?? group.name} className="min-w-0 rounded-lg bg-background p-3">
+                    <dt className="truncate text-xs text-muted-foreground" title={group.name}>{group.name}</dt>
+                    <dd className="mt-1 text-base font-semibold">{formatNumber(group.daily.find((groupDay) => groupDay.date === day.date)?.attendees ?? 0)}</dd>
+                  </div>)}
+                </dl>
+              </section>;
+            })}
+            <section className="rounded-xl border border-[#b83b00]/30 bg-[#fff3e8] p-4 text-[#8a2c00]">
+              <h3 className="text-sm font-bold">Week total</h3>
+              <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {groupTotals.map((group, index) => <div key={group.key} className="rounded-lg bg-white/70 p-3">
+                  <dt className="truncate text-xs text-[#8a2c00]/75" title={groups[index].name}>{groups[index].name}</dt>
+                  <dd className="mt-1 text-base font-bold">{formatNumber(group.total)}</dd>
+                </div>)}
+                <div className="rounded-lg bg-white/70 p-3">
+                  <dt className="text-xs font-semibold">All groups</dt>
+                  <dd className="mt-1 text-base font-extrabold">{formatNumber(grandTotal)}</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup><col className="w-36" />{daily.map((day) => <col key={day.date} className="w-20" />)}<col className="w-24" /></colgroup>
+              <thead className="border-y bg-muted/30 text-xs text-muted-foreground"><tr><th className="px-3 py-3 font-medium">Group</th>{daily.map((day) => <th key={day.date} className="min-w-20 px-2 py-3 text-right font-medium">{formatDate(day.date, { weekday: "short", month: "short", day: "numeric" })}</th>)}<th className="min-w-24 bg-[#fff3e8] px-3 py-3 text-right font-bold text-[#8a2c00]">Week total</th></tr></thead>
+              <tbody className="divide-y">{groups.map((group, index) => <tr key={group.id ?? group.name}>
+                <th scope="row" className="truncate px-3 py-3 font-medium" title={group.name}>{group.name}</th>
+                {daily.map((day) => <td key={day.date} className="px-2 py-3 text-right">{formatNumber(group.daily.find((groupDay) => groupDay.date === day.date)?.attendees ?? 0)}</td>)}
+                <td className="bg-[#fff3e8] px-3 py-3 text-right font-bold text-[#8a2c00]">{formatNumber(groupTotals[index].total)}</td>
+              </tr>)}</tbody>
+              <tfoot className="border-t-2 border-[#b83b00]/30 bg-[#fff3e8] text-[#8a2c00]"><tr><th scope="row" className="px-3 py-3 text-left font-bold">Daily total</th>{daily.map((day) => <td key={day.date} className="px-2 py-3 text-right font-bold">{formatNumber(groups.reduce((sum, group) => sum + (group.daily.find((groupDay) => groupDay.date === day.date)?.attendees ?? 0), 0))}</td>)}<td className="px-3 py-3 text-right text-base font-extrabold">{formatNumber(grandTotal)}</td></tr></tfoot>
             </table>
           </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function BreakdownCard({ title, description, rows }: {
-  title: string;
-  description: string;
-  rows: WeeklyRtoSummary["byPlatform"];
-}) {
-  return (
-    <Card>
-      <CardHeader><CardTitle>{title}</CardTitle><CardDescription>{description}</CardDescription></CardHeader>
-      <CardContent className="p-0">
-        {rows.length === 0 ? <p className="px-6 py-8 text-center text-sm text-muted-foreground">No saved RTO plans for this week.</p> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-y bg-muted/30 text-xs text-muted-foreground"><tr><th className="px-5 py-3 font-medium">Group</th><th className="px-5 py-3 text-right font-medium">Attendees</th><th className="px-5 py-3 text-right font-medium">RTO days</th></tr></thead>
-              <tbody className="divide-y">{rows.map((row) => <tr key={row.id ?? row.name}><td className="px-5 py-3 font-medium">{row.name}</td><td className="px-5 py-3 text-right">{formatNumber(row.attendees)}</td><td className="px-5 py-3 text-right">{formatNumber(row.rtoDays)}</td></tr>)}</tbody>
-            </table>
-          </div>
+          </>
         )}
       </CardContent>
     </Card>
