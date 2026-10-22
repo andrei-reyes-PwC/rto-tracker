@@ -1,7 +1,6 @@
 package com.rtotracker.backend.dashboard;
 
 import com.rtotracker.backend.auth.AdminAuthorizationService;
-import com.rtotracker.backend.user.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;

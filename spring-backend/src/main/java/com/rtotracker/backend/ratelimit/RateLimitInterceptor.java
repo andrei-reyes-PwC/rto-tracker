@@ -10,7 +10,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.IOException;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class RateLimitInterceptor implements HandlerInterceptor {
