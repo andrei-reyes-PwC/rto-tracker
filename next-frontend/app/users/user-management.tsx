@@ -39,11 +39,11 @@ const availableRoles: AvailableRole[] = [
   { code: "SUPER_ADMIN", protectedRole: true },
 ];
 
-export default function UserManagement() {
-  return <UserManagementProvider><UserManagementContent /></UserManagementProvider>;
+export default function UserManagement({ readOnly = false, platformName }: { readOnly?: boolean; platformName?: string }) {
+  return <UserManagementProvider><UserManagementContent readOnly={readOnly} platformName={platformName} /></UserManagementProvider>;
 }
 
-function UserManagementContent() {
+function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; platformName?: string }) {
   const { users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingFilters, loadError, retryLoad, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId, workScheduleId, setWorkScheduleId, roleCode, setRoleCode, keyword, setKeyword } = useUserManagement();
   const hasActiveFilters = Boolean(keyword.trim()) || roleCode !== "all" || platformId !== "all" || workScheduleId !== "all";
   const orderedRoles = [...roles].sort((first, second) => {
@@ -60,9 +60,9 @@ function UserManagementContent() {
         <div>
           <p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p>
           <h1 className="text-3xl font-semibold tracking-tight">User management</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Review registered accounts and their assigned roles.</p>
+          <p className="mt-2 text-sm text-muted-foreground">{readOnly ? `Read-only view of users assigned to ${platformName}.` : "Review registered accounts and their assigned roles."}</p>
         </div>
-        <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add user</Button>
+        {!readOnly && <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add user</Button>}
       </div>
 
       {loadError && <DataLoadError message={loadError} onRetry={retryLoad} retrying={isLoading || isLoadingFilters} />}
@@ -92,14 +92,14 @@ function UserManagementContent() {
                 {orderedRoles.map((role) => <SelectItem key={role.code} value={role.code}>{role.code}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={platformId} onValueChange={(value) => { setPage(0); setPlatformId(value); }} disabled={isLoading || isLoadingFilters}>
+            {!readOnly && <Select value={platformId} onValueChange={(value) => { setPage(0); setPlatformId(value); }} disabled={isLoading || isLoadingFilters}>
               <SelectTrigger className="w-fit max-w-full sm:w-[190px]" aria-label="Filter users by platform"><SelectValue placeholder="All platforms" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All platforms</SelectItem>
                 <SelectItem value="none">No platform</SelectItem>
                 {platforms.map((platform) => <SelectItem key={platform.id} value={String(platform.id)}>{platform.name}</SelectItem>)}
               </SelectContent>
-            </Select>
+            </Select>}
             <Select value={workScheduleId} onValueChange={(value) => { setPage(0); setWorkScheduleId(value); }} disabled={isLoading || isLoadingFilters}>
               <SelectTrigger className="w-fit max-w-full sm:w-[190px]" aria-label="Filter users by work schedule"><SelectValue placeholder="All work schedules" /></SelectTrigger>
               <SelectContent>
@@ -137,7 +137,7 @@ function UserManagementContent() {
                         {managedUser.roles.map((role) => <Badge key={role} variant={role === "ADMIN" || role === "SUPER_ADMIN" ? "secondary" : "outline"}>{role === "SUPER_ADMIN" && <Shield aria-hidden="true" />}{role}</Badge>)}
                       </div>
                     </div>
-                    <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
+                    {!readOnly && <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
                       <Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={isProtected} onClick={() => setEditor({ mode: "edit", user: managedUser })}><UserRoundPen /> Edit</Button>
                       <Button
                         variant="destructive"
@@ -147,7 +147,7 @@ function UserManagementContent() {
                         disabled={isProtected || isCurrentUser || isAuthLoading}
                         onClick={() => setDeletingUser(managedUser)}
                       ><Trash2 /></Button>
-                    </div>
+                    </div>}
                   </div>
                 );
               })}
@@ -188,7 +188,7 @@ function UserManagementContent() {
   return (
     <SidebarPageLayout headerContent={<span className="text-sm font-medium">Users</span>}>
       {content}
-      <UserEditorSheet
+      {!readOnly && <UserEditorSheet
         open={editor !== null}
         mode={editor?.mode ?? "create"}
         initialEmail={editor?.user?.email ?? ""}
@@ -196,8 +196,8 @@ function UserManagementContent() {
         availableRoles={availableRoles}
         onOpenChange={(open) => { if (!open) setEditor(null); }}
         onSave={saveUser}
-      />
-      <AlertDialog open={deletingUser !== null} onOpenChange={(open) => { if (!open) setDeletingUser(null); }}>
+      />}
+      {!readOnly && <AlertDialog open={deletingUser !== null} onOpenChange={(open) => { if (!open) setDeletingUser(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this user?</AlertDialogTitle>
@@ -219,7 +219,7 @@ function UserManagementContent() {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>}
     </SidebarPageLayout>
   );
 }

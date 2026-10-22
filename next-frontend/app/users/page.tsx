@@ -12,7 +12,9 @@ export default async function UsersPage() {
 
   const user = await getSessionUser(sessionId);
   if (!user) redirect("/login");
-  if (!user.roles.includes("SUPER_ADMIN")) notFound();
+  const isSuperAdmin = user.roles.includes("SUPER_ADMIN");
+  const isPlatformAdmin = user.roles.includes("ADMIN") && user.platform !== null;
+  if (!isSuperAdmin && !isPlatformAdmin) notFound();
 
-  return <UserManagement />;
+  return <UserManagement readOnly={!isSuperAdmin} platformName={isPlatformAdmin ? user.platform?.name : undefined} />;
 }

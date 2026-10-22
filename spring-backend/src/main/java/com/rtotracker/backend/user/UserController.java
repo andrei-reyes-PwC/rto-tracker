@@ -96,9 +96,11 @@ public class UserController {
             @RequestParam(required = false) @Size(max = 50) String roleCode,
             @RequestParam(required = false) @Size(max = 254) String search,
             HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
+        User manager = authorization.requireUserManagementAccess(request);
+        boolean isSuperAdmin = authorization.isSuperAdmin(manager);
+        Long scopedPlatformId = isSuperAdmin ? platformId : manager.getPlatform().getId();
         Pageable pageable = PageRequest.of(page, size);
-        Page<UserResponse> users = userService.findAll(pageable, platformId, withoutPlatform,
+        Page<UserResponse> users = userService.findAll(pageable, scopedPlatformId, isSuperAdmin && withoutPlatform,
                 workScheduleId, withoutWorkSchedule, roleCode, search);
         List<ManagedUserResponse> content = users.getContent().stream()
                 .map(user -> new ManagedUserResponse(user.email(), user.roles(), user.platform(), user.workSchedule()))
@@ -110,10 +112,16 @@ public class UserController {
     @GetMapping("/manage/filters")
     @Operation(summary = "List role, platform, and work schedule filter choices for user management")
     public UserManagementFiltersResponse findManagementFilters(HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
-        List<PlatformOption> platforms = platformService.findAllOptions().stream()
-                .map(platform -> new PlatformOption(platform.getId(), platform.getName())).toList();
-        List<WorkScheduleOption> workSchedules = workScheduleService.findAllSummaries("").stream()
+        User manager = authorization.requireUserManagementAccess(request);
+        boolean isSuperAdmin = authorization.isSuperAdmin(manager);
+        List<PlatformOption> platforms = isSuperAdmin
+                ? platformService.findAllOptions().stream()
+                .map(platform -> new PlatformOption(platform.getId(), platform.getName())).toList()
+                : List.of(new PlatformOption(manager.getPlatform().getId(), manager.getPlatform().getName()));
+        List<WorkScheduleOption> workSchedules = isSuperAdmin
+                ? workScheduleService.findAllSummaries("").stream()
+                .map(schedule -> new WorkScheduleOption(schedule.getId(), schedule.getName())).toList()
+                : workScheduleService.findOptionsByPlatformId(manager.getPlatform().getId()).stream()
                 .map(schedule -> new WorkScheduleOption(schedule.getId(), schedule.getName())).toList();
         List<RoleFilterOption> roles = roleService.findAll().stream()
                 .map(role -> new RoleFilterOption(role.getCode())).toList();

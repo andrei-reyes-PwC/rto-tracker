@@ -28,6 +28,11 @@ public class WorkScheduleService {
     }
 
     @Transactional(readOnly = true)
+    public List<WorkScheduleRepository.WorkScheduleOptionProjection> findOptionsByPlatformId(Long platformId) {
+        return workSchedules.findOptionsByPlatformId(platformId);
+    }
+
+    @Transactional(readOnly = true)
     public WorkSchedule findById(Long id) {
         return workSchedules.findByIdWithUsers(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Work schedule not found"));

@@ -15,6 +15,10 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Long
             + "group by schedule.id, schedule.name order by schedule.name asc")
     List<WorkScheduleSummaryProjection> findAllSummaries(@Param("search") String search);
 
+    @Query("select distinct schedule.id as id, schedule.name as name from WorkSchedule schedule "
+            + "join schedule.users user where user.platform.id = :platformId order by schedule.name asc")
+    List<WorkScheduleOptionProjection> findOptionsByPlatformId(@Param("platformId") Long platformId);
+
     @Query("select distinct schedule from WorkSchedule schedule "
             + "left join fetch schedule.users where schedule.id = :id")
     Optional<WorkSchedule> findByIdWithUsers(@Param("id") Long id);
@@ -23,5 +27,10 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Long
         Long getId();
         String getName();
         long getUserCount();
+    }
+
+    interface WorkScheduleOptionProjection {
+        Long getId();
+        String getName();
     }
 }

@@ -37,6 +37,19 @@ public class AdminAuthorizationService {
         return user;
     }
 
+    public User requireUserManagementAccess(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean canViewUsers = user.getRoles().stream().map(Role::getCode)
+                .anyMatch(code -> "ADMIN".equals(code) || "SUPER_ADMIN".equals(code));
+        if (!canViewUsers) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ADMIN access required");
+        }
+        if (!isSuperAdmin(user) && user.getPlatform() == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Platform assignment required");
+        }
+        return user;
+    }
+
     public User requireEventManager(HttpServletRequest request) {
         User user = users.findByEmail(AuthSession.requireEmail(request));
         boolean canManageEvents = user.getRoles().stream().map(Role::getCode)

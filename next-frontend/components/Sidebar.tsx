@@ -26,6 +26,7 @@ export default function Sidebar() {
   const isSuperAdmin = user?.roles.includes("SUPER_ADMIN") ?? false;
   const canViewRtoDashboard = isSuperAdmin || (user?.roles.includes("ADMIN") ?? false);
   const canManageEvents = isSuperAdmin || ((user?.roles.includes("ADMIN") ?? false) && user?.platform !== null);
+  const canViewUsers = isSuperAdmin || ((user?.roles.includes("ADMIN") ?? false) && user?.platform !== null);
 
   return (
     <ShadcnSidebar collapsible="icon" variant="sidebar">
@@ -67,15 +68,15 @@ export default function Sidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>}
-              {isSuperAdmin && <>
-              <SidebarMenuItem>
+              {canViewUsers && <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/users" || pathname.startsWith("/users/")} tooltip="Manage users">
                   <Link href="/users" onClick={() => setOpenMobile(false)} aria-label="Manage users">
                     <Users />
                     <span>Manage users</span>
                   </Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem>}
+              {isSuperAdmin && <>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/platforms" || pathname.startsWith("/platforms/")} tooltip="Manage platforms">
                   <Link href="/platforms" onClick={() => setOpenMobile(false)} aria-label="Manage platforms">
