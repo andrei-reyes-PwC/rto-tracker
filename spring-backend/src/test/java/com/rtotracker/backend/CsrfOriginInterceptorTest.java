@@ -10,7 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CsrfOriginInterceptorTest {
 
-    private final CsrfOriginInterceptor interceptor = new CsrfOriginInterceptor("http://localhost:3000");
+    private final CsrfOriginInterceptor interceptor = new CsrfOriginInterceptor(
+            "http://localhost:3000", "http://localhost:8080");
 
     @Test
     void rejectsStateChangingRequestFromUnexpectedOrigin() throws Exception {
