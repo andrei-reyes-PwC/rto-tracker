@@ -21,15 +21,17 @@ export default function SidebarPageLayout({
 }: SidebarPageLayoutProps) {
   return (
     <TooltipProvider>
-      <SidebarProvider defaultOpen={defaultOpen} className={cn("min-h-svh", className)}>
+      <SidebarProvider defaultOpen={defaultOpen} className={cn("h-svh overflow-hidden", className)}>
         <Sidebar />
-        <SidebarInset className={cn("min-w-0", insetClassName)}>
+        <SidebarInset className={cn("min-h-0 min-w-0 overflow-hidden", insetClassName)}>
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger />
             <div className="h-4 w-px bg-border" />
             {headerContent}
           </header>
-          {children}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {children}
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
