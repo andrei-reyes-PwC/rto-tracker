@@ -12,7 +12,7 @@ type ContextValue = {
 };
 const Context = createContext<ContextValue | null>(null);
 
-export function EventManagementProvider({ children }: { children: ReactNode }) {
+export function EventManagementProvider({ children, loadPlatformOptions }: { children: ReactNode; loadPlatformOptions: boolean }) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [platforms, setPlatforms] = useState<PlatformOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +35,7 @@ export function EventManagementProvider({ children }: { children: ReactNode }) {
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [load, debouncedSearch, eventDate]);
   useEffect(() => {
+    if (!loadPlatformOptions) return;
     const controller = new AbortController();
     getPlatformOptions(controller.signal).then((options) => {
       if (!controller.signal.aborted) setPlatforms(options);
@@ -42,7 +43,7 @@ export function EventManagementProvider({ children }: { children: ReactNode }) {
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Could not load platform options.");
     });
     return () => controller.abort();
-  }, []);
+  }, [loadPlatformOptions]);
   const save = useCallback(async (input: EventInput, id?: number) => {
     try {
       await saveEvent(input, id);

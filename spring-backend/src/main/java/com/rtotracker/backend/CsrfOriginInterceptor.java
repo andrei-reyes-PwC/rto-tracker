@@ -10,6 +10,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
 import java.util.Set;
 
 @Component
@@ -17,10 +18,14 @@ public class CsrfOriginInterceptor implements HandlerInterceptor {
 
     private static final Set<String> STATE_CHANGING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
 
-    private final String allowedOrigin;
+    private final Set<String> allowedOrigins;
 
-    public CsrfOriginInterceptor(@Value("${app.cors.allowed-origin}") String allowedOrigin) {
-        this.allowedOrigin = originOf(allowedOrigin);
+    public CsrfOriginInterceptor(
+            @Value("${app.cors.allowed-origin}") String frontendOrigin,
+            @Value("${app.swagger.allowed-origin:http://localhost:8080}") String swaggerOrigin) {
+        this.allowedOrigins = new HashSet<>();
+        this.allowedOrigins.add(originOf(frontendOrigin));
+        if (!swaggerOrigin.isBlank()) this.allowedOrigins.add(originOf(swaggerOrigin));
     }
 
     @Override
@@ -29,7 +34,7 @@ public class CsrfOriginInterceptor implements HandlerInterceptor {
         if (!STATE_CHANGING_METHODS.contains(request.getMethod().toUpperCase())) return true;
         String sourceHeader = request.getHeader("Origin");
         if (sourceHeader == null) sourceHeader = request.getHeader("Referer");
-        if (sourceHeader == null || originOf(sourceHeader).equals(allowedOrigin)) return true;
+        if (sourceHeader == null || allowedOrigins.contains(originOf(sourceHeader))) return true;
 
         ApiErrorResponseWriter.write(response, HttpStatus.FORBIDDEN, "Request origin is not allowed");
         return false;

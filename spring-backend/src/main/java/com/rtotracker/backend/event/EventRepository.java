@@ -16,8 +16,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             + "or lower(e.time) like concat('%', :search, '%') "
             + "or lower(e.scope) like concat('%', :search, '%') "
             + "or lower(platform.name) like concat('%', :search, '%')) "
+            + "and (:platformId is null or e.platform.id = :platformId) "
             + "order by e.date asc, e.id asc")
-    List<Event> findAllWithPlatform(@Param("search") String search, @Param("date") LocalDate date);
+    List<Event> findAllWithPlatform(@Param("search") String search, @Param("date") LocalDate date,
+                                   @Param("platformId") Long platformId);
     @Query("select e from Event e left join fetch e.platform where e.id = :id")
     Optional<Event> findWithPlatformById(@Param("id") Long id);
     @Query("select e from Event e left join fetch e.platform where e.date >= :start and e.date < :end "

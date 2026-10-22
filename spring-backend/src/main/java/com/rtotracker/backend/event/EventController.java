@@ -61,36 +61,50 @@ public class EventController {
     public List<EventResponse> findAll(@RequestParam(defaultValue = "") String search,
                                        @RequestParam(required = false) LocalDate date,
                                        HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
-        return events.findAllWithPlatform(search.trim().toLowerCase(), date).stream().map(EventResponse::from).toList();
+        User actor = authorization.requireEventManager(request);
+        Platform platform = requireAssignedPlatform(actor);
+        Long platformId = authorization.isSuperAdmin(actor) ? null : platform.getId();
+        return events.findAllWithPlatform(search.trim().toLowerCase(), date, platformId)
+                .stream().map(EventResponse::from).toList();
     }
 
     @PostMapping
     public ResponseEntity<EventResponse> create(@Valid @RequestBody EventRequest body, HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
+        User actor = authorization.requireEventManager(request);
         Event saved = events.save(new Event(body.date(), normalize(body.title()), normalize(body.kind()),
-                normalize(body.time()), normalize(body.place()), body.required(), body.scope(), findPlatform(body)));
+                normalize(body.time()), normalize(body.place()), body.required(), body.scope(), findPlatform(body, actor)));
         return ResponseEntity.status(HttpStatus.CREATED).body(EventResponse.from(saved));
     }
 
     @PutMapping("/{id}")
     public EventResponse update(@PathVariable Long id, @Valid @RequestBody EventRequest body, HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
+        User actor = authorization.requireEventManager(request);
         Event event = events.findWithPlatformById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        requireCanManage(event, actor);
         event.update(body.date(), normalize(body.title()), normalize(body.kind()), normalize(body.time()),
-                normalize(body.place()), body.required(), body.scope(), findPlatform(body));
+                normalize(body.place()), body.required(), body.scope(), findPlatform(body, actor));
         return EventResponse.from(event);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id, HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
-        if (!events.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
-        events.deleteById(id);
+        User actor = authorization.requireEventManager(request);
+        Event event = events.findWithPlatformById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        requireCanManage(event, actor);
+        events.delete(event);
         return ResponseEntity.noContent().build();
     }
 
-    private Platform findPlatform(EventRequest body) {
+    private Platform findPlatform(EventRequest body, User actor) {
+        if (!authorization.isSuperAdmin(actor)) {
+            Platform assignedPlatform = requireAssignedPlatform(actor);
+            if (!"PLATFORM".equals(body.scope())
+                    || (body.platformId() != null && !body.platformId().equals(assignedPlatform.getId()))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage events for your assigned platform");
+            }
+            return assignedPlatform;
+        }
         if ("GLOBAL".equals(body.scope())) {
             if (body.platformId() != null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Global events cannot have a platform");
             return null;
@@ -99,6 +113,22 @@ public class EventController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Choose a platform for platform-scoped events");
         }
         return platforms.findById(body.platformId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found"));
+    }
+
+    private Platform requireAssignedPlatform(User user) {
+        if (authorization.isSuperAdmin(user)) return null;
+        if (user.getPlatform() == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Assign your account to a platform to manage its events");
+        }
+        return user.getPlatform();
+    }
+
+    private void requireCanManage(Event event, User actor) {
+        if (authorization.isSuperAdmin(actor)) return;
+        Platform assignedPlatform = requireAssignedPlatform(actor);
+        if (event.getPlatform() == null || !event.getPlatform().getId().equals(assignedPlatform.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
+        }
     }
 
     private static LocalDate monthStart(String month) {

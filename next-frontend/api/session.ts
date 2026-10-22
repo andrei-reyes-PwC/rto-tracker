@@ -3,6 +3,7 @@ import { backendApiUrl } from "./backend-url";
 export type SessionUser = {
   email: string;
   roles: string[];
+  platform: { id: number; name: string } | null;
 };
 
 export async function getSessionUser(sessionId: string): Promise<SessionUser | null> {
@@ -21,6 +22,14 @@ export async function getSessionUser(sessionId: string): Promise<SessionUser | n
       && "roles" in user
       && Array.isArray(user.roles)
       && user.roles.every((role: unknown) => typeof role === "string")
+      && "platform" in user
+      && (user.platform === null || (
+        typeof user.platform === "object"
+        && "id" in user.platform
+        && typeof user.platform.id === "number"
+        && "name" in user.platform
+        && typeof user.platform.name === "string"
+      ))
     ) {
       return user as SessionUser;
     }

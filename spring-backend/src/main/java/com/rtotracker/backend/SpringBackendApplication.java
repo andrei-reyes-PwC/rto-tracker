@@ -12,6 +12,7 @@ public class SpringBackendApplication {
     @Bean
     ApplicationRunner printSwaggerUrl(Environment environment) {
         return args -> {
+            if (!environment.getProperty("springdoc.swagger-ui.enabled", Boolean.class, true)) return;
             String port = environment.getProperty("local.server.port",
                     environment.getProperty("server.port", "8080"));
             String contextPath = environment.getProperty("server.servlet.context-path", "");

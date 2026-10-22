@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CircleHelp } from "lucide-react";
+import { Building2, CircleHelp, Clock3, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSchedule } from "@/app/component/ScheduleProvider";
@@ -13,6 +13,8 @@ export type PlannerEvent = {
   time: string;
   place: string;
   required: boolean;
+  scope: "GLOBAL" | "PLATFORM";
+  platformName: string | null;
 };
 
 function formatEventDate(date: Date) {
@@ -37,12 +39,20 @@ export default function EventsRequirements() {
                 <div key={event.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-start">
                   <time dateTime={formatEventDate(event.date)} className={`flex size-10 shrink-0 items-center justify-center rounded-lg text-lg font-semibold tabular-nums ${isToday ? "bg-[#e65300] text-white ring-2 ring-[#e65300]/20" : "bg-slate-100 text-slate-700"}`}>{event.date.getDate()}</time>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold">{event.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{event.time} · {event.place}</p>
+                    <p className="break-words text-sm font-semibold [overflow-wrap:anywhere]">{event.title}</p>
+                    <div className="mt-1 space-y-1 text-xs text-slate-500">
+                      <p className="flex min-w-0 items-center gap-1.5"><Clock3 className="size-3.5 shrink-0" /><span className="break-words [overflow-wrap:anywhere]">{event.time}</span></p>
+                      <p className="flex min-w-0 items-center gap-1.5"><MapPin className="size-3.5 shrink-0" /><span className="break-words [overflow-wrap:anywhere]">{event.place}</span></p>
+                    </div>
                   </div>
-                  <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
-                    <Badge variant={event.required ? "destructive" : "outline"} className="h-5">{event.kind}</Badge>
-                    {event.required && <span className="flex items-center gap-1.5 text-xs font-medium text-rose-700"><Building2 className="size-3.5" /> Required in office</span>}
+                  <div className="flex min-w-0 flex-col items-start gap-1 sm:w-[42%] sm:shrink-0 sm:items-end">
+                    <div className="flex min-w-0 max-w-full flex-wrap items-start gap-1.5 sm:justify-end xl:flex-col xl:items-end">
+                      <Badge variant="secondary" className="h-auto min-w-0 max-w-full overflow-visible whitespace-normal break-words px-2 py-1 text-left leading-4 [overflow-wrap:anywhere]">
+                        {event.scope === "GLOBAL" ? "Global" : event.platformName ?? "Your group"}
+                      </Badge>
+                      <Badge variant={event.required ? "destructive" : "outline"} className="h-auto min-w-0 max-w-full overflow-visible whitespace-normal break-words px-2 py-1 text-left leading-4 [overflow-wrap:anywhere]">{event.kind}</Badge>
+                    </div>
+                    {event.required && <span className="flex items-center gap-1.5 text-xs font-medium text-rose-700 sm:text-right"><Building2 className="size-3.5 shrink-0" /> Required in office</span>}
                   </div>
                 </div>
               );

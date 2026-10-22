@@ -36,4 +36,18 @@ public class AdminAuthorizationService {
         }
         return user;
     }
+
+    public User requireEventManager(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean canManageEvents = user.getRoles().stream().map(Role::getCode)
+                .anyMatch(code -> "ADMIN".equals(code) || "SUPER_ADMIN".equals(code));
+        if (!canManageEvents) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ADMIN access required");
+        }
+        return user;
+    }
+
+    public boolean isSuperAdmin(User user) {
+        return user.getRoles().stream().map(Role::getCode).anyMatch("SUPER_ADMIN"::equals);
+    }
 }

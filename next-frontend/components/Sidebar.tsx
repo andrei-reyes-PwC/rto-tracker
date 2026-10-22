@@ -25,6 +25,7 @@ export default function Sidebar() {
   const { user } = useAuth();
   const isSuperAdmin = user?.roles.includes("SUPER_ADMIN") ?? false;
   const canViewRtoDashboard = isSuperAdmin || (user?.roles.includes("ADMIN") ?? false);
+  const canManageEvents = isSuperAdmin || ((user?.roles.includes("ADMIN") ?? false) && user?.platform !== null);
 
   return (
     <ShadcnSidebar collapsible="icon" variant="sidebar">
@@ -91,15 +92,15 @@ export default function Sidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
+              </>}
+              {canManageEvents && <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/events" || pathname.startsWith("/events/")} tooltip="Manage events">
                   <Link href="/events" onClick={() => setOpenMobile(false)} aria-label="Manage events">
                     <CalendarRange />
                     <span>Manage events</span>
                   </Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              </>}
+              </SidebarMenuItem>}
             </SidebarMenu>
           </SidebarGroup>
         )}

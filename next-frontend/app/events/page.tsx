@@ -9,6 +9,8 @@ export default async function EventsPage() {
   if (!sessionId) redirect("/login");
   const user = await getSessionUser(sessionId);
   if (!user) redirect("/login");
-  if (!user.roles.includes("SUPER_ADMIN")) notFound();
-  return <EventManagement />;
+  const isSuperAdmin = user.roles.includes("SUPER_ADMIN");
+  const canManagePlatformEvents = user.roles.includes("ADMIN") && user.platform !== null;
+  if (!isSuperAdmin && !canManagePlatformEvents) notFound();
+  return <EventManagement isSuperAdmin={isSuperAdmin} platform={user.platform} />;
 }
