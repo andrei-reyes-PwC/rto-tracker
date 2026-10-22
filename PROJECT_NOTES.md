@@ -12,6 +12,7 @@ This repository contains the RTO Tracker frontend and backend as separate applic
 - Platform membership is managed in the frontend at `/platforms` and persisted by Spring's authenticated `/api/platforms` CRUD endpoints. A user can belong to at most one platform; the platform foreign key is nullable on `users`.
 - Signed-in `USER` accounts assigned to a platform see daily saved attendance counts for colleagues in calendar cells and can select a date to see their saved office plans; the backend derives platform membership from the caller's authenticated account and excludes the caller from both views. The monthly schedule endpoint returns both personal office days and platform attendance counts in one response.
 - Work schedules are managed at `/work-schedules` and persisted by Spring's authenticated `/api/work-schedules` CRUD endpoints. A user can have zero or one work schedule; the nullable `users.work_schedule_id` foreign key is cleared if the work schedule is deleted.
+- Events are managed by SUPER_ADMIN users at `/events` through Spring's `/api/events` endpoints. Global events are visible to all signed-in users; platform events are visible only to users assigned to that platform. Deleting a platform cascades to its events.
 - The SUPER_ADMIN RTO dashboard at `/dashboard` reports saved office-day plans for a selected Monday–Friday week, with daily totals and breakdowns by current platform and work schedule.
 
 ## Repository conventions

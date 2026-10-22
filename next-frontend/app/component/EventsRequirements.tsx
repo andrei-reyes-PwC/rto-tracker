@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useSchedule } from "@/app/component/ScheduleProvider";
 
 export type PlannerEvent = {
+  id: number;
   date: Date;
   title: string;
   kind: string;
@@ -32,7 +33,7 @@ export default function EventsRequirements() {
             {events.map((event) => {
               const Icon = event.icon;
               return (
-                <div key={event.title} className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-start ${event.required ? "border-rose-200 bg-rose-50/40" : "border-slate-200 bg-white"}`}>
+                <div key={event.id} className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-start ${event.required ? "border-rose-200 bg-rose-50/40" : "border-slate-200 bg-white"}`}>
                   <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${event.tone}`}><Icon className="size-4" /></div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{event.title}</p>
@@ -49,7 +50,7 @@ export default function EventsRequirements() {
         ) : (
           <div className="flex items-start gap-3 rounded-lg bg-slate-50 p-4"><CircleHelp className="mt-0.5 size-4 shrink-0 text-slate-400" /><p className="text-sm text-slate-500">No upcoming events or office requirements this month.</p></div>
         )}
-        <p className="mt-4 text-xs text-slate-400">Example events for this planner. Connect your company calendar to show real events and RTO requirements.</p>
+        <p className="mt-4 text-xs text-slate-400">Global events and events for your platform are shown here.</p>
       </CardContent>
     </Card>
   );

@@ -13,6 +13,7 @@ import {
 } from "react";
 import { Building2, Coffee, Users } from "lucide-react";
 import { getOfficeDays, replaceOfficeDays } from "@/api/office-days";
+import { getCalendarEvents } from "@/api/events";
 import type { PlannerEvent } from "@/app/component/EventsRequirements";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -85,6 +86,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [events, setEvents] = useState<PlannerEvent[]>([]);
   const [loadRetry, setLoadRetry] = useState(0);
   const loadedMonths = useRef(new Set<string>());
   const previousUser = useRef<typeof user>(null);
@@ -178,6 +180,26 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [isAuthLoading, loadRetry, monthKey, user]);
 
+  useEffect(() => {
+    if (isAuthLoading || !user || monthKey === serverDateSnapshot) {
+      setEvents([]);
+      return;
+    }
+    const controller = new AbortController();
+    getCalendarEvents(monthKey, controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        setEvents(result.map((event) => ({
+          ...event,
+          date: new Date(`${event.date}T12:00:00`),
+          icon: event.required ? Building2 : event.kind.toLowerCase().includes("team") ? Coffee : Users,
+          tone: event.required ? "bg-rose-50 text-rose-700" : event.kind.toLowerCase().includes("team") ? "bg-amber-50 text-amber-700" : "bg-violet-50 text-violet-700",
+        })));
+      })
+      .catch(() => { if (!controller.signal.aborted) setEvents([]); });
+    return () => controller.abort();
+  }, [isAuthLoading, monthKey, user]);
+
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
     const offset = firstDay.getDay();
@@ -194,11 +216,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const weekdayCount = plannedDates.filter((date) => date.getDay() !== 0 && date.getDay() !== 6).length;
   const nextOfficeDay = plannedDates.find((date) => dateKey(date) >= todayKey) ?? null;
 
-  const allMonthEvents: PlannerEvent[] = [
-    { date: new Date(year, month, 6), title: "Monthly all hands", kind: "Company event", time: "10:00 AM", place: "Town Hall", icon: Users, tone: "bg-violet-50 text-violet-700", required: false },
-    { date: new Date(year, month, 12), title: "Team collaboration day", kind: "Mandatory RTO", time: "All day", place: "Manila office", icon: Building2, tone: "bg-rose-50 text-rose-700", required: true },
-    { date: new Date(year, month, 19), title: "Product & design meetup", kind: "Team event", time: "2:00 PM", place: "Level 18", icon: Coffee, tone: "bg-amber-50 text-amber-700", required: false },
-  ];
+  const allMonthEvents = events;
   const visibleEvents = allMonthEvents.filter((event) => dateKey(event.date) >= todayKey);
 
   const updateOfficeDays = useCallback((update: (current: string[]) => string[]) => {

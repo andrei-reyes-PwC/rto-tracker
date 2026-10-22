@@ -7,8 +7,8 @@ This document is the shared source of truth for the system's users, access rules
 | User type | Access |
 | --- | --- |
 | Signed-out visitor | Can use the sign-in page. Visiting a protected page redirects to sign-in. |
-| `USER` | Can sign in, view and manage their own monthly office-day schedule, view saved office days for other users in their platform, and sign out. They cannot use administrative user or platform management. |
-| `SUPER_ADMIN` | Has authenticated user capabilities and can manage users, roles assigned through user management, platforms, platform memberships, work schedules, and work schedule assignments. |
+| `USER` | Can sign in, view and manage their own monthly office-day schedule, view saved office days for other users in their platform, view global events and events for their platform, and sign out. They cannot use administrative management. |
+| `SUPER_ADMIN` | Has authenticated user capabilities and can manage users, roles assigned through user management, platforms, platform memberships, work schedules, work schedule assignments, and global/platform events. |
 
 All authenticated users have a personal account identified by email. User accounts are created by an administrator; there is no public registration flow. New accounts receive the `USER` role by default. The system may attach multiple roles to an account, but `SUPER_ADMIN` is protected from assignment and modification through the user-management flow.
 
@@ -18,6 +18,7 @@ All authenticated users have a personal account identified by email. User accoun
 - User and platform management require `SUPER_ADMIN`. The frontend hides these routes from unauthorized users; the backend independently enforces authorization for administrative API operations.
 - Office-day reads and updates require an authenticated session and always apply to the signed-in account. A caller cannot select another account as the schedule owner.
 - Platform office-day reads require an authenticated session and return saved office dates only for colleagues sharing the signed-in user's platform; the caller cannot choose another platform, and their own schedule is excluded from this view.
+- Event management requires `SUPER_ADMIN`; authenticated planner reads return global events plus events for the signed-in user's platform. Users cannot select another platform's events.
 - A `SUPER_ADMIN` cannot delete their own account. Protected users cannot be deleted or edited through user management.
 - Signing out invalidates the session.
 
@@ -37,7 +38,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **PLAN-03** — As an authenticated user, I can save a month's office-day selections and see saved selections when I revisit that month.
 - **PLAN-04** — As an authenticated user, I can edit a month before saving; unsaved changes are treated as a draft and save failures are surfaced in the planner.
 - **PLAN-05** — The planner shows a weekday count and the next planned office day for the selected month and current date.
-- **PLAN-06** — The planner may show example company events and requirements. These are illustrative and are not currently sourced from a company calendar or an event-management feature.
+- **PLAN-06** — The planner shows events managed by administrators for the selected month, including global events and events scoped to the user's platform.
 - **PLAN-07** — As a `USER` assigned to a platform, I can see the daily count of other platform members with a saved office plan in each calendar cell and select a date to see their email addresses. Counts exclude my own plan; users without a platform do not see the counts or colleague list.
 
 ### User and role administration
@@ -65,6 +66,13 @@ All authenticated users have a personal account identified by email. User accoun
 - **WSCH-03** — A user may have zero or one work schedule; a work schedule may be assigned to multiple users.
 - **WSCH-04** — Deleting a work schedule keeps its user accounts and clears their work schedule assignment.
 
+### Event management
+
+- **EVNT-01** — As a `SUPER_ADMIN`, I can create, view, edit, and delete events with a date, title, type, time, location, and optional office requirement.
+- **EVNT-02** — An event can be global or scoped to one platform; a platform-scoped event must reference an existing platform.
+- **EVNT-03** — As an authenticated user, I see global events and events scoped to my own platform in the selected planner month.
+- **EVNT-04** — Deleting a platform also deletes its platform-scoped events.
+
 ### RTO dashboard
 
 - **DASH-01** — As a `SUPER_ADMIN`, I can review saved office-day plans for a selected Monday–Friday week.
@@ -75,17 +83,17 @@ All authenticated users have a personal account identified by email. User accoun
 
 - The web application is a Next.js frontend; the REST API is a Spring Boot backend.
 - The frontend sends API requests through its same-origin `/api/*` proxy to the backend. Direct cross-origin API access is configured separately for the frontend origin.
-- MySQL stores users, roles, platform memberships, work schedules, and office-day records. Flyway manages schema changes.
+- MySQL stores users, roles, platform memberships, work schedules, events, and office-day records. Flyway manages schema changes.
 - A user's office-day schedule is stored by date and queried or replaced by month. The account identity comes from the authenticated session.
 - Platform office-day visibility is limited to same-platform colleagues and a selected date; only saved plans are shown.
-- The system currently provides no company-calendar integration, event authoring, or public self-service registration.
+- The system has no company-calendar integration; administrators manage events directly. There is no public self-service registration.
 
 ## 4. Open questions
 
 These are product decisions not established by the current implementation. Resolve them before treating the corresponding behavior as a long-term product commitment.
 
 - What is the organization's definitive RTO policy: required number of office days, eligible weekdays, holidays, exceptions, and enforcement rules?
-- Should company events and mandatory RTO requirements come from an integrated calendar or an administrator-managed source? Who owns that information?
+- Who owns the accuracy and maintenance of administrator-managed company events and mandatory RTO requirements?
 - Should standard users have access to additional views such as team schedules, or remain limited to their own planner?
 - What account lifecycle is expected (password reset, account deactivation, invitation, and credential rotation)?
 - What should happen to a user's office-day history if an administrator deletes the account?

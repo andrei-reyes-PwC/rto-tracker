@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, CalendarDays, Users } from "lucide-react";
+import { BarChart3, Boxes, CalendarDays, CalendarRange, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import { useAuth } from "@/providers/AuthProvider";
 import {
@@ -51,7 +51,12 @@ export default function Sidebar() {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {canManageUsers && (
+          </SidebarMenu>
+        </SidebarGroup>
+        {canManageUsers && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/dashboard" || pathname.startsWith("/dashboard/")} tooltip="RTO dashboard">
                   <Link href="/dashboard" onClick={() => setOpenMobile(false)} aria-label="RTO dashboard">
@@ -60,8 +65,6 @@ export default function Sidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )}
-            {canManageUsers && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/users" || pathname.startsWith("/users/")} tooltip="Manage users">
                   <Link href="/users" onClick={() => setOpenMobile(false)} aria-label="Manage users">
@@ -70,8 +73,6 @@ export default function Sidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )}
-            {canManageUsers && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/platforms" || pathname.startsWith("/platforms/")} tooltip="Manage platforms">
                   <Link href="/platforms" onClick={() => setOpenMobile(false)} aria-label="Manage platforms">
@@ -80,8 +81,6 @@ export default function Sidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )}
-            {canManageUsers && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/work-schedules" || pathname.startsWith("/work-schedules/")} tooltip="Manage work schedules">
                   <Link href="/work-schedules" onClick={() => setOpenMobile(false)} aria-label="Manage work schedules">
@@ -90,9 +89,17 @@ export default function Sidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            )}
-          </SidebarMenu>
-        </SidebarGroup>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/events" || pathname.startsWith("/events/")} tooltip="Manage events">
+                  <Link href="/events" onClick={() => setOpenMobile(false)} aria-label="Manage events">
+                    <CalendarRange />
+                    <span>Manage events</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="gap-2 p-2">
         <SidebarSeparator />

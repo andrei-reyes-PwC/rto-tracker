@@ -17,12 +17,13 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `/platforms` is implemented in `app/platforms/`; its admin list loads platform summaries with user counts in one query and paginates the filtered results client-side (10, 25, or 50 rows). It loads the user roster and member details only when the editor opens. The editor's user search filters the loaded roster after a 300 ms debounce. Platform names are required and limited to 20 characters. The editor prevents assigning users who belong to another platform; each user may belong to at most one platform.
 - `/work-schedules` is implemented in `app/work-schedules/`; SUPER_ADMIN users can create, edit, list, and delete named work schedules and assign users. Names are limited to 10 characters, and each user can belong to zero or one work schedule. Deleting a schedule leaves its users unassigned.
 - `/dashboard` is implemented in `app/dashboard/`; it reports saved office-day attendance for a selected Monday–Friday week with daily totals, weekly platform/work schedule totals, and day-by-group matrices with highlighted daily totals, per-group week sums, and a grand total. The route and reporting API are SUPER_ADMIN-only.
+- `/events` is implemented in `app/events/`; SUPER_ADMIN users create, edit, and delete global or platform-scoped events. The planner loads the selected month's global events and events for the signed-in user's platform.
 - Platform list rows show each group's user count; member email addresses are managed in the edit sheet and are not displayed in the list.
 - `components/SidebarPageLayout.tsx` provides the shared sidebar shell and page header; routes pass their header content as a prop. `components/ui/sidebar.tsx` persists the expanded/collapsed preference in a cookie and restores it when a route mounts.
 - `app/login/login-form.tsx` â€” client-side login form using shadcn UI components and Zod validation; submits to the Spring API and includes the HTTP session cookie.
 - `api/` â€” frontend API client (login, current user, logout), backend proxy rewrite, backend URL, and session-check helpers.
 - `providers/AuthProvider.tsx` â€” app-wide client auth context exposing current user, loading/authenticated/logout-pending state, refresh, and logout through `useAuth()`.
-- Route-scoped providers in `providers/` own admin data loading, mutations, modal selection, and errors for `/users`, `/platforms`, `/work-schedules`, and `/dashboard`; their page components focus on rendering and local view/form state.
+- Route-scoped providers in `providers/` own admin data loading, mutations, modal selection, and errors for `/users`, `/platforms`, `/work-schedules`, `/events`, and `/dashboard`; their page components focus on rendering and local view/form state.
 - `validation/` â€” Zod schemas and inferred form value types, organized by form.
 - `app/component/OfficePlanner.tsx` composes the schedule page; `ScheduleProvider.tsx` owns month data, loading/saving, and planner actions shared through `useSchedule()`. It loads personal office days and platform attendance counts together from the monthly schedule endpoint, reloads the active month when authenticated user data refreshes, and clears cached data when the account changes. Calendar cells show the saved daily count for other members of the user's platform, excluding the signed-in user. Selecting a date opens `PlatformOfficeDays.tsx`, which shows saved office plans by email for other members of the platform.
 - `components/Sidebar.tsx` â€” shared AC Manila navigation and authenticated email profile menu with logout.
@@ -58,7 +59,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - Use React Hook Form `Controller` for form fields, with Zod schemas and the Zod resolver for validation.
 
 
-- The root page is an interactive RTO planner; it defaults to the current client month, uses a hydration-safe placeholder until the client date is ready, and loads/saves schedules per month. Unsaved edits remain client-side drafts. Event notices are illustrative until connected to a company calendar or backend.
+- The root page is an interactive RTO planner; it defaults to the current client month, uses a hydration-safe placeholder until the client date is ready, and loads/saves schedules per month. Unsaved edits remain client-side drafts. Calendar events come from the backend and are filtered by the signed-in user's platform.
 - `components/sidebar/ProfileMenu.tsx` and `components/sidebar/utils.ts` contain the authenticated profile menu/logout behavior and email initials helper, respectively.
 - Root metadata and planner use a PwC-inspired orange and charcoal internal-tool theme.
 - `node_modules/` and `.next/` exist locally and are generated; do not treat them as source.
@@ -71,6 +72,7 @@ Keep these notes concise and factual. When work changes architecture, routes, da
 - `api/users.ts` loads, creates, updates, and deletes backend users through the same-origin API proxy without caching list requests.
 - `api/platforms.ts` loads platform summaries with member counts, platform filter options, and platform details; the platform editor fetches member details and the user roster only when opened.
 - `api/work-schedules.ts` loads, creates, updates, and deletes work schedules through the same-origin API proxy.
+- `api/events.ts` loads calendar-visible events and manages events through the same-origin API proxy.
 - `api/rto-dashboard.ts` loads the SUPER_ADMIN weekly saved-office-day summary through the same-origin API proxy.
 - `providers/UserManagementProvider.tsx`, `PlatformManagementProvider.tsx`, `WorkScheduleManagementProvider.tsx`, and `RtoDashboardProvider.tsx` keep route-specific API state and actions outside page UI; each is mounted by its route's client screen.
 - Effect-driven API reads accept an optional `AbortSignal`; each effect creates an `AbortController`, passes its signal through the API client, and aborts it during cleanup to stop stale requests.
