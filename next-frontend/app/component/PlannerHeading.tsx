@@ -22,7 +22,7 @@ export default function PlannerHeading() {
         <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-[28px]">Plan your office days</h2>
         <p className="mt-1.5 text-sm text-slate-500">Choose the days you&apos;re heading in. Your schedule is saved to your account.</p>
       </div>
-      <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+      <div className="flex flex-wrap items-center justify-start gap-3 self-start sm:ml-auto sm:flex-nowrap sm:justify-end sm:self-auto">
         {isLoadingMonth ? <Skeleton role="status" aria-label="Loading schedule status" className="h-4 w-28" /> : <span aria-live="polite" className="text-xs font-medium text-slate-500">{status}</span>}
         <Button onClick={saveSchedule} disabled={!hasUnsavedChanges || isLoadingMonth || isSaving} className="gap-2 bg-[#e65300] text-white shadow-sm hover:bg-[#c74600]"><Save className="size-4" /> {isSaving ? "Saving..." : "Save schedule"}</Button>
       </div>
