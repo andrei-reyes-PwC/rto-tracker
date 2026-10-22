@@ -13,11 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import CrudActionNotice from "@/components/CrudActionNotice";
 import CrudListSkeleton from "@/components/CrudListSkeleton";
 import DataLoadError from "@/components/DataLoadError";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { PlatformManagementProvider, usePlatformManagement } from "@/providers/PlatformManagementProvider";
 
 type Editor = { mode: "create" } | { mode: "edit"; platform: PlatformDetails };
@@ -28,17 +28,12 @@ export default function PlatformManagement() {
 }
 
 function PlatformManagementContent() {
-  const { platforms, users, isLoadingEditorData, loading, loadError, editorLoadError, error, notice, setNotice, editor, closeEditor, deleting, setDeleting, isDeleting, load, openEditor, retryEditorLoad, save, confirmDelete } = usePlatformManagement();
-  const [query, setQuery] = useState("");
-  const debouncedQuery = useDebouncedValue(query);
+  const { platforms, users, search, setSearch, isLoadingEditorData, loading, loadError, editorLoadError, error, notice, setNotice, editor, closeEditor, deleting, setDeleting, isDeleting, load, openEditor, retryEditorLoad, save, confirmDelete } = usePlatformManagement();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const isMobile = useIsMobile();
 
-  const filtered = useMemo(() => {
-    const normalized = debouncedQuery.trim().toLowerCase();
-    return normalized ? platforms.filter((platform) => platform.name.toLowerCase().includes(normalized)) : platforms;
-  }, [platforms, debouncedQuery]);
+  const filtered = platforms;
   const totalPages = Math.ceil(filtered.length / pageSize);
   const currentPage = Math.min(page, Math.max(totalPages - 1, 0));
   const visiblePlatforms = filtered.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
@@ -61,11 +56,11 @@ function PlatformManagementContent() {
               <div className="flex items-center gap-2 text-sm"><Boxes className="size-4 text-[#b83b00]" /><span className="font-semibold">{platforms.length}</span><span className="text-muted-foreground">{platforms.length === 1 ? "platform" : "platforms"}</span></div>
               <Button variant="outline" size="sm" disabled={loading} onClick={() => void load()}><RefreshCw /> Refresh</Button>
             </CardAction>
-            <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs"><div className="relative"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search platforms" aria-label="Search platforms" className="pl-9" /></div></div>
+            <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs"><div className="relative"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => { setPage(0); setSearch(event.target.value); }} placeholder="Search platforms" aria-label="Search platforms" className="pl-9" /></div></div>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? <CrudListSkeleton label="Loading platforms" />
-              : filtered.length === 0 ? <div className="px-6 py-16 text-center"><Boxes className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Platforms could not be loaded" : platforms.length ? "No platforms match this search" : "No platforms yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try again." : "Create a platform to group workspace users."}</p></div>
+              : filtered.length === 0 ? <div className="px-6 py-16 text-center"><Boxes className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Platforms could not be loaded" : search.trim() ? "No platforms match this search" : "No platforms yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try again." : "Create a platform to group workspace users."}</p></div>
                 : <div className="divide-y">{visiblePlatforms.map((platform) => <div key={platform.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-medium">{platform.name}</p><div className="mt-2"><Badge variant="secondary"><Users /> {platform.userCount} {platform.userCount === 1 ? "user" : "users"}</Badge></div></div><div className="flex w-full gap-2 sm:w-auto sm:shrink-0"><Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={isLoadingEditorData} onClick={() => void openEditor("edit", platform)}><UserRoundPen /> Edit</Button><Button variant="destructive" size="icon-sm" aria-label={`Delete ${platform.name}`} disabled={isLoadingEditorData} onClick={() => setDeleting(platform)}><Trash2 /></Button></div></div>)}</div>}
           </CardContent>
           <div className="flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between">

@@ -13,8 +13,9 @@ public interface PlatformRepository extends JpaRepository<Platform, Long> {
 
     @Query("select platform.id as id, platform.name as name, count(user.email) as userCount "
             + "from Platform platform left join platform.users user "
+            + "where :search = '' or lower(platform.name) like concat('%', :search, '%') "
             + "group by platform.id, platform.name order by platform.name asc")
-    List<PlatformSummaryProjection> findAllSummaries();
+    List<PlatformSummaryProjection> findAllSummaries(@Param("search") String search);
 
     @Query("select platform.id as id, platform.name as name from Platform platform order by platform.name asc")
     List<PlatformOptionProjection> findAllOptions();

@@ -24,8 +24,8 @@ public class PlatformService {
     }
 
     @Transactional(readOnly = true)
-    public List<PlatformRepository.PlatformSummaryProjection> findAllSummaries() {
-        return platforms.findAllSummaries();
+    public List<PlatformRepository.PlatformSummaryProjection> findAllSummaries(String search) {
+        return platforms.findAllSummaries(search.trim().toLowerCase());
     }
 
     @Transactional(readOnly = true)

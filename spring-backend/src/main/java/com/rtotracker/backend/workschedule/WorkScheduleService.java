@@ -23,8 +23,8 @@ public class WorkScheduleService {
     }
 
     @Transactional(readOnly = true)
-    public List<WorkScheduleRepository.WorkScheduleSummaryProjection> findAllSummaries() {
-        return workSchedules.findAllSummaries();
+    public List<WorkScheduleRepository.WorkScheduleSummaryProjection> findAllSummaries(String search) {
+        return workSchedules.findAllSummaries(search.trim().toLowerCase());
     }
 
     @Transactional(readOnly = true)

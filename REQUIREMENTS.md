@@ -43,13 +43,14 @@ All authenticated users have a personal account identified by email. User accoun
 
 ### User and role administration
 
-- **USER-01** — As a `SUPER_ADMIN`, I can view a paginated user list, search within the displayed results, and filter users by platform.
+- **USER-01** — As a `SUPER_ADMIN`, I can view a paginated user list, search the full roster by email or role, and filter users by role, platform, and work schedule.
 - **USER-02** — As a `SUPER_ADMIN`, I can create a user with an email and password. The new user receives the `USER` role by default.
 - **USER-03** — As a `SUPER_ADMIN`, I can update an eligible user's email and assignable roles. Existing password, platform, work schedule, and linked office-day records are preserved when the email changes.
 - **USER-04** — As a `SUPER_ADMIN`, I can delete an eligible user, subject to self-delete and protected-user restrictions.
 - **USER-05** — As a `SUPER_ADMIN`, I can view the available platform options and each listed user's optional platform.
 - **USER-06** — User listing supports page navigation and page sizes of 10, 25, 50, or 100 in the management interface; the API accepts page sizes up to 100.
 - **USER-07** — User creation and update validate email and password/role inputs. Duplicate emails are rejected, and protected roles cannot be assigned through this flow.
+- **USER-08** — Role, platform, and work-schedule filter choices for Manage Users are returned together. Search and filters apply across pages and can be combined, including filters for users with no platform or no work schedule.
 
 ### Platform administration
 

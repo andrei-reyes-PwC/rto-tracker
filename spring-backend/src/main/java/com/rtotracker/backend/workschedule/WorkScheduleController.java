@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,9 +40,9 @@ public class WorkScheduleController {
 
     @GetMapping
     @Operation(summary = "List work schedules")
-    public List<WorkScheduleSummary> findAll(HttpServletRequest request) {
+    public List<WorkScheduleSummary> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
-        return workScheduleService.findAllSummaries().stream()
+        return workScheduleService.findAllSummaries(search).stream()
                 .map(schedule -> new WorkScheduleSummary(schedule.getId(), schedule.getName(), schedule.getUserCount()))
                 .toList();
     }

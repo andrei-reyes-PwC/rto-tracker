@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { Plus, RefreshCw, Search, Shield, Trash2, UserRoundPen, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,13 +26,13 @@ import SidebarPageLayout from "@/components/SidebarPageLayout";
 import CrudActionNotice from "@/components/CrudActionNotice";
 import CrudListSkeleton from "@/components/CrudListSkeleton";
 import DataLoadError from "@/components/DataLoadError";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { UserManagementProvider, useUserManagement } from "@/providers/UserManagementProvider";
 import UserEditorSheet from "./user-editor-sheet";
 import type { AvailableRole } from "./user-types";
 
 const defaultRoleCodes = ["USER"];
 const pageSizeOptions = [10, 25, 50, 100];
+const rolePriority = ["SUPER_ADMIN", "ADMIN", "USER"];
 const availableRoles: AvailableRole[] = [
   { code: "USER", protectedRole: false },
   { code: "ADMIN", protectedRole: false },
@@ -45,18 +44,15 @@ export default function UserManagement() {
 }
 
 function UserManagementContent() {
-  const { users, platforms, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingPlatforms, loadError, retryLoad, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId } = useUserManagement();
-  const [query, setQuery] = useState("");
-  const debouncedQuery = useDebouncedValue(query);
-
-  const filteredUsers = useMemo(() => {
-    const normalizedQuery = debouncedQuery.trim().toLowerCase();
-    if (!normalizedQuery) return users;
-    return users.filter((managedUser) =>
-      managedUser.email.toLowerCase().includes(normalizedQuery)
-      || managedUser.roles.some((role) => role.toLowerCase().includes(normalizedQuery)),
-    );
-  }, [debouncedQuery, users]);
+  const { users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingFilters, loadError, retryLoad, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId, workScheduleId, setWorkScheduleId, roleCode, setRoleCode, keyword, setKeyword } = useUserManagement();
+  const hasActiveFilters = Boolean(keyword.trim()) || roleCode !== "all" || platformId !== "all" || workScheduleId !== "all";
+  const orderedRoles = [...roles].sort((first, second) => {
+    const firstPriority = rolePriority.indexOf(first.code);
+    const secondPriority = rolePriority.indexOf(second.code);
+    return (firstPriority === -1 ? rolePriority.length : firstPriority)
+      - (secondPriority === -1 ? rolePriority.length : secondPriority)
+      || first.code.localeCompare(second.code);
+  });
 
   const content = (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
@@ -69,31 +65,47 @@ function UserManagementContent() {
         <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add user</Button>
       </div>
 
-      {loadError && <DataLoadError message={loadError} onRetry={retryLoad} retrying={isLoading || isLoadingPlatforms} />}
+      {loadError && <DataLoadError message={loadError} onRetry={retryLoad} retrying={isLoading || isLoadingFilters} />}
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
       {notice && <CrudActionNotice message={notice} onDismiss={() => setNotice("")} />}
 
       <Card className="min-w-0">
         <CardHeader className="gap-4 border-b">
           <div><CardTitle>People</CardTitle><CardDescription>Review account access and assigned roles.</CardDescription></div>
-          <CardAction className="col-span-2 col-start-1 row-start-2 row-span-1 flex w-full items-center justify-between gap-2 justify-self-stretch sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:row-span-2 sm:w-auto sm:justify-self-end">
+          <CardAction className="col-span-2 col-start-1 row-start-2 row-span-1 flex w-full items-center justify-between gap-2 justify-self-stretch sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:row-span-1 sm:w-auto sm:justify-self-end">
             <div className="flex min-w-0 flex-1 items-center gap-2 py-2 text-sm sm:flex-none">
               <Users className="size-4 text-[#b83b00]" />
               <span className="font-semibold">{totalUsers}</span>
               <span className="text-muted-foreground">{totalUsers === 1 ? "user" : "users"}</span>
             </div>
-            <Button variant="outline" size="sm" className="shrink-0 rounded-xl" disabled={isLoading || isLoadingPlatforms} onClick={retryLoad}><RefreshCw /> Refresh</Button>
+            <Button variant="outline" size="sm" className="shrink-0 rounded-xl" disabled={isLoading || isLoadingFilters} onClick={retryLoad}><RefreshCw /> Refresh</Button>
           </CardAction>
-          <div className="col-span-2 flex w-full flex-col gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xl sm:flex-row">
-            <div className="relative w-full sm:max-w-xs">
+          <div className="col-span-2 flex w-full flex-wrap gap-2 sm:col-span-2 sm:col-start-1 sm:row-start-2 sm:max-w-none">
+            <div className="relative w-full sm:min-w-56 sm:flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this page by email or role" aria-label="Search users on this page" className="pl-9" />
+              <Input value={keyword} onChange={(event) => { setPage(0); setKeyword(event.target.value); }} placeholder="Search all users by email" aria-label="Search all users by email" className="pl-9" />
             </div>
-            <Select value={platformId} onValueChange={(value) => { setPage(0); setPlatformId(value); }} disabled={isLoading}>
-              <SelectTrigger className="w-full sm:w-[220px]" aria-label="Filter users by platform"><SelectValue placeholder="All platforms" /></SelectTrigger>
+            <Select value={roleCode} onValueChange={(value) => { setPage(0); setRoleCode(value); }} disabled={isLoading || isLoadingFilters}>
+              <SelectTrigger className="w-fit max-w-full sm:w-[170px]" aria-label="Filter users by role"><SelectValue placeholder="All roles" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All roles</SelectItem>
+                {orderedRoles.map((role) => <SelectItem key={role.code} value={role.code}>{role.code}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={platformId} onValueChange={(value) => { setPage(0); setPlatformId(value); }} disabled={isLoading || isLoadingFilters}>
+              <SelectTrigger className="w-fit max-w-full sm:w-[190px]" aria-label="Filter users by platform"><SelectValue placeholder="All platforms" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All platforms</SelectItem>
+                <SelectItem value="none">No platform</SelectItem>
                 {platforms.map((platform) => <SelectItem key={platform.id} value={String(platform.id)}>{platform.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={workScheduleId} onValueChange={(value) => { setPage(0); setWorkScheduleId(value); }} disabled={isLoading || isLoadingFilters}>
+              <SelectTrigger className="w-fit max-w-full sm:w-[190px]" aria-label="Filter users by work schedule"><SelectValue placeholder="All work schedules" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All work schedules</SelectItem>
+                <SelectItem value="none">No work schedule</SelectItem>
+                {workSchedules.map((schedule) => <SelectItem key={schedule.id} value={String(schedule.id)}>{schedule.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -101,11 +113,11 @@ function UserManagementContent() {
         <CardContent className="p-0">
           {isLoading ? (
             <CrudListSkeleton label="Loading user roster" rows={6} />
-          ) : filteredUsers.length === 0 ? (
-            <div className="px-6 py-16 text-center"><Users className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Users could not be loaded" : users.length ? "No users match this search" : "No users yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try refreshing." : "No accounts are available."}</p></div>
+          ) : users.length === 0 ? (
+            <div className="px-6 py-16 text-center"><Users className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Users could not be loaded" : hasActiveFilters ? "No users match these filters" : "No users yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try refreshing." : hasActiveFilters ? "Try changing or clearing your search and filters." : "No accounts are available."}</p></div>
           ) : (
             <div className="divide-y">
-              {filteredUsers.map((managedUser) => {
+              {users.map((managedUser) => {
                 const isProtected = managedUser.roles.includes("SUPER_ADMIN");
                 const isCurrentUser = signedInUser?.email.toLowerCase() === managedUser.email.toLowerCase();
                 const userPlatform = managedUser.platform;
@@ -116,10 +128,10 @@ function UserManagementContent() {
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {userPlatform
                           ? <Badge variant="outline">Platform: {userPlatform.name}</Badge>
-                          : <span className="text-xs text-muted-foreground">Platform: None</span>}
+                          : <span className="inline-flex h-5 items-center text-xs text-muted-foreground">Platform: None</span>}
                         {managedUser.workSchedule
                           ? <Badge variant="outline">Schedule: {managedUser.workSchedule.name}</Badge>
-                          : <span className="text-xs text-muted-foreground">No work schedule</span>}
+                          : <span className="inline-flex h-5 items-center text-xs text-muted-foreground">No work schedule</span>}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {managedUser.roles.map((role) => <Badge key={role} variant={role === "ADMIN" || role === "SUPER_ADMIN" ? "secondary" : "outline"}>{role === "SUPER_ADMIN" && <Shield aria-hidden="true" />}{role}</Badge>)}

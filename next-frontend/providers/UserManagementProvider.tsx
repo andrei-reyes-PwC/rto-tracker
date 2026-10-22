@@ -1,17 +1,18 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { getPlatformOptions, type PlatformOption } from "@/api/platforms";
-import { createUser, deleteUser, getManageUsers, updateUser } from "@/api/users";
+import type { PlatformOption } from "@/api/platforms";
+import { createUser, deleteUser, getManageUserFilters, getManageUsers, updateUser } from "@/api/users";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useAuth } from "@/providers/AuthProvider";
 import type { ManagedUser, UserEditorMode, UserEditorValues } from "@/app/users/user-types";
 
 type Editor = { mode: UserEditorMode; user?: ManagedUser } | null;
 type UserManagementContextValue = {
-  users: ManagedUser[]; platforms: PlatformOption[]; totalUsers: number; totalPages: number;
+  users: ManagedUser[]; platforms: PlatformOption[]; workSchedules: PlatformOption[]; roles: { code: string }[]; totalUsers: number; totalPages: number;
   page: number; setPage: (page: number | ((current: number) => number)) => void;
-  pageSize: number; setPageSize: (size: number) => void; platformId: string;
-  setPlatformId: (id: string) => void; isLoading: boolean; isLoadingPlatforms: boolean; loadError: string; retryLoad: () => void; error: string; notice: string;
+  pageSize: number; setPageSize: (size: number) => void; platformId: string; workScheduleId: string; roleCode: string; keyword: string;
+  setPlatformId: (id: string) => void; setWorkScheduleId: (id: string) => void; setRoleCode: (code: string) => void; setKeyword: (keyword: string) => void; isLoading: boolean; isLoadingFilters: boolean; loadError: string; retryLoad: () => void; error: string; notice: string;
   setNotice: (notice: string) => void; isDeleting: boolean; editor: Editor;
   setEditor: (editor: Editor) => void; deletingUser: ManagedUser | null;
   setDeletingUser: (user: ManagedUser | null) => void; refresh: () => Promise<void>;
@@ -25,16 +26,22 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
   const { user: signedInUser, isLoading: isAuthLoading } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [platforms, setPlatforms] = useState<PlatformOption[]>([]);
+  const [workSchedules, setWorkSchedules] = useState<PlatformOption[]>([]);
+  const [roles, setRoles] = useState<{ code: string }[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [platformId, setPlatformId] = useState("all");
+  const [workScheduleId, setWorkScheduleId] = useState("all");
+  const [roleCode, setRoleCode] = useState("all");
+  const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebouncedValue(keyword);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [platformLoadError, setPlatformLoadError] = useState("");
-  const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(true);
-  const [platformRetry, setPlatformRetry] = useState(0);
+  const [filterLoadError, setFilterLoadError] = useState("");
+  const [isLoadingFilters, setIsLoadingFilters] = useState(true);
+  const [filterRetry, setFilterRetry] = useState(0);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -45,16 +52,22 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setLoadError("");
     try {
-      const result = await getManageUsers(page, pageSize, platformId === "all" ? undefined : Number(platformId), signal);
+      const result = await getManageUsers(page, pageSize, {
+        platformId: platformId !== "all" && platformId !== "none" ? Number(platformId) : undefined,
+        withoutPlatform: platformId === "none",
+        workScheduleId: workScheduleId !== "all" && workScheduleId !== "none" ? Number(workScheduleId) : undefined,
+        withoutWorkSchedule: workScheduleId === "none",
+        roleCode: roleCode === "all" ? undefined : roleCode,
+        search: debouncedKeyword.trim() || undefined,
+      }, signal);
       if (signal?.aborted) return;
       setUsers(result.content);
-      setPlatforms(result.platforms ?? []);
       setTotalUsers(result.totalElements);
       setTotalPages(result.totalPages);
     } catch (cause) {
       if (!signal?.aborted) setLoadError(cause instanceof Error ? cause.message : "Could not load users. Please try again.");
     } finally { if (!signal?.aborted) setIsLoading(false); }
-  }, [page, pageSize, platformId]);
+  }, [page, pageSize, platformId, workScheduleId, roleCode, debouncedKeyword]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,17 +76,23 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
   useEffect(() => {
     const controller = new AbortController();
-    setIsLoadingPlatforms(true);
-    setPlatformLoadError("");
-    getPlatformOptions(controller.signal).then((options) => { if (!controller.signal.aborted) setPlatforms(options); }).catch((cause: unknown) => {
-      if (!controller.signal.aborted) setPlatformLoadError(cause instanceof Error ? cause.message : "Could not load platform filters.");
-    }).finally(() => { if (!controller.signal.aborted) setIsLoadingPlatforms(false); });
+    setIsLoadingFilters(true);
+    setFilterLoadError("");
+    getManageUserFilters(controller.signal).then((options) => {
+      if (!controller.signal.aborted) {
+        setPlatforms(options.platforms);
+        setWorkSchedules(options.workSchedules);
+        setRoles(options.roles);
+      }
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted) setFilterLoadError(cause instanceof Error ? cause.message : "Could not load user filters.");
+    }).finally(() => { if (!controller.signal.aborted) setIsLoadingFilters(false); });
     return () => controller.abort();
-  }, [platformRetry]);
+  }, [filterRetry]);
 
   const retryLoad = useCallback(() => {
     void refresh();
-    setPlatformRetry((current) => current + 1);
+    setFilterRetry((current) => current + 1);
   }, [refresh]);
 
   const saveUser = useCallback(async (values: UserEditorValues) => {
@@ -98,7 +117,7 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
     finally { setIsDeleting(false); }
   }, [deletingUser, isDeleting, page, refresh, users.length]);
 
-  const value = useMemo(() => ({ users, platforms, totalUsers, totalPages, page, setPage, pageSize, setPageSize, platformId, setPlatformId, isLoading, isLoadingPlatforms, loadError: loadError || platformLoadError, retryLoad, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading }), [users, platforms, totalUsers, totalPages, page, pageSize, platformId, isLoading, isLoadingPlatforms, loadError, platformLoadError, retryLoad, error, notice, isDeleting, editor, deletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading]);
+  const value = useMemo(() => ({ users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, platformId, workScheduleId, roleCode, keyword, setPlatformId, setWorkScheduleId, setRoleCode, setKeyword, isLoading, isLoadingFilters, loadError: loadError || filterLoadError, retryLoad, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading }), [users, platforms, workSchedules, roles, totalUsers, totalPages, page, pageSize, platformId, workScheduleId, roleCode, keyword, isLoading, isLoadingFilters, loadError, filterLoadError, retryLoad, error, notice, isDeleting, editor, deletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading]);
   return <UserManagementContext.Provider value={value}>{children}</UserManagementContext.Provider>;
 }
 

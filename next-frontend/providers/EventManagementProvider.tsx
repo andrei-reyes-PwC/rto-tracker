@@ -3,10 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { deleteEvent, getManageEvents, saveEvent, type CalendarEvent, type EventInput } from "@/api/events";
 import { getPlatformOptions, type PlatformOption } from "@/api/platforms";
+import { useCrudSearch } from "@/hooks/use-crud-search";
 
 type ContextValue = {
-  events: CalendarEvent[]; platforms: PlatformOption[]; loading: boolean; error: string; notice: string;
-  load: (signal?: AbortSignal) => Promise<void>; save: (input: EventInput, id?: number) => Promise<string | null>;
+  events: CalendarEvent[]; platforms: PlatformOption[]; search: string; setSearch: (search: string) => void; loading: boolean; error: string; notice: string;
+  load: (search?: string, signal?: AbortSignal) => Promise<void>; save: (input: EventInput, id?: number) => Promise<string | null>;
   remove: (event: CalendarEvent) => Promise<string | null>; setNotice: (notice: string) => void;
 };
 const Context = createContext<ContextValue | null>(null);
@@ -17,35 +18,45 @@ export function EventManagementProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const load = useCallback(async (signal?: AbortSignal) => {
+  const { search, setSearch, debouncedSearch } = useCrudSearch();
+  const load = useCallback(async (query = debouncedSearch, signal?: AbortSignal) => {
     setLoading(true); setError("");
     try {
-      const [nextEvents, nextPlatforms] = await Promise.all([getManageEvents(signal), getPlatformOptions(signal)]);
-      if (!signal?.aborted) { setEvents(nextEvents); setPlatforms(nextPlatforms); }
+      const nextEvents = await getManageEvents(query, signal);
+      if (!signal?.aborted) setEvents(nextEvents);
     } catch (cause) {
       if (!signal?.aborted) setError(cause instanceof Error ? cause.message : "Could not load events.");
     } finally { if (!signal?.aborted) setLoading(false); }
-  }, []);
+  }, [debouncedSearch]);
   useEffect(() => {
     const controller = new AbortController();
-    const timer = window.setTimeout(() => { void load(controller.signal); }, 0);
+    const timer = window.setTimeout(() => { void load(debouncedSearch, controller.signal); }, 0);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [load]);
+  }, [load, debouncedSearch]);
+  useEffect(() => {
+    const controller = new AbortController();
+    getPlatformOptions(controller.signal).then((options) => {
+      if (!controller.signal.aborted) setPlatforms(options);
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "Could not load platform options.");
+    });
+    return () => controller.abort();
+  }, []);
   const save = useCallback(async (input: EventInput, id?: number) => {
     try {
       await saveEvent(input, id);
       setNotice(`“${input.title}” was ${id === undefined ? "created" : "updated"}.`);
-      await load(); return null;
+      await load(debouncedSearch); return null;
     } catch (cause) { return cause instanceof Error ? cause.message : "Could not save this event."; }
-  }, [load]);
+  }, [load, debouncedSearch]);
   const remove = useCallback(async (event: CalendarEvent) => {
     try {
       await deleteEvent(event.id);
       setNotice(`“${event.title}” was deleted.`);
-      await load(); return null;
+      await load(debouncedSearch); return null;
     } catch (cause) { return cause instanceof Error ? cause.message : "Could not delete this event."; }
-  }, [load]);
-  const value = useMemo(() => ({ events, platforms, loading, error, notice, load, save, remove, setNotice }), [events, platforms, loading, error, notice, load, save, remove]);
+  }, [load, debouncedSearch]);
+  const value = useMemo(() => ({ events, platforms, search, setSearch, loading, error, notice, load, save, remove, setNotice }), [events, platforms, search, setSearch, loading, error, notice, load, save, remove]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

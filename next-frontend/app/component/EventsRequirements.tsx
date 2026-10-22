@@ -18,6 +18,10 @@ export type PlannerEvent = {
   required: boolean;
 };
 
+function formatEventDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export default function EventsRequirements() {
   const { visibleEvents: events, monthLabel } = useSchedule();
 
@@ -37,7 +41,7 @@ export default function EventsRequirements() {
                   <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${event.tone}`}><Icon className="size-4" /></div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{event.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(event.date)} | {event.time} | {event.place}</p>
+                    <p className="mt-1 text-xs text-slate-500">{formatEventDate(event.date)} · {event.time} · {event.place}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
                     <Badge variant={event.required ? "destructive" : "outline"} className="h-5">{event.kind}</Badge>

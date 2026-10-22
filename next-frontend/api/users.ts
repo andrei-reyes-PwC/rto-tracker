@@ -15,6 +15,21 @@ export type UserPage = {
   platforms?: PlatformOption[];
 };
 
+export type UserManagementFilters = {
+  platforms: PlatformOption[];
+  workSchedules: PlatformOption[];
+  roles: { code: string }[];
+};
+
+export type UserManagementListFilters = {
+  platformId?: number;
+  withoutPlatform?: boolean;
+  workScheduleId?: number;
+  withoutWorkSchedule?: boolean;
+  roleCode?: string;
+  search?: string;
+};
+
 export type CreateUserRequest = {
   email: string;
   password: string;
@@ -104,9 +119,14 @@ export async function getUsers(page: number, size: number, platformId?: number, 
   throw new Error("The users service returned an unexpected response. Please refresh and try again.");
 }
 
-export async function getManageUsers(page: number, size: number, platformId?: number, signal?: AbortSignal): Promise<UserPage> {
+export async function getManageUsers(page: number, size: number, filters: UserManagementListFilters = {}, signal?: AbortSignal): Promise<UserPage> {
   const params = new URLSearchParams({ page: String(page), size: String(size) });
-  if (platformId !== undefined) params.set("platformId", String(platformId));
+  if (filters.platformId !== undefined) params.set("platformId", String(filters.platformId));
+  if (filters.withoutPlatform) params.set("withoutPlatform", "true");
+  if (filters.workScheduleId !== undefined) params.set("workScheduleId", String(filters.workScheduleId));
+  if (filters.withoutWorkSchedule) params.set("withoutWorkSchedule", "true");
+  if (filters.roleCode) params.set("roleCode", filters.roleCode);
+  if (filters.search) params.set("search", filters.search);
   const response = await fetch(`/api/users/manage?${params}`, {
     credentials: "include",
     cache: "no-store",
@@ -121,11 +141,25 @@ export async function getManageUsers(page: number, size: number, platformId?: nu
   return result;
 }
 
+export async function getManageUserFilters(signal?: AbortSignal): Promise<UserManagementFilters> {
+  const response = await fetch("/api/users/manage/filters", {
+    credentials: "include",
+    cache: "no-store",
+    signal,
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+  const result = await response.json() as UserManagementFilters;
+  if (!result || !Array.isArray(result.platforms) || !Array.isArray(result.workSchedules) || !Array.isArray(result.roles)) {
+    throw new Error("The user filters service returned an unexpected response. Please refresh and try again.");
+  }
+  return result;
+}
+
 export async function getAllUsers(signal?: AbortSignal): Promise<ManagedUser[]> {
-  const firstPage = await getManageUsers(0, 100, undefined, signal);
+  const firstPage = await getManageUsers(0, 100, {}, signal);
   const allUsers = [...firstPage.content];
   for (let page = 1; page < firstPage.totalPages; page += 1) {
-    const result = await getManageUsers(page, 100, undefined, signal);
+    const result = await getManageUsers(page, 100, {}, signal);
     allUsers.push(...result.content);
   }
   return allUsers;

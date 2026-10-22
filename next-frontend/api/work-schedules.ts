@@ -11,8 +11,10 @@ async function responseError(response: Response) {
   return error?.details?.join(" ") || error?.message || "Could not complete this work schedule request. Please try again.";
 }
 
-export async function getWorkSchedules(signal?: AbortSignal): Promise<WorkSchedule[]> {
-  const response = await fetch("/api/work-schedules", { credentials: "include", cache: "no-store", signal });
+export async function getWorkSchedules(search = "", signal?: AbortSignal): Promise<WorkSchedule[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const response = await fetch(`/api/work-schedules?${params}`, { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as WorkSchedule[];
 }

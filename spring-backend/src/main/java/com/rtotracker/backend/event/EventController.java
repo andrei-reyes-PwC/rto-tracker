@@ -58,9 +58,9 @@ public class EventController {
 
     @GetMapping("/manage")
     @Transactional(readOnly = true)
-    public List<EventResponse> findAll(HttpServletRequest request) {
+    public List<EventResponse> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
-        return events.findAllWithPlatform().stream().map(EventResponse::from).toList();
+        return events.findAllWithPlatform(search.trim().toLowerCase()).stream().map(EventResponse::from).toList();
     }
 
     @PostMapping

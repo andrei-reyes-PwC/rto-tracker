@@ -11,8 +11,9 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Long
 
     @Query("select schedule.id as id, schedule.name as name, count(user.email) as userCount "
             + "from WorkSchedule schedule left join schedule.users user "
+            + "where :search = '' or lower(schedule.name) like concat('%', :search, '%') "
             + "group by schedule.id, schedule.name order by schedule.name asc")
-    List<WorkScheduleSummaryProjection> findAllSummaries();
+    List<WorkScheduleSummaryProjection> findAllSummaries(@Param("search") String search);
 
     @Query("select distinct schedule from WorkSchedule schedule "
             + "left join fetch schedule.users where schedule.id = :id")

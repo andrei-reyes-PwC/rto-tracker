@@ -28,17 +28,12 @@ export default function WorkScheduleManagement() {
 }
 
 function WorkScheduleManagementContent() {
-  const { schedules, users, isLoadingEditorData, loading, loadError, editorLoadError, error, notice, setNotice, editor, closeEditor, deleting, setDeleting, isDeleting, load, openEditor, retryEditorLoad, save, confirmDelete } = useWorkScheduleManagement();
-  const [query, setQuery] = useState("");
-  const debouncedQuery = useDebouncedValue(query);
+  const { schedules, users, search, setSearch, isLoadingEditorData, loading, loadError, editorLoadError, error, notice, setNotice, editor, closeEditor, deleting, setDeleting, isDeleting, load, openEditor, retryEditorLoad, save, confirmDelete } = useWorkScheduleManagement();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const isMobile = useIsMobile();
 
-  const filtered = useMemo(() => {
-    const normalized = debouncedQuery.trim().toLowerCase();
-    return normalized ? schedules.filter((schedule) => schedule.name.toLowerCase().includes(normalized)) : schedules;
-  }, [schedules, debouncedQuery]);
+  const filtered = schedules;
   const totalPages = Math.ceil(filtered.length / pageSize);
   const currentPage = Math.min(page, Math.max(totalPages - 1, 0));
   const visibleSchedules = filtered.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
@@ -64,11 +59,11 @@ function WorkScheduleManagementContent() {
               <div className="flex items-center gap-2 text-sm"><CalendarDays className="size-4 text-[#b83b00]" /><span className="font-semibold">{schedules.length}</span><span className="text-muted-foreground">{schedules.length === 1 ? "schedule" : "schedules"}</span></div>
               <Button variant="outline" size="sm" disabled={loading} onClick={() => void load()}><RefreshCw /> Refresh</Button>
             </CardAction>
-            <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs"><div className="relative"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search work schedules" aria-label="Search work schedules" className="pl-9" /></div></div>
+            <div className="col-span-2 w-full sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:max-w-xs"><div className="relative"><Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => { setPage(0); setSearch(event.target.value); }} placeholder="Search work schedules" aria-label="Search work schedules" className="pl-9" /></div></div>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? <CrudListSkeleton label="Loading work schedules" />
-              : filtered.length === 0 ? <div className="px-6 py-16 text-center"><CalendarDays className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Work schedules could not be loaded" : schedules.length ? "No work schedules match this search" : "No work schedules yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try again." : "Create a work schedule and assign users to it."}</p></div>
+              : filtered.length === 0 ? <div className="px-6 py-16 text-center"><CalendarDays className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Work schedules could not be loaded" : search.trim() ? "No work schedules match this search" : "No work schedules yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try again." : "Create a work schedule and assign users to it."}</p></div>
                 : <div className="divide-y">{visibleSchedules.map((schedule) => <div key={schedule.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-medium">{schedule.name}</p><div className="mt-2"><Badge variant="secondary"><Users /> {schedule.userCount} {schedule.userCount === 1 ? "user" : "users"}</Badge></div></div><div className="flex w-full gap-2 sm:w-auto sm:shrink-0"><Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={isLoadingEditorData} onClick={() => void openEditor("edit", schedule)}><UserRoundPen /> Edit</Button><Button variant="destructive" size="icon-sm" aria-label={`Delete ${schedule.name}`} disabled={isLoadingEditorData} onClick={() => setDeleting(schedule)}><Trash2 /></Button></div></div>)}</div>}
           </CardContent>
           <div className="flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between">

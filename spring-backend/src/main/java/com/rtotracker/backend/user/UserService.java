@@ -36,11 +36,19 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserController.UserResponse> findAll(Pageable pageable, Long platformId) {
-        Page<User> matchingUsers = platformId == null
-                ? users.findAll(pageable)
-                : users.findAllByPlatformId(platformId, pageable);
+    public Page<UserController.UserResponse> findAll(Pageable pageable, Long platformId, boolean withoutPlatform,
+                                                      Long workScheduleId, boolean withoutWorkSchedule,
+                                                      String roleCode, String search) {
+        Page<User> matchingUsers = users.findAllByFilters(platformId, withoutPlatform, workScheduleId,
+                withoutWorkSchedule, roleCode, normalizeSearch(search), pageable);
         return matchingUsers.map(UserController.UserResponse::from);
+    }
+
+    private static String normalizeSearch(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+        return search.trim().toLowerCase(Locale.ROOT);
     }
 
     @Transactional(readOnly = true)

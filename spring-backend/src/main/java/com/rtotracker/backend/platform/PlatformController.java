@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,9 +40,9 @@ public class PlatformController {
 
     @GetMapping
     @Operation(summary = "List platforms")
-    public List<PlatformSummary> findAll(HttpServletRequest request) {
+    public List<PlatformSummary> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
-        return platformService.findAllSummaries().stream()
+        return platformService.findAllSummaries(search).stream()
                 .map(platform -> new PlatformSummary(platform.getId(), platform.getName(), platform.getUserCount()))
                 .toList();
     }

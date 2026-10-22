@@ -18,8 +18,10 @@ async function responseError(response: Response) {
   return error?.details?.join(" ") || error?.message || "Could not complete this platform request. Please try again.";
 }
 
-export async function getPlatforms(signal?: AbortSignal): Promise<Platform[]> {
-  const response = await fetch("/api/platforms", { credentials: "include", cache: "no-store", signal });
+export async function getPlatforms(search = "", signal?: AbortSignal): Promise<Platform[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const response = await fetch(`/api/platforms?${params}`, { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as Platform[];
 }
