@@ -69,7 +69,7 @@ All authenticated users have a personal account identified by email. User accoun
 
 ### Event management
 
-- **EVNT-01** — As a `SUPER_ADMIN`, I can create, view, edit, and delete events with a date, title, type, time, location, and optional office requirement.
+- **EVNT-01** — As a `SUPER_ADMIN`, I can create, view, edit, and delete events with a date, title (up to 50 characters), type, time, location, and optional office requirement.
 - **EVNT-02** — An event can be global or scoped to one platform; a platform-scoped event must reference an existing platform.
 - **EVNT-03** — As an authenticated user, I see global events and events scoped to my own platform in the selected planner month.
 - **EVNT-04** — Deleting a platform also deletes its platform-scoped events.

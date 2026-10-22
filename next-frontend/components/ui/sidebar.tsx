@@ -370,7 +370,7 @@ function SidebarSeparator({
     <Separator
       data-slot="sidebar-separator"
       data-sidebar="separator"
-      className={cn("mx-2 w-auto bg-sidebar-border", className)}
+      className={cn("mx-0 w-full self-stretch bg-sidebar-border", className)}
       {...props}
     />
   )

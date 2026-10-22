@@ -97,7 +97,7 @@ function Editor({ initial, platforms, mobile, working, error, close, submit }: {
   const [scope, setScope] = useState(draft.scope);
   const field = (name: string, label: string, value: string, type = "text", maxLength?: number) => <div className="space-y-2"><Label htmlFor={"event-" + name}>{label}</Label><Input id={"event-" + name} name={name} type={type} defaultValue={value} maxLength={maxLength} required /></div>;
   return <Sheet open onOpenChange={(open) => { if (!open) close(); }}><SheetContent side={mobile ? "bottom" : "right"} className="max-h-[88dvh] w-full overflow-y-auto rounded-t-2xl p-0 sm:max-w-md sm:rounded-none md:h-full md:max-h-none"><SheetHeader className="border-b px-6 py-5"><SheetTitle>{initial ? "Edit event" : "Add an event"}</SheetTitle><SheetDescription>Choose who sees the event and whether office attendance is required.</SheetDescription></SheetHeader><form className="space-y-4 px-6 py-5" onSubmit={submit}>
-    {field("title", "Title", draft.title, "text", 120)}
+    {field("title", "Title (up to 50 characters)", draft.title, "text", 50)}
     <div className="grid grid-cols-2 gap-3">{field("date", "Date", draft.date, "date")}{field("time", "Time", draft.time, "text", 30)}</div>
     <div className="grid grid-cols-2 gap-3">{field("kind", "Event type", draft.kind, "text", 40)}{field("place", "Location", draft.place, "text", 120)}</div>
     <div className="space-y-2"><Label htmlFor="event-scope">Scope</Label><select id="event-scope" name="scope" value={scope} onChange={(event) => setScope(event.target.value as Draft["scope"])} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"><option value="GLOBAL">Global</option><option value="PLATFORM">Platform</option></select></div>

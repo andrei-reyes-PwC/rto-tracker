@@ -34,7 +34,7 @@ export default function EventsRequirements() {
             {events.map((event) => {
               const isToday = formatEventDate(event.date) === todayKey;
               return (
-                <div key={event.id} className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-start ${event.required ? "border-rose-200 bg-rose-50/40" : "border-slate-200 bg-white"}`}>
+                <div key={event.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-start">
                   <time dateTime={formatEventDate(event.date)} className={`flex size-10 shrink-0 items-center justify-center rounded-lg text-lg font-semibold tabular-nums ${isToday ? "bg-[#e65300] text-white ring-2 ring-[#e65300]/20" : "bg-slate-100 text-slate-700"}`}>{event.date.getDate()}</time>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{event.title}</p>
