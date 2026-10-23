@@ -28,12 +28,15 @@ public class AuthController {
 
     private final AuthService authService;
     private final PlatformService platformService;
+    private final AssistantJwtService assistantJwtService;
     private final boolean secureSessionCookie;
 
     public AuthController(AuthService authService, PlatformService platformService,
+                          AssistantJwtService assistantJwtService,
                           @Value("${server.servlet.session.cookie.secure:false}") boolean secureSessionCookie) {
         this.authService = authService;
         this.platformService = platformService;
+        this.assistantJwtService = assistantJwtService;
         this.secureSessionCookie = secureSessionCookie;
     }
 
@@ -50,6 +53,11 @@ public class AuthController {
     @GetMapping("/me")
     public LoginResponse currentUser(HttpServletRequest servletRequest) {
         return responseFor(authService.findByEmail(AuthSession.requireEmail(servletRequest)));
+    }
+
+    @PostMapping("/assistant-token")
+    public AssistantJwtService.Token assistantToken(HttpServletRequest servletRequest) {
+        return assistantJwtService.issue(AuthSession.requireEmail(servletRequest));
     }
 
     private LoginResponse responseFor(User user) {

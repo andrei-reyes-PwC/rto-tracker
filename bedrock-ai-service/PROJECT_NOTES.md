@@ -1,6 +1,8 @@
 # Project Notes
 
-- Standalone Python 3.11+ FastAPI application; install dependencies with `pip install .` from this directory.
+- Python 3.11+ FastAPI application; install dependencies with `pip install .` from this directory. The `tzdata` dependency supplies IANA time zones on Windows. The browser calls the service directly with a short-lived Spring-issued assistant JWT.
 - `app/main.py` defines `GET /health` and `POST /api/assistant/chat`; Swagger UI is served at `/docs`.
-- The chat endpoint calls Amazon Bedrock Converse with `BEDROCK_MODEL_ID` (default `amazon.nova-micro-v1:0`) and AWS SDK credentials. Region comes from `AWS_REGION` or `AWS_DEFAULT_REGION`.
-- The service does not connect to Spring, access application data, or persist schedules. Local development binds to `127.0.0.1:8010`; see `README.md` for setup.
+- Chat verifies JWT signature, issuer, audience, expiry, subject, and `assistant:chat` scope with the shared RSA public key. Bedrock Converse selects read-only tools for visible events, other platform members' daily RTO counts, and the user's saved office days. Python validates ranges and calls fixed Spring endpoints with the same token. The allowed window is today through the end of next month; no past-date or write tools are available. Event refresh follow-ups reuse the prior event question's range and are required to call Spring's event tool again before responding. Replies stay concise; the service does not receive the session cookie or persist schedules.
+- Configure `JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_PUBLIC_KEY_PATH`, and `SPRING_BACKEND_URL` in `.env`; generate local signing keys with `python scripts/generate_local_jwt_keys.py` from this directory. `BEDROCK_MODEL_ID` defaults to `amazon.nova-micro-v1:0`; AWS region comes from `AWS_REGION` or `AWS_DEFAULT_REGION`.
+- Request validation failures log the endpoint, content headers, and field errors without logging prompt or context values.
+- CORS allows the configured `FRONTEND_ORIGINS` (default localhost ports 3000). The service binds to `127.0.0.1:8010` locally; see `README.md` for setup.

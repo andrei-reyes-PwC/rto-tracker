@@ -7,6 +7,7 @@ import MonthlyCalendar from "@/app/component/MonthlyCalendar";
 import PlannerHeading from "@/app/component/PlannerHeading";
 import PlannerSummary from "@/app/component/PlannerSummary";
 import PlatformOfficeDays from "@/app/component/PlatformOfficeDays";
+import RtoAssistant from "@/app/component/RtoAssistant";
 import { ScheduleProvider, useSchedule } from "@/app/component/ScheduleProvider";
 
 function ScheduleContent() {
@@ -24,6 +25,7 @@ function ScheduleContent() {
         {loadError && <DataLoadError message={loadError} onRetry={retryLoading} retrying={isLoadingMonth} />}
         {saveError && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{saveError} Your changes are still here; you can try saving again.</div>}
         <PlannerSummary />
+        <RtoAssistant />
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
           <MonthlyCalendar />
           <div className="space-y-4">

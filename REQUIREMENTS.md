@@ -81,12 +81,20 @@ All authenticated users have a personal account identified by email. User accoun
 - **DASH-02** — The dashboard shows attendance for each weekday, total planned RTO days, distinct attendees, and total and daily breakdowns by each attendee's current platform and work schedule.
 - **DASH-03** — Users with no platform or work schedule are included in the corresponding unassigned breakdown.
 
+### RTO planning assistant
+
+- **AI-01** — An authenticated user can ask the planner assistant for RTO planning suggestions; the frontend sends prompts directly to the AI service with a short-lived token obtained from Spring.
+- **AI-02** — Bedrock can request the user's visible events, other platform members' daily saved RTO counts, and the user's saved office days through read-only tools. Spring derives the account and platform from the verified token.
+- **AI-03** — Assistant planning is limited to today through the end of next month. It must not suggest or change past office days; responses are drafts and do not save schedule changes.
+- **AI-04** — Event lookups fetch current Spring data for every request. Refresh follow-ups retain the preceding event query's date range and must invoke the live event tool again before responding; “today” is a one-day range only when explicitly requested.
+
 ## 3. Product and system boundaries
 
 - The web application is a Next.js frontend; the REST API is a Spring Boot backend.
 - The frontend sends API requests through its same-origin `/api/*` proxy to the backend. Direct cross-origin API access is configured separately for the frontend origin.
 - MySQL stores users, roles, platform memberships, work schedules, events, and office-day records. Flyway manages schema changes.
 - A user's office-day schedule is stored by date and queried or replaced by month. The account identity comes from the authenticated session.
+- The frontend sends assistant prompts directly to the Python Bedrock AI service using a short-lived Spring-issued token. Bedrock may choose among allowlisted, read-only Spring tools for user-scoped events, attendance counts, and saved office days; the AI service does not persist schedule data.
 - Platform office-day visibility is limited to same-platform colleagues and a selected date; only saved plans are shown.
 - The system has no company-calendar integration; administrators manage events directly. There is no public self-service registration.
 
