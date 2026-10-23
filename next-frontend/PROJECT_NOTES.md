@@ -36,6 +36,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `app/layout.tsx` â€” root HTML/layout, metadata, and Geist font setup.
 - `app/globals.css` â€” imports Tailwind and shadcn styles, and defines base theme variables.
 - `components/ui/` â€” shadcn-generated Button, Card, Badge, Input, Label, AlertDialog, Alert, DropdownMenu, and other shared UI components.
+- Use shadcn components from `components/ui/` for frontend UI controls and layout every time. If a needed component is missing, add it with the shadcn CLI instead of writing a native HTML control or custom replacement.
 - Standard for data-fetching UI: show layout-matched skeletons anywhere fetched content is pending, including initial loads and refreshes. Use `components/ui/skeleton.tsx`, keep placeholders in the same card or list region as the loaded content, and mark the loading region with an accessible status and busy state. Show fetch failures with `components/DataLoadError.tsx` and provide a retry action for the failed read.
 - `components.json` â€” shadcn preset, aliases, and style configuration.
 - `lib/utils.ts` â€” shared class name utility.
