@@ -25,7 +25,6 @@ function ScheduleContent() {
         {loadError && <DataLoadError message={loadError} onRetry={retryLoading} retrying={isLoadingMonth} />}
         {saveError && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{saveError} Your changes are still here; you can try saving again.</div>}
         <PlannerSummary />
-        <RtoAssistant />
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
           <MonthlyCalendar />
           <div className="space-y-4">
@@ -37,6 +36,7 @@ function ScheduleContent() {
           Your office days are saved to your work account.
         </p>
       </main>
+      <RtoAssistant />
     </SidebarPageLayout>
   );
 }

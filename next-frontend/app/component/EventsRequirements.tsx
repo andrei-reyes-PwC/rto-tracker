@@ -1,7 +1,9 @@
 "use client";
 
-import { Building2, CircleHelp, Clock3, MapPin } from "lucide-react";
+import { useState } from "react";
+import { Building2, CircleHelp, Clock3, History, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSchedule } from "@/app/component/ScheduleProvider";
 
@@ -22,13 +24,34 @@ function formatEventDate(date: Date) {
 }
 
 export default function EventsRequirements() {
-  const { visibleEvents: events, monthLabel, todayKey } = useSchedule();
+  const { allMonthEvents, visibleEvents, monthLabel, todayKey } = useSchedule();
+  const [pastEventsMonth, setPastEventsMonth] = useState<string | null>(null);
+  const showPastEvents = pastEventsMonth === monthLabel;
+  const chronologicalEvents = [...allMonthEvents].sort(
+    (first, second) => first.date.getTime() - second.date.getTime() || first.id - second.id,
+  );
+  const pastEvents = chronologicalEvents.filter((event) => formatEventDate(event.date) < todayKey);
+  const events = showPastEvents ? chronologicalEvents : visibleEvents;
 
   return (
     <Card id="events" className="gap-0 border-slate-200/80 shadow-none">
-      <CardHeader className="flex flex-row items-start justify-between gap-3 pb-5">
+      <CardHeader className="flex flex-col items-start justify-between gap-3 pb-5 sm:flex-row">
         <div><CardTitle className="text-base">Events & office requirements</CardTitle><CardDescription className="mt-1">Keep these in mind while planning {monthLabel}</CardDescription></div>
-        <Badge variant="secondary" className="bg-rose-50 text-rose-700">{events.filter((event) => event.required).length} mandatory</Badge>
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <Badge variant="secondary" className="bg-rose-50 text-rose-700">{events.filter((event) => event.required).length} mandatory</Badge>
+          {pastEvents.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPastEventsMonth(showPastEvents ? null : monthLabel)}
+              aria-pressed={showPastEvents}
+            >
+              <History aria-hidden="true" />
+              {showPastEvents ? "Hide past events" : `See past events (${pastEvents.length})`}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {events.length ? (
@@ -59,7 +82,7 @@ export default function EventsRequirements() {
             })}
           </div>
         ) : (
-          <div className="flex items-start gap-3 rounded-lg bg-slate-50 p-4"><CircleHelp className="mt-0.5 size-4 shrink-0 text-slate-400" /><p className="text-sm text-slate-500">No upcoming events or office requirements this month.</p></div>
+          <div className="flex items-start gap-3 rounded-lg bg-slate-50 p-4"><CircleHelp className="mt-0.5 size-4 shrink-0 text-slate-400" /><p className="text-sm text-slate-500">{pastEvents.length > 0 ? "No upcoming events this month. You can view past events above." : "No events or office requirements this month."}</p></div>
         )}
         <p className="mt-4 text-xs text-slate-400">Global events and events for your platform are shown here.</p>
       </CardContent>

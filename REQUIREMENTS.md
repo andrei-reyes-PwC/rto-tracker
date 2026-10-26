@@ -83,10 +83,14 @@ All authenticated users have a personal account identified by email. User accoun
 
 ### RTO planning assistant
 
-- **AI-01** — An authenticated user can ask the planner assistant for RTO planning suggestions; the frontend sends prompts directly to the AI service with a short-lived token obtained from Spring.
-- **AI-02** — Bedrock can request the user's visible events, other platform members' daily saved RTO counts, and the user's saved office days through read-only tools. Spring derives the account and platform from the verified token.
-- **AI-03** — Assistant planning is limited to today through the end of next month. It must not suggest or change past office days; responses are drafts and do not save schedule changes.
+- **AI-01** — An authenticated user can ask the planner assistant about planning their RTO schedule in this app, their visible events, and team RTO attendance available to them. The frontend sends prompts directly to the AI service with a short-lived token obtained from Spring. The service rejects out-of-scope questions before calling Bedrock and does not answer questions about other platforms, companies, or services.
+- **AI-02** — Bedrock can request the user's visible events, other platform members' daily saved RTO counts, and the user's saved office days through read-only tools. Spring derives the account and platform from the verified token. Read-only data ranges may include dates from the first of the current month through the end of next month; responses must label dates before today as historical and explain that they are not upcoming.
+- **AI-03** — Assistant planning is limited to the current and following month. New RTO suggestions must be future dates, starting tomorrow, and responses are drafts that do not save schedule changes.
 - **AI-04** — Event lookups fetch current Spring data for every request. Refresh follow-ups retain the preceding event query's date range and must invoke the live event tool again before responding; “today” is a one-day range only when explicitly requested.
+- **AI-05** — The assistant opens from a floating lower-right button on the planner route (`/`) only.
+- **AI-06** — A monthly request for N RTO days is a total target unless the user says “additional” or “more.” Count already-saved days in that month, including past days, and suggest only the remaining future dates.
+- **AI-07** — Monthly RTO recommendations state which saved dates count and how many remain, suggest available weekdays within the requested month before using weekends as a last resort, and give a brief factual reason per date based on current event and team-attendance data. Follow-ups retain the active month, apply unavailable dates and weekday preferences, and recalculate from fresh data when constraints change. If constraints leave too few dates, explain the shortfall and ask what to relax. Ask a focused question when ambiguity would change the plan; otherwise state an assumption and proceed. Dates use readable formatting with correct weekday names.
+- **AI-08** — The assistant retains up to eight recent chat turns for follow-up questions and explains recommendations using available schedule, event, attendance, and preference facts.
 
 ## 3. Product and system boundaries
 
@@ -95,6 +99,7 @@ All authenticated users have a personal account identified by email. User accoun
 - MySQL stores users, roles, platform memberships, work schedules, events, and office-day records. Flyway manages schema changes.
 - A user's office-day schedule is stored by date and queried or replaced by month. The account identity comes from the authenticated session.
 - The frontend sends assistant prompts directly to the Python Bedrock AI service using a short-lived Spring-issued token. Bedrock may choose among allowlisted, read-only Spring tools for user-scoped events, attendance counts, and saved office days; the AI service does not persist schedule data.
+- The assistant is restricted to this application's RTO planning, the authenticated user's visible events, and accessible team RTO attendance. The AI service gates out-of-scope requests before invoking Bedrock and its system instructions prohibit answering about other platforms, companies, or services.
 - Platform office-day visibility is limited to same-platform colleagues and a selected date; only saved plans are shown.
 - The system has no company-calendar integration; administrators manage events directly. There is no public self-service registration.
 

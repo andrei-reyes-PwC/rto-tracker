@@ -33,7 +33,7 @@ public class AssistantService {
     }
 
     public List<EventData> visibleEventsForUser(String email, LocalDate startDate, LocalDate endDate) {
-        validatePlanningRange(startDate, endDate);
+        validateAssistantDataRange(startDate, endDate);
         Long platformId = platformIdFor(email);
         List<Event> visibleEvents = platformId == null
                 ? events.findGlobalEvents(startDate, endDate.plusDays(1))
@@ -45,7 +45,7 @@ public class AssistantService {
     }
 
     public List<MemberCount> rtoMemberCountsForUser(String email, LocalDate startDate, LocalDate endDate) {
-        validatePlanningRange(startDate, endDate);
+        validateAssistantDataRange(startDate, endDate);
         Long platformId = platformIdFor(email);
         if (platformId == null) return List.of();
         List<OfficeDayRepository.PlatformDailyAttendanceProjection> counts =
@@ -57,7 +57,7 @@ public class AssistantService {
     }
 
     public List<ScheduledDay> myOfficeSchedule(String email, LocalDate startDate, LocalDate endDate) {
-        validatePlanningRange(startDate, endDate);
+        validateAssistantDataRange(startDate, endDate);
         List<OfficeDay> schedule = officeDays
                 .findAllByUserEmailAndOfficeDateGreaterThanEqualAndOfficeDateLessThanOrderByOfficeDateAsc(
                         email, startDate, endDate.plusDays(1));
@@ -66,15 +66,16 @@ public class AssistantService {
         return schedule.stream().map(day -> new ScheduledDay(day.getOfficeDate())).toList();
     }
 
-    public static void validatePlanningRange(LocalDate startDate, LocalDate endDate) {
+    public static void validateAssistantDataRange(LocalDate startDate, LocalDate endDate) {
         LocalDate today = LocalDate.now(PLANNING_ZONE);
+        LocalDate earliestDate = today.withDayOfMonth(1);
         LocalDate nextMonthStart = today.withDayOfMonth(1).plusMonths(2);
         LocalDate latestDate = nextMonthStart.minusDays(1);
         if (startDate == null || endDate == null || startDate.isAfter(endDate)
-                || startDate.isBefore(today) || endDate.isAfter(latestDate)) {
+                || startDate.isBefore(earliestDate) || endDate.isAfter(latestDate)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Date range must stay between today and the end of next month.");
+                    "Read-only assistant data must stay between the first of this month and the end of next month.");
         }
     }
 

@@ -1,6 +1,6 @@
 # RTO Bedrock AI Service
 
-A FastAPI service for Amazon Nova Micro through Amazon Bedrock. The frontend obtains a short-lived assistant JWT from Spring using its existing login session, then sends the prompt and JWT directly to this service. Bedrock chooses from read-only tools for the caller's visible events, other platform members' daily RTO counts, and the caller's saved office days; Python validates the model's tool request and calls fixed, user-scoped Spring endpoints. The tools allow today through the end of next month only. There is no schedule write tool, and the Spring session cookie is never sent to the AI service.
+A FastAPI service for Amazon Nova Micro through Amazon Bedrock. The frontend obtains a short-lived assistant JWT from Spring using its existing login session, then posts the prompt and JWT to a same-origin frontend route that reverse-proxies to this service. Bedrock chooses from read-only tools for the caller's visible events, other platform members' daily RTO counts, and the caller's saved office days; Python validates the model's tool request and calls fixed, user-scoped Spring endpoints. Read-only tools allow dates from the first of the current month through the end of next month so current-month history can be explained. New planning suggestions start tomorrow, within the current and following month. The frontend sends recent chat turns so the assistant can answer follow-up questions. There is no schedule write tool, and the Spring session cookie is never sent to the AI service.
 
 ## Requirements
 
@@ -41,7 +41,7 @@ Copy-Item .env.example .env
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8010
 ```
 
-The service listens on localhost only. Browser access is allowed from `FRONTEND_ORIGINS` (default `http://localhost:3000` and `http://127.0.0.1:3000`). Set the frontend's `NEXT_PUBLIC_AI_SERVICE_URL` if the AI service URL differs from `http://127.0.0.1:8010`. Open [http://127.0.0.1:8010/docs](http://127.0.0.1:8010/docs) for Swagger UI. `GET /health` checks the service without calling AWS. `POST /api/assistant/chat` requires `Authorization: Bearer <assistant JWT>` and a JSON body containing `message` (and optional `max_tokens`). The frontend gets this token through same-origin `POST /api/auth/assistant-token`; the Spring endpoint requires its existing authenticated session.
+The service listens on localhost only for local development. The Next.js server reverse-proxies same-origin `POST /api/assistant/chat` requests to `AI_SERVICE_URL`, which defaults to `http://127.0.0.1:8010`; set `AI_SERVICE_URL` in the frontend server environment when the service runs at a different reachable URL. Browser requests stay on the frontend origin, so browser CORS is not needed for chat. Open [http://127.0.0.1:8010/docs](http://127.0.0.1:8010/docs) for Swagger UI. `GET /health` checks the service without calling AWS. `POST /api/assistant/chat` requires `Authorization: Bearer <assistant JWT>` and a JSON body containing `message` (and optional `max_tokens`). The frontend gets this token through same-origin `POST /api/auth/assistant-token`; the Spring endpoint requires its existing authenticated session.
 
 Example request:
 

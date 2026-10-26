@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class AssistantRequest(BaseModel):
     message: str = Field(
         min_length=1,
-        max_length=4000,
+        max_length=6000,
         description="A question or RTO planning request for the assistant.",
         examples=["I need 11 office days next month. Prefer Wednesday to Friday."],
     )
