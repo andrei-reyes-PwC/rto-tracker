@@ -35,7 +35,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 - `src/main/java/com/rtotracker/backend/WebCorsConfig.java` configures credentialed CORS globally for `/api/**`.
 - `src/main/java/com/rtotracker/backend/ApiExceptionHandler.java` formats validation, malformed request, and application status errors as JSON responses with explanations.
 - `src/main/resources/db/migration/` contains Flyway schema migrations.
-- `dev-data/seed-rto-dashboard.sql` is an optional, idempotent local development seed for demo platforms, schedules, users, role assignments, and current-week office days; it is not a Flyway migration.
+- `dev-data/seed-rto-dashboard.sql` is an optional, idempotent local development seed for 200 synthetic demo users across three platforms and work schedules, with varied attendance on the current Monday–Friday; it is not a Flyway migration and must not be run against production. All demo accounts use password `RtoDemo123!`.
 - `V9__create_work_schedules.sql` creates named work schedules and adds the nullable `users.work_schedule_id` relationship with `ON DELETE SET NULL`.
 - `V10__create_events.sql` creates global/platform events with a platform foreign key that cascades on platform deletion.
 
