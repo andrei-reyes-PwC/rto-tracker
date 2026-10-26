@@ -61,7 +61,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - Use React Hook Form `Controller` for form fields, with Zod schemas and the Zod resolver for validation.
 
 
-- The root page is an interactive RTO planner; it defaults to the current client month, uses a hydration-safe placeholder until the client date is ready, and loads/saves schedules per month. Unsaved edits remain client-side drafts. Calendar events come from the backend and are filtered by the signed-in user's platform.
+- The root page is an interactive RTO planner; it defaults to the current client month, uses a hydration-safe placeholder until the client date is ready, and loads/saves schedules per month. Unsaved edits remain client-side drafts. Today and past dates are locked in the calendar and bulk actions affect only future dates. Calendar events come from the backend and are filtered by the signed-in user's platform.
 - `components/sidebar/ProfileMenu.tsx` and `components/sidebar/utils.ts` contain the authenticated profile menu/logout behavior and email initials helper, respectively.
 - Root metadata and planner use a PwC-inspired orange and charcoal internal-tool theme.
 - `node_modules/` and `.next/` exist locally and are generated; do not treat them as source.
@@ -70,7 +70,7 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 Keep these notes concise and factual. When work changes architecture, routes, data flow, integrations, or conventions, update the relevant section here.
 
-- `api/office-days.ts` loads the authenticated user's monthly schedule and same-platform daily counts together, replaces the monthly schedule, and loads colleagues' plans for a selected date through the same-origin API proxy. The planner keeps unsaved edits in client state and persists them with the backend on Save.
+- `api/office-days.ts` loads the authenticated user's monthly schedule and same-platform daily counts together, replaces the editable future portion of the monthly schedule, and loads colleagues' plans for a selected date through the same-origin API proxy. The planner keeps unsaved edits in client state and persists them with the backend on Save.
 - `api/users.ts` loads, creates, updates, and deletes backend users through the same-origin API proxy without caching list requests.
 - `api/platforms.ts` loads platform summaries with member counts, platform filter options, and platform details; the platform editor fetches member details and the user roster only when opened.
 - `api/work-schedules.ts` loads, creates, updates, and deletes work schedules through the same-origin API proxy.

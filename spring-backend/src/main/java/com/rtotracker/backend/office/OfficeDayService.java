@@ -91,9 +91,26 @@ public class OfficeDayService {
 
         LocalDate startInclusive = month.atDay(1);
         LocalDate endExclusive = month.plusMonths(1).atDay(1);
-        officeDays.deleteMonth(userEmail, startInclusive, endExclusive);
+        LocalDate today = LocalDate.now();
+        List<LocalDate> lockedDates = officeDays
+                .findAllByUserEmailAndOfficeDateGreaterThanEqualAndOfficeDateLessThanOrderByOfficeDateAsc(
+                        userEmail, startInclusive, endExclusive)
+                .stream()
+                .map(OfficeDay::getOfficeDate)
+                .filter(date -> !date.isAfter(today))
+                .toList();
+        if (dates.stream().anyMatch(date -> !date.isAfter(today) && !lockedDates.contains(date))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Today and past office days cannot be added or changed");
+        }
+
+        LocalDate editableStart = today.plusDays(1).isAfter(startInclusive) ? today.plusDays(1) : startInclusive;
+        if (editableStart.isBefore(endExclusive)) {
+            officeDays.deleteMonth(userEmail, editableStart, endExclusive);
+        }
 
         List<OfficeDay> replacements = new TreeSet<>(dates).stream()
+                .filter(date -> date.isAfter(today))
                 .map(date -> new OfficeDay(userEmail, date))
                 .toList();
         officeDays.saveAll(replacements);

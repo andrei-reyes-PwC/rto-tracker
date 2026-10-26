@@ -226,15 +226,16 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   }, [monthKey, savedByMonth]);
 
   const toggleDay = useCallback((key: string) => {
+    if (key <= todayKey) return;
     updateOfficeDays((current) => current.includes(key) ? current.filter((day) => day !== key) : [...current, key].sort());
-  }, [updateOfficeDays]);
+  }, [todayKey, updateOfficeDays]);
 
   const setWeekdays = useCallback(() => {
-    const weekdays = calendarDays.flatMap((date) => date && date.getDay() !== 0 && date.getDay() !== 6 ? [dateKey(date)] : []);
+    const weekdays = calendarDays.flatMap((date) => date && dateKey(date) > todayKey && date.getDay() !== 0 && date.getDay() !== 6 ? [dateKey(date)] : []);
     updateOfficeDays((current) => [...new Set([...current, ...weekdays])].sort());
-  }, [calendarDays, updateOfficeDays]);
+  }, [calendarDays, todayKey, updateOfficeDays]);
 
-  const clearMonth = useCallback(() => updateOfficeDays(() => []), [updateOfficeDays]);
+  const clearMonth = useCallback(() => updateOfficeDays((current) => current.filter((day) => day <= todayKey)), [todayKey, updateOfficeDays]);
 
   const saveSchedule = useCallback(async () => {
     setIsSaving(true);

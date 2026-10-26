@@ -51,7 +51,7 @@ export default function MonthlyCalendar() {
   return (
     <Card id="calendar" className="gap-0 border-slate-200/80 shadow-none">
       <CardHeader className="flex flex-col justify-between gap-4 pb-5 sm:flex-row sm:items-center">
-        <div><CardTitle className="text-base">Monthly calendar</CardTitle><CardDescription className="mt-1">Click any date to see who else on your platform plans to be in. Use the checkbox to edit your own plan.</CardDescription></div>
+        <div><CardTitle className="text-base">Monthly calendar</CardTitle><CardDescription className="mt-1">Click any date to see who else on your platform plans to be in. Use the checkbox to edit future office days; today and past days are locked.</CardDescription></div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => changeMonth(-1)}><ArrowLeft className="size-4" /></Button>
           <div className="min-w-36 text-center text-sm font-semibold">{isCurrentDateReady ? monthName : <Skeleton role="status" aria-label="Loading current month" className="mx-auto h-4 w-28" />}</div>
@@ -97,7 +97,7 @@ export default function MonthlyCalendar() {
                     <span className="flex min-w-0 items-center gap-1">
                       <span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs ${isToday ? "bg-[#e65300] font-semibold text-white" : "font-medium text-slate-700"}`}>{date.getDate()}</span>
                     </span>
-                    <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => toggleDay(key)} disabled={disabled} className="pointer-events-auto size-4 cursor-pointer accent-[#e65300]" />
+                    <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => toggleDay(key)} disabled={disabled || key <= todayKey} title={key <= todayKey ? "Today and past office days are locked" : undefined} className="pointer-events-auto size-4 cursor-pointer accent-[#e65300] disabled:cursor-not-allowed disabled:opacity-50" />
                   </span>
                   {(user?.platform && platformAttendanceCounts || eventCount > 0) && (
                     <span className="mt-auto flex flex-wrap items-start gap-1">
@@ -121,7 +121,7 @@ export default function MonthlyCalendar() {
           </div>
           <div className="flex flex-wrap gap-2 self-start">
             <Button variant="outline" size="sm" onClick={setWeekdays} disabled={disabled} className="gap-2"><Check className="size-3.5" /> Select all remaining weekdays</Button>
-            <Button variant="outline" size="sm" onClick={clearMonth} disabled={disabled || officeDays.length === 0} className="gap-2"><RotateCcw className="size-3.5" /> Clear month</Button>
+            <Button variant="outline" size="sm" onClick={clearMonth} disabled={disabled || !officeDays.some((day) => day > todayKey)} className="gap-2"><RotateCcw className="size-3.5" /> Clear future days</Button>
           </div>
         </div>
       </CardContent>

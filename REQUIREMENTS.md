@@ -17,6 +17,7 @@ All authenticated users have a personal account identified by email. User accoun
 - The planner requires an authenticated session.
 - User and platform management require `SUPER_ADMIN`. The frontend hides these routes from unauthorized users; the backend independently enforces authorization for administrative API operations.
 - Office-day reads and updates require an authenticated session and always apply to the signed-in account. A caller cannot select another account as the schedule owner.
+- Office-day selections for today and past dates are locked. Users may add or remove future dates only; monthly updates preserve saved dates on or before today, and the backend rejects attempts to add such dates.
 - Platform office-day reads require an authenticated session and return saved office dates only for colleagues sharing the signed-in user's platform; the caller cannot choose another platform, and their own schedule is excluded from this view.
 - Event management requires `SUPER_ADMIN`; authenticated planner reads return global events plus events for the signed-in user's platform. Users cannot select another platform's events.
 - A `SUPER_ADMIN` cannot delete their own account. Protected users cannot be deleted or edited through user management.
@@ -34,7 +35,7 @@ All authenticated users have a personal account identified by email. User accoun
 ### Office planner
 
 - **PLAN-01** — As an authenticated user, I can view a monthly calendar and move between months or return to the current month.
-- **PLAN-02** — As an authenticated user, I can mark individual dates as office days, mark weekdays, or clear the selected month.
+- **PLAN-02** — As an authenticated user, I can mark or clear future dates as office days, select remaining weekdays, and clear future selections; today and past dates are locked.
 - **PLAN-03** — As an authenticated user, I can save a month's office-day selections and see saved selections when I revisit that month.
 - **PLAN-04** — As an authenticated user, I can edit a month before saving; unsaved changes are treated as a draft and save failures are surfaced in the planner.
 - **PLAN-05** — The planner shows a weekday count and the next planned office day for the selected month and current date.
