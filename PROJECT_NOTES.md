@@ -25,3 +25,4 @@ This repository contains the RTO Tracker frontend and backend, plus a standalone
 - Build output and dependencies are local generated files, not source.
 - Sites are managed at `/sites` and persisted by Spring's SUPER_ADMIN-protected `/api/sites` CRUD endpoints. Each Site has a unique name up to 25 characters and can have multiple users; each user can belong to zero or one Site through nullable `users.site_id`, cleared when its Site is deleted.
 - Manage Users includes Site assignment in its server-side filters and account editor; SUPER_ADMIN users can assign or clear a user's Site directly.
+- The RTO dashboard has a Site filter above the week selector; it filters daily attendance and all platform/work-schedule breakdown totals to all Sites or one Site.

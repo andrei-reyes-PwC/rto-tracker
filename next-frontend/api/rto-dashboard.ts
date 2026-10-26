@@ -17,6 +17,8 @@ export type WeeklyRtoSummary = {
   byWorkSchedule: GroupAttendance[];
 };
 
+export type DashboardSiteOption = { id: number; name: string };
+
 type ApiErrorResponse = { message?: string; details?: string[] };
 
 async function responseError(response: Response) {
@@ -24,8 +26,23 @@ async function responseError(response: Response) {
   return error?.details?.join(" ") || error?.message || "Could not load the RTO dashboard. Please try again.";
 }
 
-export async function getWeeklyRtoSummary(weekStart: string, signal?: AbortSignal): Promise<WeeklyRtoSummary> {
+export async function getRtoDashboardSites(signal?: AbortSignal): Promise<DashboardSiteOption[]> {
+  const response = await fetch("/api/dashboard/rto/sites", {
+    credentials: "include",
+    cache: "no-store",
+    signal,
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+  return (await response.json()) as DashboardSiteOption[];
+}
+
+export async function getWeeklyRtoSummary(
+  weekStart: string,
+  siteFilter = "all",
+  signal?: AbortSignal,
+): Promise<WeeklyRtoSummary> {
   const params = new URLSearchParams({ weekStart });
+  if (siteFilter !== "all") params.set("siteId", siteFilter);
   const response = await fetch(`/api/dashboard/rto?${params}`, {
     credentials: "include",
     cache: "no-store",

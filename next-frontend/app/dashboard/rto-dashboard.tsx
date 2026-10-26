@@ -5,6 +5,7 @@ import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import type { WeeklyRtoSummary } from "@/api/rto-dashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import DataLoadError from "@/components/DataLoadError";
@@ -21,7 +22,7 @@ export default function RtoDashboard() {
 }
 
 function RtoDashboardContent() {
-  const { weekStart, summary, loading, error, retry, previousWeek, nextWeek, currentWeek, addDays } = useRtoDashboard();
+  const { weekStart, siteFilter, setSiteFilter, sites, summary, loading, error, retry, previousWeek, nextWeek, currentWeek, addDays } = useRtoDashboard();
 
   const weekLabel = summary
     ? `${formatDate(summary.weekStart, { month: "short", day: "numeric" })} – ${formatDate(summary.weekEnd, { month: "short", day: "numeric", year: "numeric" })}`
@@ -36,15 +37,30 @@ function RtoDashboardContent() {
             <h1 className="text-3xl font-semibold tracking-tight">RTO dashboard</h1>
             <p className="mt-2 text-sm text-muted-foreground">Saved office-day plans for the selected Monday–Friday week.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 sm:items-end">
+          <div className="flex w-fit max-w-full items-center gap-3 sm:grid sm:w-64 sm:grid-cols-[auto_minmax(0,1fr)]">
+            <label htmlFor="dashboard-site-filter" className="text-sm font-medium">Site</label>
+            <Select value={siteFilter} onValueChange={setSiteFilter} disabled={loading}>
+              <SelectTrigger id="dashboard-site-filter" aria-label="Filter dashboard by site" className="w-fit max-w-[calc(100vw-6rem)] bg-background sm:w-full">
+                <SelectValue placeholder="All sites" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All sites</SelectItem>
+                {sites.map((site) => <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="icon" aria-label="Previous week" onClick={previousWeek}><ChevronLeft /></Button>
             <span className="min-w-40 text-center text-sm font-medium">{weekLabel}</span>
             <Button variant="outline" size="icon" aria-label="Next week" onClick={nextWeek}><ChevronRight /></Button>
             <Button variant="outline" onClick={currentWeek}><CalendarDays /><span className="hidden sm:inline">This week</span></Button>
           </div>
+          </div>
         </div>
 
         {error && <DataLoadError message={error} onRetry={retry} retrying={loading} />}
+
         {loading ? <DashboardSkeleton /> : summary ? (
           <>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

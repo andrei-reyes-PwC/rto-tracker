@@ -3,6 +3,7 @@ package com.rtotracker.backend.dashboard;
 import com.rtotracker.backend.office.OfficeDay;
 import com.rtotracker.backend.office.OfficeDayRepository;
 import com.rtotracker.backend.platform.Platform;
+import com.rtotracker.backend.site.SiteRepository;
 import com.rtotracker.backend.user.User;
 import com.rtotracker.backend.user.UserRepository;
 import com.rtotracker.backend.workschedule.WorkSchedule;
@@ -25,14 +26,23 @@ public class RtoDashboardService {
 
     private final OfficeDayRepository officeDays;
     private final UserRepository users;
+    private final SiteRepository sites;
 
-    public RtoDashboardService(OfficeDayRepository officeDays, UserRepository users) {
+    public RtoDashboardService(OfficeDayRepository officeDays, UserRepository users, SiteRepository sites) {
         this.officeDays = officeDays;
         this.users = users;
+        this.sites = sites;
     }
 
     @Transactional(readOnly = true)
-    public WeeklyRtoSummary getWeeklySummary(LocalDate weekStart) {
+    public List<SiteOption> findSiteOptions() {
+        return sites.findAllSummaries("").stream()
+                .map(site -> new SiteOption(site.getId(), site.getName()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public WeeklyRtoSummary getWeeklySummary(LocalDate weekStart, Long siteId) {
         LocalDate weekEnd = weekStart.plusDays(4);
         List<OfficeDay> plannedDays = officeDays.findAllByOfficeDateBetweenOrderByOfficeDateAsc(weekStart, weekEnd);
         Set<String> emails = plannedDays.stream().map(OfficeDay::getUserEmail).collect(java.util.stream.Collectors.toSet());
@@ -48,6 +58,10 @@ public class RtoDashboardService {
         for (OfficeDay plannedDay : plannedDays) {
             String email = plannedDay.getUserEmail();
             User user = userByEmail.get(email);
+            if (siteId != null && (user == null || user.getSite() == null
+                    || !siteId.equals(user.getSite().getId()))) {
+                continue;
+            }
             dailyAttendees.get(plannedDay.getOfficeDate()).add(email);
             weeklyAttendees.add(email);
 
@@ -99,6 +113,9 @@ public class RtoDashboardService {
     public record WeeklyRtoSummary(LocalDate weekStart, LocalDate weekEnd, long totalRtoDays, long uniqueAttendees,
                                    List<DailyAttendance> daily, List<GroupAttendance> byPlatform,
                                    List<GroupAttendance> byWorkSchedule) {
+    }
+
+    public record SiteOption(Long id, String name) {
     }
 
     public record DailyAttendance(LocalDate date, long attendees) {

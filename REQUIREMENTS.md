@@ -90,6 +90,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **DASH-01** — As a `SUPER_ADMIN`, I can review saved office-day plans for a selected Monday–Friday week.
 - **DASH-02** — The dashboard shows attendance for each weekday, total planned RTO days, distinct attendees, and total and daily breakdowns by each attendee's current platform and work schedule.
 - **DASH-03** — Users with no platform or work schedule are included in the corresponding unassigned breakdown.
+- **DASH-04** - As an ADMIN or SUPER_ADMIN, I can filter the RTO dashboard by all Sites or one Site. The Site filter appears above the week selector and applies to attendance totals and every breakdown.
 
 ### Lunch procurement
 
