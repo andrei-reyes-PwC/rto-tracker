@@ -9,7 +9,7 @@ This document is the shared source of truth for the system's users, access rules
 | Signed-out visitor | Can use the sign-in page. Visiting a protected page redirects to sign-in. |
 | `USER` | Can sign in, view and manage their own monthly office-day schedule, view saved office days for other users in their platform, view global events and events for their platform, and sign out. They cannot use administrative management. |
 | `SUPER_ADMIN` | Has authenticated user capabilities and can manage users, roles assigned through user management, platforms, platform memberships, work schedules, work schedule assignments, and global/platform events. |
-| `LUNCH` | Can lock one recipient list per lunch date, view the daily recipients, and mark whether each person received lunch. |
+| `LUNCH` | Can preview and lock one recipient list per lunch date and scan user credentials to track receipt. |
 
 All authenticated users have a personal account identified by email. User accounts are created by an administrator; there is no public registration flow. New accounts receive the `USER` role by default. The system may attach multiple roles to an account, but `SUPER_ADMIN` is protected from assignment and modification through the user-management flow.
 
@@ -21,7 +21,7 @@ All authenticated users have a personal account identified by email. User accoun
 - Office-day selections for today and past dates are locked. Users may add or remove future dates only; monthly updates preserve saved dates on or before today, and the backend rejects attempts to add such dates.
 - Platform office-day reads require an authenticated session and return saved office dates only for colleagues sharing the signed-in user's platform; the caller cannot choose another platform, and their own schedule is excluded from this view.
 - Event management requires `SUPER_ADMIN`; authenticated planner reads return global events plus events for the signed-in user's platform. Users cannot select another platform's events.
-- Lunch procurement and receiving routes (`/lunch` and `/lunch/receiving`) and their API endpoints require the `LUNCH` or `SUPER_ADMIN` role; backend authorization is enforced for roster reads, daily lists, locking, and receipt updates.
+- Lunch procurement (`/lunch`) and its API endpoints require the `LUNCH` or `SUPER_ADMIN` role; backend authorization is enforced for roster reads and locking.
 - A `SUPER_ADMIN` cannot delete their own account. Protected users cannot be deleted or edited through user management.
 - Signing out invalidates the session.
 
@@ -88,13 +88,12 @@ All authenticated users have a personal account identified by email. User accoun
 
 - **LUNCH-01** — As a user with the `LUNCH` or `SUPER_ADMIN` role, I can lock all existing users as free-lunch recipients for a selected date with one action.
 - **LUNCH-06** — Before locking, I can review the full user roster and a platform-row/work-schedule-column summary for the selected date.
-- **LUNCH-07** — Lunch procurement and recipient handout tracking are available on separate routes.
 - **LUNCH-08** — Before locking, I can filter only the “Users to be included” list by platform and work schedule. These filters do not change the breakdown or all-users lock action.
 - **LUNCH-09** — The filtered “Users to be included” list supports pagination with selectable page sizes.
 - **LUNCH-02** — A date can have only one locked lunch list. Once locked, its recipients cannot be added or removed.
-- **LUNCH-03** — As a user with the `LUNCH` or `SUPER_ADMIN` role, I can view the recipients for a selected date and mark each person as received or not received.
+- **LUNCH-03** — As a user with the `LUNCH` or `SUPER_ADMIN` role, I can scan a recipient's credential to mark lunch received; scans identify recipients not on the locked list and recipients already marked received.
 - **LUNCH-04** — The system stores one received status per locked recipient and date. Deleted user accounts are removed from recipient records.
-- **LUNCH-05** — The daily dashboard shows recipient totals by platform in rows and work schedule in columns, including received counts.
+- **LUNCH-05** — The daily overview shows recipient received/total counts by platform in rows and work schedule in columns once locked.
 
 ### RTO planning assistant
 

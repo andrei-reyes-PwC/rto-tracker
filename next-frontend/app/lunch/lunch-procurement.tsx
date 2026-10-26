@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { LockKeyhole } from "lucide-react";
-import { getLunchDay, lockLunchDay, type LunchDay } from "@/api/lunch";
+import { getLunchDay, lockLunchDay, scanLunchCredential, type LunchScanResult, type LunchSummary } from "@/api/lunch";
 import DataLoadError from "@/components/DataLoadError";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,8 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import LunchBreakdown from "./lunch-breakdown";
+import LunchSummaryBreakdown from "./lunch-summary-breakdown";
 import LunchRosterPreview from "./lunch-roster-preview";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import InlineNotification from "@/components/InlineNotification";
 
 function currentLunchDate() {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
@@ -21,13 +23,23 @@ function currentLunchDate() {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
+function formatLunchDate(date: string) {
+  if (!date) return "";
+  const value = new Date(`${date}T00:00:00Z`);
+  const monthDayYear = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(value);
+  const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: "UTC" }).format(value);
+  return `${monthDayYear} (${weekday})`;
+}
+
 export default function LunchProcurement() {
   const [date, setDate] = useState("");
-  const [day, setDay] = useState<LunchDay | null>(null);
+  const [day, setDay] = useState<LunchSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [dayError, setDayError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmLockOpen, setConfirmLockOpen] = useState(false);
+  const [rosterRefreshKey, setRosterRefreshKey] = useState(0);
 
   useEffect(() => { setDate(currentLunchDate()); }, []);
 
@@ -55,9 +67,19 @@ export default function LunchProcurement() {
   async function lockDay() {
     setBusy(true);
     setActionError(null);
-    try { setDay(await lockLunchDay(date)); }
+    try {
+      setDay(await lockLunchDay(date));
+      setConfirmLockOpen(false);
+    }
     catch (error) { setActionError(error instanceof Error ? error.message : "Could not lock lunch."); }
     finally { setBusy(false); }
+  }
+
+  async function scanCredential(credential: string): Promise<LunchScanResult> {
+    const result = await scanLunchCredential(date, credential);
+    try { setDay(await getLunchDay(date)); } catch { /* Keep the scan result visible even if the summary refresh fails. */ }
+    setRosterRefreshKey((value) => value + 1);
+    return result;
   }
 
   return (
@@ -73,19 +95,78 @@ export default function LunchProcurement() {
         ) : day && (
           <>
             <Card>
-              <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>{day.locked ? "Lunch is locked" : "Lock lunch for this date"}</CardTitle><CardDescription>{day.locked ? `${day.recipients.length} users are on the locked list. The recipient list cannot be changed.` : `${day.recipients.length} users will be included. Review the overview below, then lock the list once.`}</CardDescription></div><Badge variant={day.locked ? "default" : "secondary"}>{day.locked ? "Locked" : "Open"}</Badge></div></CardHeader>
-              {!day.locked && <CardContent><Button onClick={() => void lockDay()} disabled={busy || !date || day.recipients.length === 0}><LockKeyhole />Lock all users</Button></CardContent>}
+              <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>{day.locked ? "Lunch is locked" : "Lock lunch for this date"}</CardTitle><CardDescription>{day.locked ? `${day.totalRecipients} users are on the locked list. The recipient list cannot be changed.` : `${day.totalRecipients} users will be included. Review the overview below, then lock the list once.`}</CardDescription></div><Badge variant={day.locked ? "default" : "secondary"}>{day.locked ? "Locked" : "Open"}</Badge></div></CardHeader>
+              {!day.locked && <CardContent><Button onClick={() => setConfirmLockOpen(true)} disabled={busy || !date || day.totalRecipients === 0}><LockKeyhole />Lock all users</Button></CardContent>}
             </Card>
-            <Card>
-              <CardHeader><CardTitle>User overview</CardTitle><CardDescription>Review users by platform and work schedule before locking.</CardDescription></CardHeader>
-              <CardContent>
-                <LunchBreakdown recipients={day.recipients} showReceiptCounts={false} />
-              </CardContent>
-            </Card>
-            <LunchRosterPreview key={date} recipients={day.recipients} />
+            <div className={day.locked ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start" : "space-y-4"}>
+              <Card>
+                <CardHeader><CardTitle>User overview</CardTitle><CardDescription>Review users by platform and work schedule before locking.</CardDescription></CardHeader>
+                <CardContent>
+                  <LunchSummaryBreakdown breakdown={day.breakdown} totalRecipients={day.totalRecipients} locked={day.locked} />
+                </CardContent>
+              </Card>
+              {day.locked && <aside className="xl:sticky xl:top-4"><LunchCredentialScanner onScan={scanCredential} /></aside>}
+              <LunchRosterPreview key={date} locked={day.locked} date={date} totalCount={day.totalRecipients} refreshKey={rosterRefreshKey} />
+            </div>
           </>
         )}
+        <AlertDialog open={confirmLockOpen} onOpenChange={(open) => { if (!busy) setConfirmLockOpen(open); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Lock lunch for {formatLunchDate(date)}?</AlertDialogTitle>
+              <AlertDialogDescription>This will lock the current roster of {day?.totalRecipients ?? 0} users for this date. The recipient list cannot be changed after locking.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+              <AlertDialogAction disabled={busy || !day || day.totalRecipients === 0} onClick={(event) => { event.preventDefault(); void lockDay(); }}>
+                {busy ? "Locking…" : "Confirm lock"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </SidebarPageLayout>
   );
+}
+
+function LunchCredentialScanner({ onScan }: { onScan: (credential: string) => Promise<LunchScanResult> }) {
+  const [credential, setCredential] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
+
+  async function processCredential(value: string) {
+    const scanned = value.trim();
+    if (!scanned || busy) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await onScan(scanned);
+      if (result.status === "MARKED_RECEIVED") setMessage({ text: `${result.email} marked as received.`, error: false });
+      else if (result.status === "ALREADY_RECEIVED") setMessage({ text: `${result.email} has already received lunch.`, error: true });
+      else setMessage({ text: `${result.email} is not on today's locked lunch list.`, error: true });
+      setCredential("");
+    } catch (error) {
+      setMessage({ text: error instanceof Error ? error.message : "Could not process this scan.", error: true });
+    } finally { setBusy(false); }
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+    }
+    if (event.key === "Enter") void processCredential(credential);
+  }
+
+  return <Card>
+    <CardHeader><CardTitle>Scan user credential</CardTitle><CardDescription>Scan or type a user email, then press Enter or select Check scan.</CardDescription></CardHeader>
+    <CardContent className="space-y-3">
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input autoFocus autoComplete="off" aria-label="Scanned user email" placeholder="Scan user email" value={credential} onChange={(event) => setCredential(event.target.value)} onKeyDown={handleKeyDown} disabled={busy} />
+        <Button type="button" onClick={() => void processCredential(credential)} disabled={busy || credential.trim().length === 0}>{busy ? "Checking…" : "Check scan"}</Button>
+      </div>
+      {message && (message.error
+        ? <InlineNotification message={message.text} tone="error" onDismiss={() => setMessage(null)} />
+        : <InlineNotification message={message.text} tone="success" onDismiss={() => setMessage(null)} />)}
+    </CardContent>
+  </Card>;
 }

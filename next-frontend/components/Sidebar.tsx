@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, CalendarDays, CalendarRange, ClipboardCheck, Utensils, Users } from "lucide-react";
+import { BarChart3, Boxes, CalendarDays, CalendarRange, Utensils, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import { useAuth } from "@/providers/AuthProvider";
 import {
@@ -115,14 +115,6 @@ export default function Sidebar() {
                   <Link href="/lunch" onClick={() => setOpenMobile(false)} aria-label="Lunch procurement">
                     <Utensils />
                     <span>Lunch procurement</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/lunch/receiving"} tooltip="Receiving lunch">
-                  <Link href="/lunch/receiving" onClick={() => setOpenMobile(false)} aria-label="Receiving lunch">
-                    <ClipboardCheck />
-                    <span>Receiving lunch</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

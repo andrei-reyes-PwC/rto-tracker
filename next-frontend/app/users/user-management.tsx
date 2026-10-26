@@ -45,7 +45,7 @@ export default function UserManagement({ readOnly = false, platformName }: { rea
 }
 
 function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; platformName?: string }) {
-  const { users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingFilters, loadError, retryLoad, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId, workScheduleId, setWorkScheduleId, roleCode, setRoleCode, keyword, setKeyword } = useUserManagement();
+  const { users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingFilters, loadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId, workScheduleId, setWorkScheduleId, roleCode, setRoleCode, keyword, setKeyword } = useUserManagement();
   const hasActiveFilters = Boolean(keyword.trim()) || roleCode !== "all" || platformId !== "all" || workScheduleId !== "all";
   const orderedRoles = [...roles].sort((first, second) => {
     const firstPriority = rolePriority.indexOf(first.code);
@@ -66,7 +66,7 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
         {!readOnly && <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add user</Button>}
       </div>
 
-      {loadError && <DataLoadError message={loadError} onRetry={retryLoad} retrying={isLoading || isLoadingFilters} />}
+      {loadError && <DataLoadError message={loadError} onRetry={retryLoad} retrying={isLoading || isLoadingFilters} onDismiss={dismissLoadError} />}
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
       {notice && <CrudActionNotice message={notice} onDismiss={() => setNotice("")} />}
 

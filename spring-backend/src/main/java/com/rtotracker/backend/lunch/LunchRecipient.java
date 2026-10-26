@@ -37,8 +37,7 @@ public class LunchRecipient {
     }
     public String getUserEmail() { return userEmail; }
     public boolean isReceived() { return received; }
-    public void setReceived(boolean received) { this.received = received; }
-
+    public void markReceived() { this.received = true; }
     public static class Key implements Serializable {
         private LocalDate lunchDate;
         private String userEmail;

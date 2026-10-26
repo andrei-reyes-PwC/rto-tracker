@@ -12,7 +12,7 @@ type UserManagementContextValue = {
   users: ManagedUser[]; platforms: PlatformOption[]; workSchedules: PlatformOption[]; roles: { code: string }[]; totalUsers: number; totalPages: number;
   page: number; setPage: (page: number | ((current: number) => number)) => void;
   pageSize: number; setPageSize: (size: number) => void; platformId: string; workScheduleId: string; roleCode: string; keyword: string;
-  setPlatformId: (id: string) => void; setWorkScheduleId: (id: string) => void; setRoleCode: (code: string) => void; setKeyword: (keyword: string) => void; isLoading: boolean; isLoadingFilters: boolean; loadError: string; retryLoad: () => void; error: string; notice: string;
+  setPlatformId: (id: string) => void; setWorkScheduleId: (id: string) => void; setRoleCode: (code: string) => void; setKeyword: (keyword: string) => void; isLoading: boolean; isLoadingFilters: boolean; loadError: string; retryLoad: () => void; dismissLoadError: () => void; error: string; notice: string;
   setNotice: (notice: string) => void; isDeleting: boolean; editor: Editor;
   setEditor: (editor: Editor) => void; deletingUser: ManagedUser | null;
   setDeletingUser: (user: ManagedUser | null) => void; refresh: () => Promise<void>;
@@ -94,6 +94,10 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
     void refresh();
     setFilterRetry((current) => current + 1);
   }, [refresh]);
+  const dismissLoadError = useCallback(() => {
+    setLoadError("");
+    setFilterLoadError("");
+  }, []);
 
   const saveUser = useCallback(async (values: UserEditorValues) => {
     try {
@@ -121,7 +125,7 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
     finally { setIsDeleting(false); }
   }, [deletingUser, isDeleting, page, refresh, users.length]);
 
-  const value = useMemo(() => ({ users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, platformId, workScheduleId, roleCode, keyword, setPlatformId, setWorkScheduleId, setRoleCode, setKeyword, isLoading, isLoadingFilters, loadError: loadError || filterLoadError, retryLoad, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading }), [users, platforms, workSchedules, roles, totalUsers, totalPages, page, pageSize, platformId, workScheduleId, roleCode, keyword, isLoading, isLoadingFilters, loadError, filterLoadError, retryLoad, error, notice, isDeleting, editor, deletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading]);
+  const value = useMemo(() => ({ users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, platformId, workScheduleId, roleCode, keyword, setPlatformId, setWorkScheduleId, setRoleCode, setKeyword, isLoading, isLoadingFilters, loadError: loadError || filterLoadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading }), [users, platforms, workSchedules, roles, totalUsers, totalPages, page, pageSize, platformId, workScheduleId, roleCode, keyword, isLoading, isLoadingFilters, loadError, filterLoadError, retryLoad, dismissLoadError, error, notice, isDeleting, editor, deletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading]);
   return <UserManagementContext.Provider value={value}>{children}</UserManagementContext.Provider>;
 }
 

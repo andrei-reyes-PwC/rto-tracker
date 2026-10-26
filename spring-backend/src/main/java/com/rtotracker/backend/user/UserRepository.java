@@ -13,6 +13,18 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("select user.email from User user order by user.email asc")
     List<String> findAllEmails();
 
+    @Query("select user from User user where (:platform is null or coalesce(user.platform.name, 'No platform') = :platform) "
+            + "and (:workSchedule is null or coalesce(user.workSchedule.name, 'No work schedule') = :workSchedule) "
+            + "and (:search is null or lower(user.email) like concat('%', lower(:search), '%'))")
+    Page<User> findLunchRoster(@Param("platform") String platform, @Param("workSchedule") String workSchedule,
+                               @Param("search") String search, Pageable pageable);
+
+    @Query("select distinct coalesce(user.platform.name, 'No platform') from User user order by coalesce(user.platform.name, 'No platform')")
+    List<String> findLunchPlatforms();
+
+    @Query("select distinct coalesce(user.workSchedule.name, 'No work schedule') from User user order by coalesce(user.workSchedule.name, 'No work schedule')")
+    List<String> findLunchWorkSchedules();
+
     @Query(value = "select distinct user from User user left join user.roles role "
             + "where (:search is null or lower(user.email) like concat('%', lower(:search), '%')) "
             + "and (:roleCode is null or role.code = :roleCode) "
