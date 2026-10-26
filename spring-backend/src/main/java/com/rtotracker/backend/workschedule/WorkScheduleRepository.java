@@ -9,6 +9,10 @@ import java.util.Optional;
 
 public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Long> {
 
+    boolean existsByNameIgnoreCase(String name);
+
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
     @Query("select schedule.id as id, schedule.name as name, count(user.email) as userCount "
             + "from WorkSchedule schedule left join schedule.users user "
             + "where :search = '' or lower(schedule.name) like concat('%', :search, '%') "

@@ -39,13 +39,21 @@ public class WorkScheduleService {
     }
 
     public WorkSchedule create(String name, List<String> userEmails) {
-        return workSchedules.save(new WorkSchedule(normalizeName(name), findUsers(userEmails, null)));
+        String normalizedName = normalizeName(name);
+        if (workSchedules.existsByNameIgnoreCase(normalizedName)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A work schedule with this name already exists");
+        }
+        return workSchedules.save(new WorkSchedule(normalizedName, findUsers(userEmails, null)));
     }
 
     public WorkSchedule update(Long id, String name, List<String> userEmails) {
         WorkSchedule schedule = workSchedules.findByIdWithUsers(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Work schedule not found"));
-        schedule.update(normalizeName(name), findUsers(userEmails, id));
+        String normalizedName = normalizeName(name);
+        if (workSchedules.existsByNameIgnoreCaseAndIdNot(normalizedName, id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A work schedule with this name already exists");
+        }
+        schedule.update(normalizedName, findUsers(userEmails, id));
         return schedule;
     }
 
