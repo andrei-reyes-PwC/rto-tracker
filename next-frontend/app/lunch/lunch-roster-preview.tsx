@@ -7,21 +7,20 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import PaginationControls from "@/components/PaginationControls";
-import { getLunchRosterOptions, getLunchRosterPage, type LunchRosterOptions } from "@/api/lunch";
+import { getLunchRosterPage, type LunchRosterOptions } from "@/api/lunch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 const pageSizeOptions = [10, 25, 50];
 
-export default function LunchRosterPreview({ locked = false, date, totalCount, refreshKey = 0 }: { locked?: boolean; date: string; totalCount: number; refreshKey?: number }) {
+export default function LunchRosterPreview({ locked = false, date, totalCount, refreshKey = 0, siteFilter, options }: { locked?: boolean; date: string; totalCount: number; refreshKey?: number; siteFilter: string; options: LunchRosterOptions }) {
   const [platformFilter, setPlatformFilter] = useState("all");
   const [workScheduleFilter, setWorkScheduleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [emailSearch, setEmailSearch] = useState("");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [options, setOptions] = useState<LunchRosterOptions>({ platforms: [], workSchedules: [] });
   const [serverRecipients, setServerRecipients] = useState<LunchRecipient[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [rosterError, setRosterError] = useState<string | null>(null);
@@ -30,19 +29,14 @@ export default function LunchRosterPreview({ locked = false, date, totalCount, r
   const workScheduleOptions = useMemo(() => options.workSchedules, [options.workSchedules]);
   useEffect(() => {
     const controller = new AbortController();
-    void getLunchRosterOptions(controller.signal).then(setOptions).catch(() => undefined);
-    return () => controller.abort();
-  }, []);
-  useEffect(() => {
-    const controller = new AbortController();
     setRosterError(null);
-    void getLunchRosterPage(page, pageSize, platformFilter, workScheduleFilter, statusFilter, debouncedEmailSearch, controller.signal, locked ? date : undefined).then((result) => {
+    void getLunchRosterPage(page, pageSize, siteFilter, platformFilter, workScheduleFilter, statusFilter, debouncedEmailSearch, controller.signal, locked ? date : undefined).then((result) => {
       if (!controller.signal.aborted) { setServerRecipients(result.recipients); setTotalElements(result.totalElements); }
     }).catch((error: unknown) => {
       if (!controller.signal.aborted) setRosterError(error instanceof Error ? error.message : "Could not load this roster page.");
     });
     return () => controller.abort();
-  }, [date, debouncedEmailSearch, locked, page, pageSize, platformFilter, statusFilter, workScheduleFilter, refreshKey]);
+  }, [date, debouncedEmailSearch, locked, page, pageSize, platformFilter, siteFilter, statusFilter, workScheduleFilter, refreshKey]);
   const displayedRecipients = serverRecipients;
   const displayedTotalPages = Math.ceil(totalElements / pageSize);
   const displayedPage = Math.min(page, Math.max(displayedTotalPages - 1, 0));

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { LockKeyhole } from "lucide-react";
-import { getLunchDay, lockLunchDay, scanLunchCredential, type LunchScanResult, type LunchSummary } from "@/api/lunch";
+import { getLunchDay, getLunchRosterOptions, lockLunchDay, scanLunchCredential, type LunchRosterOptions, type LunchScanResult, type LunchSummary } from "@/api/lunch";
 import DataLoadError from "@/components/DataLoadError";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import LunchSummaryBreakdown from "./lunch-summary-breakdown";
@@ -40,22 +41,40 @@ export default function LunchProcurement() {
   const [busy, setBusy] = useState(false);
   const [confirmLockOpen, setConfirmLockOpen] = useState(false);
   const [rosterRefreshKey, setRosterRefreshKey] = useState(0);
+  const [rosterOptions, setRosterOptions] = useState<LunchRosterOptions>({ platforms: [], workSchedules: [], sites: [] });
+  const [siteFilter, setSiteFilter] = useState("");
+  const [siteOptionsLoaded, setSiteOptionsLoaded] = useState(false);
+  const [siteOptionsError, setSiteOptionsError] = useState<string | null>(null);
 
   useEffect(() => { setDate(currentLunchDate()); }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    void getLunchRosterOptions(controller.signal).then((result) => {
+      if (!controller.signal.aborted) {
+        setRosterOptions(result);
+        setSiteFilter((current) => current || (result.sites[0] ? String(result.sites[0].id) : ""));
+      }
+    }).catch((error: unknown) => {
+      if (!controller.signal.aborted) setSiteOptionsError(error instanceof Error ? error.message : "Could not load Sites.");
+    }).finally(() => {
+      if (!controller.signal.aborted) setSiteOptionsLoaded(true);
+    });
+    return () => controller.abort();
+  }, []);
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
-    if (!date) return;
+    if (!date || !siteFilter) { setLoading(false); return; }
     setLoading(true);
     setDayError(null);
     try {
-      const result = await getLunchDay(date, signal);
+      const result = await getLunchDay(date, siteFilter, signal);
       if (!signal?.aborted) setDay(result);
     } catch (error) {
       if (!signal?.aborted) setDayError(error instanceof Error ? error.message : "Could not load the lunch roster.");
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [date]);
+  }, [date, siteFilter]);
 
   useEffect(() => {
     if (!date) return;
@@ -68,7 +87,7 @@ export default function LunchProcurement() {
     setBusy(true);
     setActionError(null);
     try {
-      setDay(await lockLunchDay(date));
+      setDay(await lockLunchDay(date, siteFilter));
       setConfirmLockOpen(false);
     }
     catch (error) { setActionError(error instanceof Error ? error.message : "Could not lock lunch."); }
@@ -76,8 +95,8 @@ export default function LunchProcurement() {
   }
 
   async function scanCredential(credential: string): Promise<LunchScanResult> {
-    const result = await scanLunchCredential(date, credential);
-    try { setDay(await getLunchDay(date)); } catch { /* Keep the scan result visible even if the summary refresh fails. */ }
+    const result = await scanLunchCredential(date, credential, siteFilter);
+    try { setDay(await getLunchDay(date, siteFilter)); } catch { /* Keep the scan result visible even if the summary refresh fails. */ }
     setRosterRefreshKey((value) => value + 1);
     return result;
   }
@@ -87,26 +106,37 @@ export default function LunchProcurement() {
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
         <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p><h1 className="text-3xl font-semibold tracking-tight">Lunch procurement</h1><p className="mt-2 text-sm text-muted-foreground">Review the roster before locking lunch for a day.</p></div>
-          <div className="grid gap-2"><Label htmlFor="lunch-date">Lunch date</Label><Input id="lunch-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} className="w-full sm:w-48" /></div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="grid w-fit max-w-full gap-2 sm:w-64">
+              <Label htmlFor="lunch-site-filter">Site</Label>
+              <Select value={siteFilter} onValueChange={(value) => { setActionError(null); setSiteFilter(value ?? ""); }} disabled={!siteOptionsLoaded || !rosterOptions.sites.length || loading || busy || confirmLockOpen}>
+                <SelectTrigger id="lunch-site-filter" aria-label="Select lunch site" className="w-fit max-w-[calc(100vw-6rem)] bg-background sm:w-full"><SelectValue placeholder="Select a site" /></SelectTrigger>
+                <SelectContent>{rosterOptions.sites.map((site) => <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid w-fit max-w-full gap-2"><Label htmlFor="lunch-date">Lunch date</Label><Input id="lunch-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} className="w-fit max-w-full sm:w-48" /></div>
+          </div>
         </section>
         {actionError && <Alert variant="destructive"><AlertDescription>{actionError}</AlertDescription></Alert>}
+        {siteOptionsError && <Alert variant="destructive"><AlertDescription>{siteOptionsError} Refresh the page to try again.</AlertDescription></Alert>}
+        {siteOptionsLoaded && !siteOptionsError && rosterOptions.sites.length === 0 && <Alert><AlertDescription>No Sites are available for lunch procurement. Ask an administrator to configure a Site.</AlertDescription></Alert>}
         {dayError ? <DataLoadError message={dayError} onRetry={() => { void refresh(); }} /> : loading ? (
           <div className="space-y-5" aria-busy="true" aria-label="Loading lunch roster"><Skeleton className="h-40" /><Skeleton className="h-[480px]" /></div>
         ) : day && (
           <>
             <Card>
-              <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>{day.locked ? "Lunch is locked" : "Lock lunch for this date"}</CardTitle><CardDescription>{day.locked ? `${day.totalRecipients} users are on the locked list. The recipient list cannot be changed.` : `${day.totalRecipients} users will be included. Review the overview below, then lock the list once.`}</CardDescription></div><Badge variant={day.locked ? "default" : "secondary"}>{day.locked ? "Locked" : "Open"}</Badge></div></CardHeader>
-              {!day.locked && <CardContent><Button onClick={() => setConfirmLockOpen(true)} disabled={busy || !date || day.totalRecipients === 0}><LockKeyhole />Lock all users</Button></CardContent>}
+              <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>{day.locked ? "Lunch is locked" : "Lock lunch for this date"}</CardTitle><CardDescription>{day.locked ? `${day.totalRecipients} users are on the ${day.siteName ?? "selected Site"} locked list. The Site and recipient list cannot be changed.` : `${day.totalRecipients} users from ${day.siteName ?? "selected Site"} will be included. Review the overview below, then lock this Site and date.`}</CardDescription></div><Badge variant={day.locked ? "default" : "secondary"}>{day.locked ? "Locked" : "Open"}</Badge></div></CardHeader>
+              {!day.locked && <CardContent><Button onClick={() => setConfirmLockOpen(true)} disabled={busy || !date || !siteFilter || day.totalRecipients === 0}><LockKeyhole />Lock {day.siteName ?? "selected Site"}</Button></CardContent>}
             </Card>
             <div className={day.locked ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start" : "space-y-4"}>
               <Card>
-                <CardHeader><CardTitle>User overview</CardTitle><CardDescription>Review users by platform and work schedule before locking.</CardDescription></CardHeader>
+                <CardHeader><CardTitle>User overview</CardTitle><CardDescription>Review users from {day.siteName ?? "the selected Site"} by platform and work schedule before locking.</CardDescription></CardHeader>
                 <CardContent>
                   <LunchSummaryBreakdown breakdown={day.breakdown} totalRecipients={day.totalRecipients} locked={day.locked} />
                 </CardContent>
               </Card>
               {day.locked && <aside className="xl:sticky xl:top-4"><LunchCredentialScanner onScan={scanCredential} /></aside>}
-              <LunchRosterPreview key={date} locked={day.locked} date={date} totalCount={day.totalRecipients} refreshKey={rosterRefreshKey} />
+              <LunchRosterPreview key={date} locked={day.locked} date={date} totalCount={day.totalRecipients} refreshKey={rosterRefreshKey} siteFilter={siteFilter} options={rosterOptions} />
             </div>
           </>
         )}
@@ -114,7 +144,7 @@ export default function LunchProcurement() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Lock lunch for {formatLunchDate(date)}?</AlertDialogTitle>
-              <AlertDialogDescription>This will lock the current roster of {day?.totalRecipients ?? 0} users for this date. The recipient list cannot be changed after locking.</AlertDialogDescription>
+            <AlertDialogDescription>This will lock the current roster of {day?.totalRecipients ?? 0} users for {day?.siteName ?? "the selected Site"} on this date. The Site and recipient list cannot be changed after locking.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
