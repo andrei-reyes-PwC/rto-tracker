@@ -4,13 +4,18 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { useIsMobile } from "@/hooks/use-mobile";
 import UserEditorForm from "./user-editor-form";
 import type { AvailableRole, UserEditorMode, UserEditorValues } from "./user-types";
+import type { PlatformOption } from "@/api/platforms";
 
 type UserEditorSheetProps = {
   open: boolean;
   mode: UserEditorMode;
   initialEmail: string;
   initialRoles: string[];
+  initialPlatformId: number | null;
+  initialWorkScheduleId: number | null;
   availableRoles: AvailableRole[];
+  platforms: PlatformOption[];
+  workSchedules: PlatformOption[];
   onOpenChange: (open: boolean) => void;
   onSave: (values: UserEditorValues) => string | null | Promise<string | null>;
 };
@@ -20,7 +25,11 @@ export default function UserEditorSheet({
   mode,
   initialEmail,
   initialRoles,
+  initialPlatformId,
+  initialWorkScheduleId,
   availableRoles,
+  platforms,
+  workSchedules,
   onOpenChange,
   onSave,
 }: UserEditorSheetProps) {
@@ -37,7 +46,7 @@ export default function UserEditorSheet({
           <SheetDescription>
             {mode === "create"
               ? "Create an account for the workspace."
-              : "Update this user’s email and assigned roles."}
+              : "Update this user’s email, roles, platform, and work schedule."}
           </SheetDescription>
         </SheetHeader>
         <UserEditorForm
@@ -46,7 +55,11 @@ export default function UserEditorSheet({
           mode={mode}
           initialEmail={initialEmail}
           initialRoles={initialRoles}
+          initialPlatformId={initialPlatformId}
+          initialWorkScheduleId={initialWorkScheduleId}
           availableRoles={availableRoles}
+          platforms={platforms}
+          workSchedules={workSchedules}
           onCancel={() => onOpenChange(false)}
           onSave={onSave}
         />

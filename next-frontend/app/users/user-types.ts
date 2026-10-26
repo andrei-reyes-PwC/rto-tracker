@@ -16,4 +16,6 @@ export type UserEditorValues = {
   email: string;
   password: string;
   roles: string[];
+  platformId: number | null;
+  workScheduleId: number | null;
 };

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { PlatformOption } from "@/api/platforms";
 import type { AvailableRole, UserEditorMode, UserEditorValues } from "./user-types";
 
 const emailPattern = /^[^@\s]+@(?:[^@.\s]+\.)+[^@.\s]+$/;
@@ -13,7 +15,11 @@ type UserEditorFormProps = {
   mode: UserEditorMode;
   initialEmail: string;
   initialRoles: string[];
+  initialPlatformId: number | null;
+  initialWorkScheduleId: number | null;
   availableRoles: AvailableRole[];
+  platforms: PlatformOption[];
+  workSchedules: PlatformOption[];
   onCancel: () => void;
   onSave: (values: UserEditorValues) => string | null | Promise<string | null>;
 };
@@ -23,13 +29,19 @@ export default function UserEditorForm({
   mode,
   initialEmail,
   initialRoles,
+  initialPlatformId,
+  initialWorkScheduleId,
   availableRoles,
+  platforms,
+  workSchedules,
   onCancel,
   onSave,
 }: UserEditorFormProps) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [selectedRoles, setSelectedRoles] = useState(initialRoles);
+  const [platformId, setPlatformId] = useState(initialPlatformId?.toString() ?? "none");
+  const [workScheduleId, setWorkScheduleId] = useState(initialWorkScheduleId?.toString() ?? "none");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initialRolesKey = initialRoles.join("|");
@@ -43,8 +55,10 @@ export default function UserEditorForm({
     setEmail(initialEmail);
     setPassword("");
     setSelectedRoles(initialRoles);
+    setPlatformId(initialPlatformId?.toString() ?? "none");
+    setWorkScheduleId(initialWorkScheduleId?.toString() ?? "none");
     setError("");
-  }, [open, initialEmail, initialRoles, initialRolesKey]);
+  }, [open, initialEmail, initialRoles, initialRolesKey, initialPlatformId, initialWorkScheduleId]);
 
   function toggleRole(role: string) {
     setSelectedRoles((current) => current.includes(role)
@@ -75,6 +89,8 @@ export default function UserEditorForm({
         email: normalizedEmail,
         password,
         roles: mode === "create" ? ["USER"] : selectedRoles,
+        platformId: mode === "edit" && platformId !== "none" ? Number(platformId) : null,
+        workScheduleId: mode === "edit" && workScheduleId !== "none" ? Number(workScheduleId) : null,
       });
       if (saveError) setError(saveError);
     } catch (error: unknown) {
@@ -117,21 +133,47 @@ export default function UserEditorForm({
           <p className="text-xs text-muted-foreground">New accounts start with the USER role.</p>
         </div>
       ) : (
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Roles</legend>
-          {assignableRoles.map((role) => (
-            <label key={role.code} className="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm hover:bg-muted/60">
-              <input
-                type="checkbox"
-                checked={selectedRoles.includes(role.code)}
-                onChange={() => toggleRole(role.code)}
-                className="size-4 accent-[#e65300]"
-              />
-              <span className="font-medium">{role.code}</span>
-            </label>
-          ))}
-          <p className="text-xs leading-5 text-muted-foreground">Protected roles cannot be assigned or edited.</p>
-        </fieldset>
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="user-editor-platform">Platform</Label>
+            <Select value={platformId} onValueChange={setPlatformId}>
+              <SelectTrigger id="user-editor-platform" aria-label="Platform" className="w-full">
+                <SelectValue placeholder="Select a platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No platform</SelectItem>
+                {platforms.map((platform) => <SelectItem key={platform.id} value={String(platform.id)}>{platform.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="user-editor-work-schedule">Work schedule</Label>
+            <Select value={workScheduleId} onValueChange={setWorkScheduleId}>
+              <SelectTrigger id="user-editor-work-schedule" aria-label="Work schedule" className="w-full">
+                <SelectValue placeholder="Select a work schedule" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No work schedule</SelectItem>
+                {workSchedules.map((schedule) => <SelectItem key={schedule.id} value={String(schedule.id)}>{schedule.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Roles</legend>
+            {assignableRoles.map((role) => (
+              <label key={role.code} className="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm hover:bg-muted/60">
+                <input
+                  type="checkbox"
+                  checked={selectedRoles.includes(role.code)}
+                  onChange={() => toggleRole(role.code)}
+                  className="size-4 accent-[#e65300]"
+                />
+                <span className="font-medium">{role.code}</span>
+              </label>
+            ))}
+            <p className="text-xs leading-5 text-muted-foreground">Protected roles cannot be assigned or edited.</p>
+          </fieldset>
+        </div>
       )}
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

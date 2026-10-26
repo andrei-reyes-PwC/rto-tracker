@@ -1,8 +1,12 @@
 package com.rtotracker.backend.user;
 
 import com.rtotracker.backend.office.OfficeDayRepository;
+import com.rtotracker.backend.platform.Platform;
+import com.rtotracker.backend.platform.PlatformRepository;
 import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.role.RoleRepository;
+import com.rtotracker.backend.workschedule.WorkSchedule;
+import com.rtotracker.backend.workschedule.WorkScheduleRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,16 +27,22 @@ public class UserService {
     private final PasswordHashingService passwordHashingService;
     private final RoleRepository roles;
     private final OfficeDayRepository officeDays;
+    private final PlatformRepository platforms;
+    private final WorkScheduleRepository workSchedules;
 
     public UserService(
             UserRepository users,
             PasswordHashingService passwordHashingService,
             RoleRepository roles,
-            OfficeDayRepository officeDays) {
+            OfficeDayRepository officeDays,
+            PlatformRepository platforms,
+            WorkScheduleRepository workSchedules) {
         this.users = users;
         this.passwordHashingService = passwordHashingService;
         this.roles = roles;
         this.officeDays = officeDays;
+        this.platforms = platforms;
+        this.workSchedules = workSchedules;
     }
 
     @Transactional(readOnly = true)
@@ -66,7 +76,8 @@ public class UserService {
                 Set.of(defaultRole())));
     }
 
-    public User update(String currentEmail, String replacementEmail, List<String> requestedRoleCodes) {
+    public User update(String currentEmail, String replacementEmail, List<String> requestedRoleCodes,
+                       MembershipUpdate membershipUpdate) {
         User current = findByEmail(currentEmail);
         if (current.getRoles().stream().anyMatch(Role::isProtectedRole)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected users cannot be edited");
@@ -92,14 +103,23 @@ public class UserService {
         }
 
         Set<Role> replacementRoles = Set.copyOf(requestedRoles);
+        Platform platform = membershipUpdate == null ? current.getPlatform()
+                : membershipUpdate.platformId() == null ? null : platforms.findById(membershipUpdate.platformId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Platform not found"));
+        WorkSchedule workSchedule = membershipUpdate == null ? current.getWorkSchedule()
+                : membershipUpdate.workScheduleId() == null ? null
+                : workSchedules.findById(membershipUpdate.workScheduleId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work schedule not found"));
         if (current.getEmail().equals(normalizedReplacement)) {
             current.setRoles(replacementRoles);
+            current.setPlatform(platform);
+            current.setWorkSchedule(workSchedule);
             return current;
         }
 
         User replacementUser = new User(normalizedReplacement, current.getPasswordHash(), replacementRoles);
-        replacementUser.setPlatform(current.getPlatform());
-        replacementUser.setWorkSchedule(current.getWorkSchedule());
+        replacementUser.setPlatform(platform);
+        replacementUser.setWorkSchedule(workSchedule);
         User replacement = users.save(replacementUser);
         users.flush();
         officeDays.updateUserEmail(current.getEmail(), normalizedReplacement);
@@ -120,5 +140,8 @@ public class UserService {
     private Role defaultRole() {
         return roles.findById("USER")
                 .orElseThrow(() -> new IllegalStateException("The USER role is missing from the role catalog"));
+    }
+
+    public record MembershipUpdate(Long platformId, Long workScheduleId) {
     }
 }

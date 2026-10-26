@@ -193,7 +193,11 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
         mode={editor?.mode ?? "create"}
         initialEmail={editor?.user?.email ?? ""}
         initialRoles={editor?.user?.roles ?? defaultRoleCodes}
+        initialPlatformId={editor?.user?.platform?.id ?? null}
+        initialWorkScheduleId={editor?.user?.workSchedule?.id ?? null}
         availableRoles={availableRoles}
+        platforms={platforms}
+        workSchedules={workSchedules}
         onOpenChange={(open) => { if (!open) setEditor(null); }}
         onSave={saveUser}
       />}

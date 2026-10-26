@@ -38,6 +38,10 @@ export type CreateUserRequest = {
 export type UpdateUserRequest = {
   email: string;
   roles: string[];
+  assignments: {
+    platformId: number | null;
+    workScheduleId: number | null;
+  };
 };
 
 async function responseError(response: Response) {

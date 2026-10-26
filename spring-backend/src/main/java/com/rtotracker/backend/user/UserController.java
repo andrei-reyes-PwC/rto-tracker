@@ -17,6 +17,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -148,13 +149,16 @@ public class UserController {
     }
 
     @PutMapping("/{email}")
-    @Operation(summary = "Update a user's email and roles")
+    @Operation(summary = "Update a user's email, roles, platform, and work schedule")
     public UserResponse update(
             @PathVariable String email,
             @Valid @RequestBody UserUpdateRequest request,
             HttpServletRequest servletRequest) {
         authorization.requireSuperAdmin(servletRequest);
-        return UserResponse.from(userService.update(email, request.email(), request.roles()));
+        UserService.MembershipUpdate memberships = request.assignments() == null ? null
+                : new UserService.MembershipUpdate(request.assignments().platformId(),
+                request.assignments().workScheduleId());
+        return UserResponse.from(userService.update(email, request.email(), request.roles(), memberships));
     }
 
     @DeleteMapping("/{email}")
@@ -183,7 +187,11 @@ public class UserController {
     public record UserUpdateRequest(
             @NotBlank @Email @Pattern(regexp = "^[^@\\s]+@(?:[^@.\\s]+\\.)+[^@.\\s]+$")
             @Size(max = 254) String email,
-            @NotEmpty List<@NotBlank @Size(max = 50) String> roles) {
+            @NotEmpty List<@NotBlank @Size(max = 50) String> roles,
+            @Valid MembershipUpdateRequest assignments) {
+    }
+
+    public record MembershipUpdateRequest(@Positive Long platformId, @Positive Long workScheduleId) {
     }
 
     public record UserPageResponse(List<UserResponse> content, long totalElements, int totalPages,

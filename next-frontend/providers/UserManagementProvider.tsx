@@ -98,7 +98,11 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
   const saveUser = useCallback(async (values: UserEditorValues) => {
     try {
       if (editor?.mode === "create") await createUser({ email: values.email, password: values.password });
-      else if (editor?.mode === "edit" && editor.user) await updateUser(editor.user.email, { email: values.email, roles: values.roles });
+      else if (editor?.mode === "edit" && editor.user) await updateUser(editor.user.email, {
+        email: values.email,
+        roles: values.roles,
+        assignments: { platformId: values.platformId, workScheduleId: values.workScheduleId },
+      });
       else return "Select a user to edit and try again.";
       setEditor(null); setError(""); setNotice(`${values.email} was ${editor.mode === "create" ? "created" : "updated"}.`);
       if (page === 0) await refresh(); else setPage(0);
