@@ -9,6 +9,7 @@ import type { PlatformOption } from "@/api/platforms";
 type UserEditorSheetProps = {
   open: boolean;
   mode: UserEditorMode;
+  isSelf: boolean;
   initialEmail: string;
   initialRoles: string[];
   initialPlatformId: number | null;
@@ -23,6 +24,7 @@ type UserEditorSheetProps = {
 export default function UserEditorSheet({
   open,
   mode,
+  isSelf,
   initialEmail,
   initialRoles,
   initialPlatformId,
@@ -46,13 +48,15 @@ export default function UserEditorSheet({
           <SheetDescription>
             {mode === "create"
               ? "Create an account for the workspace."
-              : "Update this user’s email, roles, platform, and work schedule."}
+              : isSelf ? "Update your email, additional roles, platform, and work schedule. SUPER_ADMIN access is retained."
+                : "Update this user’s email, roles, platform, and work schedule."}
           </SheetDescription>
         </SheetHeader>
         <UserEditorForm
           key={`${mode}:${initialEmail}`}
           open={open}
           mode={mode}
+          isSelf={isSelf}
           initialEmail={initialEmail}
           initialRoles={initialRoles}
           initialPlatformId={initialPlatformId}

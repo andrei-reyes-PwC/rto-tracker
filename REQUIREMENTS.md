@@ -11,7 +11,7 @@ This document is the shared source of truth for the system's users, access rules
 | `SUPER_ADMIN` | Has authenticated user capabilities and can manage users, roles assigned through user management, platforms, platform memberships, work schedules, work schedule assignments, and global/platform events. |
 | `LUNCH` | Can preview and lock one recipient list per lunch date and scan user credentials to track receipt. |
 
-All authenticated users have a personal account identified by email. User accounts are created by an administrator; there is no public registration flow. New accounts receive the `USER` role by default. The system may attach multiple roles to an account, but `SUPER_ADMIN` is protected from assignment and modification through the user-management flow.
+All authenticated users have a personal account identified by email. User accounts are created by an administrator; there is no public registration flow. New accounts receive the `USER` role by default. The system may attach multiple roles to an account. `SUPER_ADMIN` cannot be assigned to another user or removed, but a signed-in SUPER_ADMIN can edit their own email and assignments while retaining that role. SUPER_ADMINs can assign the `LUNCH` role to grant lunch procurement access.
 
 ### Access rules
 
@@ -22,7 +22,7 @@ All authenticated users have a personal account identified by email. User accoun
 - Platform office-day reads require an authenticated session and return saved office dates only for colleagues sharing the signed-in user's platform; the caller cannot choose another platform, and their own schedule is excluded from this view.
 - Event management requires `SUPER_ADMIN`; authenticated planner reads return global events plus events for the signed-in user's platform. Users cannot select another platform's events.
 - Lunch procurement (`/lunch`) and its API endpoints require the `LUNCH` or `SUPER_ADMIN` role; backend authorization is enforced for roster reads and locking.
-- A `SUPER_ADMIN` cannot delete their own account. Protected users cannot be deleted or edited through user management.
+- A `SUPER_ADMIN` cannot delete their own account. Other protected users cannot be edited; a signed-in SUPER_ADMIN may edit their own account while retaining SUPER_ADMIN access.
 - Signing out invalidates the session.
 
 ## 2. Feature requirements
@@ -48,11 +48,11 @@ All authenticated users have a personal account identified by email. User accoun
 
 - **USER-01** — As a `SUPER_ADMIN`, I can view a paginated user list, search the full roster by email or role, and filter users by role, platform, and work schedule.
 - **USER-02** — As a `SUPER_ADMIN`, I can create a user with an email and password. The new user receives the `USER` role by default.
-- **USER-03** — As a `SUPER_ADMIN`, I can update an eligible user's email, assignable roles, platform, and work schedule, including clearing either assignment. Existing password and linked office-day records are preserved when the email changes.
+- **USER-03** — As a `SUPER_ADMIN`, I can update an eligible user's email, assignable roles, platform, and work schedule, including clearing either assignment. I can also edit my own email and assignments while retaining SUPER_ADMIN access. Existing password and linked office-day records are preserved when the email changes.
 - **USER-04** — As a `SUPER_ADMIN`, I can delete an eligible user, subject to self-delete and protected-user restrictions.
 - **USER-05** — As a `SUPER_ADMIN`, I can view the available platform options and each listed user's optional platform.
 - **USER-06** — User listing supports page navigation and page sizes of 10, 25, 50, or 100 in the management interface; the API accepts page sizes up to 100.
-- **USER-07** — User creation and update validate email and password/role inputs. Duplicate emails are rejected, and protected roles cannot be assigned through this flow.
+- **USER-07** — User creation and update validate email and password/role inputs. Duplicate emails are rejected, and `SUPER_ADMIN` cannot be assigned through this flow. `LUNCH` is assignable to grant lunch procurement access.
 - **USER-08** — Role, platform, and work-schedule filter choices for Manage Users are returned together. Search and filters apply across pages and can be combined, including filters for users with no platform or no work schedule.
 
 ### Platform administration

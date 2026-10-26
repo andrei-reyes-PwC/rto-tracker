@@ -13,6 +13,7 @@ const emailPattern = /^[^@\s]+@(?:[^@.\s]+\.)+[^@.\s]+$/;
 type UserEditorFormProps = {
   open: boolean;
   mode: UserEditorMode;
+  isSelf: boolean;
   initialEmail: string;
   initialRoles: string[];
   initialPlatformId: number | null;
@@ -27,6 +28,7 @@ type UserEditorFormProps = {
 export default function UserEditorForm({
   open,
   mode,
+  isSelf,
   initialEmail,
   initialRoles,
   initialPlatformId,
@@ -171,7 +173,7 @@ export default function UserEditorForm({
                 <span className="font-medium">{role.code}</span>
               </label>
             ))}
-            <p className="text-xs leading-5 text-muted-foreground">Protected roles cannot be assigned or edited.</p>
+            <p className="text-xs leading-5 text-muted-foreground">{isSelf ? "Your SUPER_ADMIN access is retained and cannot be removed." : "SUPER_ADMIN is protected and cannot be assigned here."}</p>
           </fieldset>
         </div>
       )}

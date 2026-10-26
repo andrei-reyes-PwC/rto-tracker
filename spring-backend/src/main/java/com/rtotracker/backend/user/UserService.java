@@ -77,9 +77,11 @@ public class UserService {
     }
 
     public User update(String currentEmail, String replacementEmail, List<String> requestedRoleCodes,
-                       MembershipUpdate membershipUpdate) {
+                       MembershipUpdate membershipUpdate, boolean allowProtectedSelfEdit) {
         User current = findByEmail(currentEmail);
-        if (current.getRoles().stream().anyMatch(Role::isProtectedRole)) {
+        Set<String> protectedRoleCodes = current.getRoles().stream().filter(Role::isProtectedRole)
+                .map(Role::getCode).collect(Collectors.toSet());
+        if (!protectedRoleCodes.isEmpty() && !allowProtectedSelfEdit) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected users cannot be edited");
         }
 
@@ -98,11 +100,14 @@ public class UserService {
         if (requestedRoles.size() != requestedCodes.size()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more roles do not exist");
         }
-        if (requestedRoles.stream().anyMatch(Role::isProtectedRole)) {
+        if (requestedRoles.stream().anyMatch(Role::isProtectedRole)
+                && (!allowProtectedSelfEdit || requestedRoles.stream().filter(Role::isProtectedRole)
+                .anyMatch(role -> !protectedRoleCodes.contains(role.getCode())))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected roles cannot be assigned");
         }
 
-        Set<Role> replacementRoles = Set.copyOf(requestedRoles);
+        Set<Role> replacementRoles = new java.util.HashSet<>(requestedRoles);
+        replacementRoles.addAll(current.getRoles().stream().filter(Role::isProtectedRole).toList());
         Platform platform = membershipUpdate == null ? current.getPlatform()
                 : membershipUpdate.platformId() == null ? null : platforms.findById(membershipUpdate.platformId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Platform not found"));

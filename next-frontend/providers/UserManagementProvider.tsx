@@ -23,7 +23,7 @@ type UserManagementContextValue = {
 const UserManagementContext = createContext<UserManagementContextValue | null>(null);
 
 export function UserManagementProvider({ children }: { children: ReactNode }) {
-  const { user: signedInUser, isLoading: isAuthLoading } = useAuth();
+  const { user: signedInUser, isLoading: isAuthLoading, refreshUser } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [platforms, setPlatforms] = useState<PlatformOption[]>([]);
   const [workSchedules, setWorkSchedules] = useState<PlatformOption[]>([]);
@@ -102,17 +102,21 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
   const saveUser = useCallback(async (values: UserEditorValues) => {
     try {
       if (editor?.mode === "create") await createUser({ email: values.email, password: values.password });
-      else if (editor?.mode === "edit" && editor.user) await updateUser(editor.user.email, {
-        email: values.email,
-        roles: values.roles,
-        assignments: { platformId: values.platformId, workScheduleId: values.workScheduleId },
-      });
+      else if (editor?.mode === "edit" && editor.user) {
+        const isSelf = signedInUser?.email.toLowerCase() === editor.user.email.toLowerCase();
+        await updateUser(editor.user.email, {
+          email: values.email,
+          roles: values.roles,
+          assignments: { platformId: values.platformId, workScheduleId: values.workScheduleId },
+        });
+        if (isSelf) await refreshUser();
+      }
       else return "Select a user to edit and try again.";
       setEditor(null); setError(""); setNotice(`${values.email} was ${editor.mode === "create" ? "created" : "updated"}.`);
       if (page === 0) await refresh(); else setPage(0);
       return null;
     } catch (cause) { return cause instanceof Error ? cause.message : "Could not save this user. Please try again."; }
-  }, [editor, page, refresh]);
+  }, [editor, page, refresh, refreshUser, signedInUser]);
 
   const confirmDelete = useCallback(async () => {
     if (!deletingUser || isDeleting) return;

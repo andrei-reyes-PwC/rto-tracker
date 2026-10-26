@@ -33,10 +33,11 @@ import type { AvailableRole } from "./user-types";
 
 const defaultRoleCodes = ["USER"];
 const pageSizeOptions = [10, 25, 50, 100];
-const rolePriority = ["SUPER_ADMIN", "ADMIN", "USER"];
+const rolePriority = ["SUPER_ADMIN", "ADMIN", "LUNCH", "USER"];
 const availableRoles: AvailableRole[] = [
   { code: "USER", protectedRole: false },
   { code: "ADMIN", protectedRole: false },
+  { code: "LUNCH", protectedRole: false },
   { code: "SUPER_ADMIN", protectedRole: true },
 ];
 
@@ -139,7 +140,7 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
                       </div>
                     </div>
                     {!readOnly && <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
-                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={isProtected} onClick={() => setEditor({ mode: "edit", user: managedUser })}><UserRoundPen /> Edit</Button>
+                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={isProtected && !isCurrentUser} onClick={() => setEditor({ mode: "edit", user: managedUser })}><UserRoundPen /> Edit</Button>
                       <Button
                         variant="destructive"
                         size="icon-sm"
@@ -166,6 +167,7 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
       {!readOnly && <UserEditorSheet
         open={editor !== null}
         mode={editor?.mode ?? "create"}
+        isSelf={Boolean(editor?.user && signedInUser?.email.toLowerCase() === editor.user.email.toLowerCase())}
         initialEmail={editor?.user?.email ?? ""}
         initialRoles={editor?.user?.roles ?? defaultRoleCodes}
         initialPlatformId={editor?.user?.platform?.id ?? null}

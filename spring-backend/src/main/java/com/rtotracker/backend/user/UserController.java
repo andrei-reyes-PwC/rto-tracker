@@ -1,6 +1,7 @@
 package com.rtotracker.backend.user;
 
 import com.rtotracker.backend.auth.AdminAuthorizationService;
+import com.rtotracker.backend.auth.AuthSession;
 import com.rtotracker.backend.platform.Platform;
 import com.rtotracker.backend.platform.PlatformService;
 import com.rtotracker.backend.role.RoleService;
@@ -154,11 +155,17 @@ public class UserController {
             @PathVariable String email,
             @Valid @RequestBody UserUpdateRequest request,
             HttpServletRequest servletRequest) {
-        authorization.requireSuperAdmin(servletRequest);
+        User administrator = authorization.requireSuperAdmin(servletRequest);
+        boolean isSelf = administrator.getEmail().equalsIgnoreCase(email);
         UserService.MembershipUpdate memberships = request.assignments() == null ? null
                 : new UserService.MembershipUpdate(request.assignments().platformId(),
                 request.assignments().workScheduleId());
-        return UserResponse.from(userService.update(email, request.email(), request.roles(), memberships));
+        User updated = userService.update(email, request.email(), request.roles(), memberships, isSelf);
+        if (isSelf) {
+            servletRequest.getSession(false).setAttribute(
+                    AuthSession.AUTHENTICATED_EMAIL_ATTRIBUTE, updated.getEmail());
+        }
+        return UserResponse.from(updated);
     }
 
     @DeleteMapping("/{email}")
