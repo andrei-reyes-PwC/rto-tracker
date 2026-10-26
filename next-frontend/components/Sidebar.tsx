@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, CalendarDays, CalendarRange, Users } from "lucide-react";
+import { BarChart3, Boxes, CalendarDays, CalendarRange, ClipboardCheck, Utensils, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import { useAuth } from "@/providers/AuthProvider";
 import {
@@ -27,6 +27,7 @@ export default function Sidebar() {
   const canViewRtoDashboard = isSuperAdmin || (user?.roles.includes("ADMIN") ?? false);
   const canManageEvents = isSuperAdmin || ((user?.roles.includes("ADMIN") ?? false) && user?.platform !== null);
   const canViewUsers = isSuperAdmin || ((user?.roles.includes("ADMIN") ?? false) && user?.platform !== null);
+  const canManageLunch = isSuperAdmin || (user?.roles.includes("LUNCH") ?? false);
 
   return (
     <ShadcnSidebar collapsible="icon" variant="sidebar">
@@ -102,6 +103,29 @@ export default function Sidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
+        {canManageLunch && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Lunch</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/lunch"} tooltip="Lunch procurement">
+                  <Link href="/lunch" onClick={() => setOpenMobile(false)} aria-label="Lunch procurement">
+                    <Utensils />
+                    <span>Lunch procurement</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/lunch/receiving"} tooltip="Receiving lunch">
+                  <Link href="/lunch/receiving" onClick={() => setOpenMobile(false)} aria-label="Receiving lunch">
+                    <ClipboardCheck />
+                    <span>Receiving lunch</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         )}

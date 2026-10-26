@@ -14,6 +14,7 @@ import SidebarPageLayout from "@/components/SidebarPageLayout";
 import CrudActionNotice from "@/components/CrudActionNotice";
 import CrudListSkeleton from "@/components/CrudListSkeleton";
 import DataLoadError from "@/components/DataLoadError";
+import PaginationControls from "@/components/PaginationControls";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EventManagementProvider, useEventManagement } from "@/providers/EventManagementProvider";
 
@@ -85,13 +86,7 @@ function Content({ isSuperAdmin, platform }: EventManagementProps) {
       </CardHeader><CardContent className="p-0">
         {loading ? <CrudListSkeleton label="Loading events" /> : matching.length === 0 ? <div className="px-6 py-16 text-center"><CalendarDays className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{search.trim() || eventDate ? "No events match these filters" : "No events yet"}</p><p className="mt-1 text-sm text-muted-foreground">Add an event to show it in the schedule planner.</p></div> : <div className="divide-y">{visibleEvents.map((e) => <div key={e.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold">{e.title}</p><p className="mt-1 text-xs text-muted-foreground">{formatEventDate(e.date)} · {e.time} · {e.place}</p><div className="mt-2 flex flex-wrap gap-2"><Badge variant="outline">{e.kind}</Badge><Badge variant="secondary">{e.scope === "GLOBAL" ? "Global" : e.platformName}</Badge>{e.required && <Badge variant="destructive">Required in office</Badge>}</div></div><div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => { setError(""); setEditor(e); }}>Edit</Button><Button variant="destructive" size="icon-sm" aria-label={"Delete " + e.title} onClick={() => setDeleting(e)}><Trash2 /></Button></div></div>)}</div>}
       </CardContent>
-      <div className="flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-          <p className="text-sm text-muted-foreground">Page {totalPages === 0 ? 0 : currentPage + 1} of {totalPages}</p>
-          <div className="flex items-center gap-2"><span className="text-sm text-muted-foreground">Rows per page</span><Select value={String(pageSize)} onValueChange={(value) => { setPage(0); setPageSize(Number(value)); }} disabled={loading}><SelectTrigger className="w-[84px]" aria-label="Rows per page"><SelectValue /></SelectTrigger><SelectContent align="end">{pageSizeOptions.map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent></Select></div>
-        </div>
-        <div className="flex gap-2"><Button variant="outline" size="sm" disabled={loading || currentPage === 0} onClick={() => setPage((current) => Math.max(0, current - 1))}>Previous</Button><Button variant="outline" size="sm" disabled={loading || currentPage + 1 >= totalPages} onClick={() => setPage((current) => current + 1)}>Next</Button></div>
-      </div>
+      <PaginationControls page={currentPage} totalPages={totalPages} pageSize={pageSize} pageSizeOptions={pageSizeOptions} disabled={loading} onPageChange={setPage} onPageSizeChange={(size) => { setPage(0); setPageSize(size); }} />
       </Card>
     </main>
     {editor && <Editor key={typeof editor === "object" ? editor.id : "new"} initial={typeof editor === "object" ? editor : null} platforms={platforms} platform={platform} isSuperAdmin={isSuperAdmin} mobile={mobile} working={working} error={error} close={() => { if (!working) { setEditor(null); setError(""); } }} submit={submit} />}

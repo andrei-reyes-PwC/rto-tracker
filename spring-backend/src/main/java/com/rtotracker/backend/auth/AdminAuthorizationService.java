@@ -37,6 +37,15 @@ public class AdminAuthorizationService {
         return user;
     }
 
+    public User requireLunchAccess(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean hasLunchRole = user.getRoles().stream().map(Role::getCode).anyMatch("LUNCH"::equals);
+        if (!hasLunchRole && !isSuperAdmin(user)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "LUNCH or SUPER_ADMIN access required");
+        }
+        return user;
+    }
+
     public User requireUserManagementAccess(HttpServletRequest request) {
         User user = users.findByEmail(AuthSession.requireEmail(request));
         boolean canViewUsers = user.getRoles().stream().map(Role::getCode)

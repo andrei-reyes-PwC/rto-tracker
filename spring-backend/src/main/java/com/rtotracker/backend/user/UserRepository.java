@@ -6,7 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface UserRepository extends JpaRepository<User, String> {
+
+    @Query("select user.email from User user order by user.email asc")
+    List<String> findAllEmails();
 
     @Query(value = "select distinct user from User user left join user.roles role "
             + "where (:search is null or lower(user.email) like concat('%', lower(:search), '%')) "

@@ -16,6 +16,7 @@ This repository contains the RTO Tracker frontend and backend, plus a standalone
 - Work schedules are managed at `/work-schedules` and persisted by Spring's authenticated `/api/work-schedules` CRUD endpoints. A user can have zero or one work schedule; the nullable `users.work_schedule_id` foreign key is cleared if the work schedule is deleted.
 - Events are managed by SUPER_ADMIN users at `/events` through Spring's `/api/events` endpoints. Global events are visible to all signed-in users; platform events are visible only to users assigned to that platform. Deleting a platform cascades to its events.
 - The SUPER_ADMIN RTO dashboard at `/dashboard` reports saved office-day plans for a selected Monday–Friday week, with daily totals and breakdowns by current platform and work schedule.
+- Users with the `LUNCH` or `SUPER_ADMIN` role manage daily free-lunch procurement at `/lunch` and handout tracking at `/lunch/receiving`. Before locking, procurement previews all users with a platform-row/work-schedule-column breakdown; filters on the “Users to be included” list do not affect the breakdown or all-users lock action. One action locks all users for a date. The receiving route shows the immutable list with per-person receipt status and the same breakdown. Spring persists the locked date and recipient status through `/api/lunch`.
 
 ## Repository conventions
 

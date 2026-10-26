@@ -26,6 +26,7 @@ import SidebarPageLayout from "@/components/SidebarPageLayout";
 import CrudActionNotice from "@/components/CrudActionNotice";
 import CrudListSkeleton from "@/components/CrudListSkeleton";
 import DataLoadError from "@/components/DataLoadError";
+import PaginationControls from "@/components/PaginationControls";
 import { UserManagementProvider, useUserManagement } from "@/providers/UserManagementProvider";
 import UserEditorSheet from "./user-editor-sheet";
 import type { AvailableRole } from "./user-types";
@@ -74,7 +75,7 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
           <div><CardTitle>People</CardTitle><CardDescription>Review account access and assigned roles.</CardDescription></div>
           <CardAction className="col-span-2 col-start-1 row-start-2 row-span-1 flex w-full items-center justify-between gap-2 justify-self-stretch sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:row-span-1 sm:w-auto sm:justify-self-end">
             <div className="flex min-w-0 flex-1 items-center gap-2 py-2 text-sm sm:flex-none">
-              <Users className="size-4 text-[#b83b00]" />
+              <Users className="size-4 shrink-0 text-[#b83b00]" />
               <span className="font-semibold">{totalUsers}</span>
               <span className="text-muted-foreground">{totalUsers === 1 ? "user" : "users"}</span>
             </div>
@@ -154,33 +155,7 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
             </div>
           )}
         </CardContent>
-        <div className="flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-            <p className="text-sm text-muted-foreground">Page {totalPages === 0 ? 0 : page + 1} of {totalPages}</p>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Rows per page</span>
-              <Select
-                value={String(pageSize)}
-                onValueChange={(value) => {
-                  setPage(0);
-                  setPageSize(Number(value));
-                }}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="w-[84px]" aria-label="Rows per page">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  {pageSizeOptions.map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={isLoading || page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))}>Previous</Button>
-            <Button variant="outline" size="sm" disabled={isLoading || page + 1 >= totalPages} onClick={() => setPage((current) => current + 1)}>Next</Button>
-          </div>
-        </div>
+        <PaginationControls page={page} totalPages={totalPages} pageSize={pageSize} pageSizeOptions={pageSizeOptions} disabled={isLoading} onPageChange={setPage} onPageSizeChange={(size) => { setPage(0); setPageSize(size); }} />
       </Card>
     </main>
   );
