@@ -23,3 +23,5 @@ This repository contains the RTO Tracker frontend and backend, plus a standalone
 - Each application has its own dependencies, run commands, and README.
 - Run frontend commands from `next-frontend/` and Maven commands from `spring-backend/`.
 - Build output and dependencies are local generated files, not source.
+- Sites are managed at `/sites` and persisted by Spring's SUPER_ADMIN-protected `/api/sites` CRUD endpoints. Each Site has a unique name up to 25 characters and can have multiple users; each user can belong to zero or one Site through nullable `users.site_id`, cleared when its Site is deleted.
+- Manage Users includes Site assignment in its server-side filters and account editor; SUPER_ADMIN users can assign or clear a user's Site directly.

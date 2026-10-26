@@ -8,7 +8,7 @@ This document is the shared source of truth for the system's users, access rules
 | --- | --- |
 | Signed-out visitor | Can use the sign-in page. Visiting a protected page redirects to sign-in. |
 | `USER` | Can sign in, view and manage their own monthly office-day schedule, view saved office days for other users in their platform, view global events and events for their platform, and sign out. They cannot use administrative management. |
-| `SUPER_ADMIN` | Has authenticated user capabilities and can manage users, roles assigned through user management, platforms, platform memberships, work schedules, work schedule assignments, and global/platform events. |
+| `SUPER_ADMIN` | Has authenticated user capabilities and can manage users, roles assigned through user management, platforms, platform memberships, work schedules and assignments, Sites and assignments, and global/platform events. |
 | `LUNCH` | Can preview and lock one recipient list per lunch date and scan user credentials to track receipt. |
 
 All authenticated users have a personal account identified by email. User accounts are created by an administrator; there is no public registration flow. New accounts receive the `USER` role by default. The system may attach multiple roles to an account. `SUPER_ADMIN` cannot be assigned to another user or removed, but a signed-in SUPER_ADMIN can edit their own email and assignments while retaining that role. SUPER_ADMINs can assign the `LUNCH` role to grant lunch procurement access.
@@ -46,14 +46,14 @@ All authenticated users have a personal account identified by email. User accoun
 
 ### User and role administration
 
-- **USER-01** — As a `SUPER_ADMIN`, I can view a paginated user list, search the full roster by email or role, and filter users by role, platform, and work schedule.
+- **USER-01** — As a `SUPER_ADMIN`, I can view a paginated user list, search the full roster by email or role, and filter users by role, platform, work schedule, and Site.
 - **USER-02** — As a `SUPER_ADMIN`, I can create a user with an email and password. The new user receives the `USER` role by default.
-- **USER-03** — As a `SUPER_ADMIN`, I can update an eligible user's email, assignable roles, platform, and work schedule, including clearing either assignment. I can also edit my own email and assignments while retaining SUPER_ADMIN access. Existing password and linked office-day records are preserved when the email changes.
+- **USER-03** — As a `SUPER_ADMIN`, I can update an eligible user's email, assignable roles, platform, work schedule, and Site, including clearing assignments. I can also edit my own email and assignments while retaining SUPER_ADMIN access. Existing password and linked office-day records are preserved when the email changes.
 - **USER-04** — As a `SUPER_ADMIN`, I can delete an eligible user, subject to self-delete and protected-user restrictions.
 - **USER-05** — As a `SUPER_ADMIN`, I can view the available platform options and each listed user's optional platform.
 - **USER-06** — User listing supports page navigation and page sizes of 10, 25, 50, or 100 in the management interface; the API accepts page sizes up to 100.
 - **USER-07** — User creation and update validate email and password/role inputs. Duplicate emails are rejected, and `SUPER_ADMIN` cannot be assigned through this flow. `LUNCH` is assignable to grant lunch procurement access.
-- **USER-08** — Role, platform, and work-schedule filter choices for Manage Users are returned together. Search and filters apply across pages and can be combined, including filters for users with no platform or no work schedule.
+- **USER-08** — Role, platform, work-schedule, and Site filter choices for Manage Users are returned together. Search and filters apply across pages and can be combined, including filters for users with no platform, no work schedule, or no Site.
 
 ### Platform administration
 
@@ -69,6 +69,13 @@ All authenticated users have a personal account identified by email. User accoun
 - **WSCH-02** — Work schedule names are required, limited to 10 characters, and unique without regard to letter case.
 - **WSCH-03** — A user may have zero or one work schedule; a work schedule may be assigned to multiple users.
 - **WSCH-04** — Deleting a work schedule keeps its user accounts and clears their work schedule assignment.
+
+### Site administration
+
+- **SITE-01** - As a SUPER_ADMIN, I can list, create, edit, and delete named Sites and assign users to them.
+- **SITE-02** - Site names are required, limited to 25 characters, and unique without regard to letter case.
+- **SITE-03** - A user may have zero or one Site; a Site may be assigned to multiple users.
+- **SITE-04** - Deleting a Site keeps its user accounts and clears their Site assignment.
 
 ### Event management
 

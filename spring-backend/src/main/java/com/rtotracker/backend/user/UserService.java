@@ -7,6 +7,8 @@ import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.role.RoleRepository;
 import com.rtotracker.backend.workschedule.WorkSchedule;
 import com.rtotracker.backend.workschedule.WorkScheduleRepository;
+import com.rtotracker.backend.site.Site;
+import com.rtotracker.backend.site.SiteRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ public class UserService {
     private final OfficeDayRepository officeDays;
     private final PlatformRepository platforms;
     private final WorkScheduleRepository workSchedules;
+    private final SiteRepository sites;
 
     public UserService(
             UserRepository users,
@@ -36,21 +39,24 @@ public class UserService {
             RoleRepository roles,
             OfficeDayRepository officeDays,
             PlatformRepository platforms,
-            WorkScheduleRepository workSchedules) {
+            WorkScheduleRepository workSchedules,
+            SiteRepository sites) {
         this.users = users;
         this.passwordHashingService = passwordHashingService;
         this.roles = roles;
         this.officeDays = officeDays;
         this.platforms = platforms;
         this.workSchedules = workSchedules;
+        this.sites = sites;
     }
 
     @Transactional(readOnly = true)
     public Page<UserController.UserResponse> findAll(Pageable pageable, Long platformId, boolean withoutPlatform,
                                                       Long workScheduleId, boolean withoutWorkSchedule,
+                                                      Long siteId, boolean withoutSite,
                                                       String roleCode, String search) {
         Page<User> matchingUsers = users.findAllByFilters(platformId, withoutPlatform, workScheduleId,
-                withoutWorkSchedule, roleCode, normalizeSearch(search), pageable);
+                withoutWorkSchedule, siteId, withoutSite, roleCode, normalizeSearch(search), pageable);
         return matchingUsers.map(UserController.UserResponse::from);
     }
 
@@ -115,16 +121,22 @@ public class UserService {
                 : membershipUpdate.workScheduleId() == null ? null
                 : workSchedules.findById(membershipUpdate.workScheduleId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work schedule not found"));
+        Site site = membershipUpdate == null ? current.getSite()
+                : membershipUpdate.siteId() == null ? null
+                : sites.findById(membershipUpdate.siteId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Site not found"));
         if (current.getEmail().equals(normalizedReplacement)) {
             current.setRoles(replacementRoles);
             current.setPlatform(platform);
             current.setWorkSchedule(workSchedule);
+            current.setSite(site);
             return current;
         }
 
         User replacementUser = new User(normalizedReplacement, current.getPasswordHash(), replacementRoles);
         replacementUser.setPlatform(platform);
         replacementUser.setWorkSchedule(workSchedule);
+        replacementUser.setSite(site);
         User replacement = users.save(replacementUser);
         users.flush();
         officeDays.updateUserEmail(current.getEmail(), normalizedReplacement);
@@ -147,6 +159,6 @@ public class UserService {
                 .orElseThrow(() -> new IllegalStateException("The USER role is missing from the role catalog"));
     }
 
-    public record MembershipUpdate(Long platformId, Long workScheduleId) {
+    public record MembershipUpdate(Long platformId, Long workScheduleId, Long siteId) {
     }
 }

@@ -9,10 +9,10 @@ import type { ManagedUser, UserEditorMode, UserEditorValues } from "@/app/users/
 
 type Editor = { mode: UserEditorMode; user?: ManagedUser } | null;
 type UserManagementContextValue = {
-  users: ManagedUser[]; platforms: PlatformOption[]; workSchedules: PlatformOption[]; roles: { code: string }[]; totalUsers: number; totalPages: number;
+  users: ManagedUser[]; platforms: PlatformOption[]; workSchedules: PlatformOption[]; sites: PlatformOption[]; roles: { code: string }[]; totalUsers: number; totalPages: number;
   page: number; setPage: (page: number | ((current: number) => number)) => void;
-  pageSize: number; setPageSize: (size: number) => void; platformId: string; workScheduleId: string; roleCode: string; keyword: string;
-  setPlatformId: (id: string) => void; setWorkScheduleId: (id: string) => void; setRoleCode: (code: string) => void; setKeyword: (keyword: string) => void; isLoading: boolean; isLoadingFilters: boolean; loadError: string; retryLoad: () => void; dismissLoadError: () => void; error: string; notice: string;
+  pageSize: number; setPageSize: (size: number) => void; platformId: string; workScheduleId: string; siteId: string; roleCode: string; keyword: string;
+  setPlatformId: (id: string) => void; setWorkScheduleId: (id: string) => void; setSiteId: (id: string) => void; setRoleCode: (code: string) => void; setKeyword: (keyword: string) => void; isLoading: boolean; isLoadingFilters: boolean; loadError: string; retryLoad: () => void; dismissLoadError: () => void; error: string; notice: string;
   setNotice: (notice: string) => void; isDeleting: boolean; editor: Editor;
   setEditor: (editor: Editor) => void; deletingUser: ManagedUser | null;
   setDeletingUser: (user: ManagedUser | null) => void; refresh: () => Promise<void>;
@@ -27,6 +27,7 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [platforms, setPlatforms] = useState<PlatformOption[]>([]);
   const [workSchedules, setWorkSchedules] = useState<PlatformOption[]>([]);
+  const [sites, setSites] = useState<PlatformOption[]>([]);
   const [roles, setRoles] = useState<{ code: string }[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -34,6 +35,7 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
   const [pageSize, setPageSize] = useState(10);
   const [platformId, setPlatformId] = useState("all");
   const [workScheduleId, setWorkScheduleId] = useState("all");
+  const [siteId, setSiteId] = useState("all");
   const [roleCode, setRoleCode] = useState("all");
   const [keyword, setKeyword] = useState("");
   const debouncedKeyword = useDebouncedValue(keyword);
@@ -57,6 +59,8 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
         withoutPlatform: platformId === "none",
         workScheduleId: workScheduleId !== "all" && workScheduleId !== "none" ? Number(workScheduleId) : undefined,
         withoutWorkSchedule: workScheduleId === "none",
+        siteId: siteId !== "all" && siteId !== "none" ? Number(siteId) : undefined,
+        withoutSite: siteId === "none",
         roleCode: roleCode === "all" ? undefined : roleCode,
         search: debouncedKeyword.trim() || undefined,
       }, signal);
@@ -67,7 +71,7 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
     } catch (cause) {
       if (!signal?.aborted) setLoadError(cause instanceof Error ? cause.message : "Could not load users. Please try again.");
     } finally { if (!signal?.aborted) setIsLoading(false); }
-  }, [page, pageSize, platformId, workScheduleId, roleCode, debouncedKeyword]);
+  }, [page, pageSize, platformId, workScheduleId, siteId, roleCode, debouncedKeyword]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -82,6 +86,7 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
       if (!controller.signal.aborted) {
         setPlatforms(options.platforms);
         setWorkSchedules(options.workSchedules);
+        setSites(options.sites);
         setRoles(options.roles);
       }
     }).catch((cause: unknown) => {
@@ -107,7 +112,7 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
         await updateUser(editor.user.email, {
           email: values.email,
           roles: values.roles,
-          assignments: { platformId: values.platformId, workScheduleId: values.workScheduleId },
+          assignments: { platformId: values.platformId, workScheduleId: values.workScheduleId, siteId: values.siteId },
         });
         if (isSelf) await refreshUser();
       }
@@ -129,7 +134,7 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
     finally { setIsDeleting(false); }
   }, [deletingUser, isDeleting, page, refresh, users.length]);
 
-  const value = useMemo(() => ({ users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, platformId, workScheduleId, roleCode, keyword, setPlatformId, setWorkScheduleId, setRoleCode, setKeyword, isLoading, isLoadingFilters, loadError: loadError || filterLoadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading }), [users, platforms, workSchedules, roles, totalUsers, totalPages, page, pageSize, platformId, workScheduleId, roleCode, keyword, isLoading, isLoadingFilters, loadError, filterLoadError, retryLoad, dismissLoadError, error, notice, isDeleting, editor, deletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading]);
+  const value = useMemo(() => ({ users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, platformId, workScheduleId, siteId, roleCode, keyword, setPlatformId, setWorkScheduleId, setSiteId, setRoleCode, setKeyword, isLoading, isLoadingFilters, loadError: loadError || filterLoadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading }), [users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, pageSize, platformId, workScheduleId, siteId, roleCode, keyword, isLoading, isLoadingFilters, loadError, filterLoadError, retryLoad, dismissLoadError, error, notice, isDeleting, editor, deletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading]);
   return <UserManagementContext.Provider value={value}>{children}</UserManagementContext.Provider>;
 }
 

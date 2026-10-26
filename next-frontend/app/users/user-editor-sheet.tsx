@@ -14,9 +14,11 @@ type UserEditorSheetProps = {
   initialRoles: string[];
   initialPlatformId: number | null;
   initialWorkScheduleId: number | null;
+  initialSiteId: number | null;
   availableRoles: AvailableRole[];
   platforms: PlatformOption[];
   workSchedules: PlatformOption[];
+  sites: PlatformOption[];
   onOpenChange: (open: boolean) => void;
   onSave: (values: UserEditorValues) => string | null | Promise<string | null>;
 };
@@ -29,9 +31,11 @@ export default function UserEditorSheet({
   initialRoles,
   initialPlatformId,
   initialWorkScheduleId,
+  initialSiteId,
   availableRoles,
   platforms,
   workSchedules,
+  sites,
   onOpenChange,
   onSave,
 }: UserEditorSheetProps) {
@@ -61,9 +65,11 @@ export default function UserEditorSheet({
           initialRoles={initialRoles}
           initialPlatformId={initialPlatformId}
           initialWorkScheduleId={initialWorkScheduleId}
+          initialSiteId={initialSiteId}
           availableRoles={availableRoles}
           platforms={platforms}
           workSchedules={workSchedules}
+          sites={sites}
           onCancel={() => onOpenChange(false)}
           onSave={onSave}
         />

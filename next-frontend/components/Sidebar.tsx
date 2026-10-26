@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, CalendarDays, CalendarRange, Utensils, Users } from "lucide-react";
+import { BarChart3, Boxes, CalendarDays, CalendarRange, MapPin, Utensils, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import { useAuth } from "@/providers/AuthProvider";
 import {
@@ -91,6 +91,14 @@ export default function Sidebar() {
                   <Link href="/work-schedules" onClick={() => setOpenMobile(false)} aria-label="Manage work schedules">
                     <CalendarDays />
                     <span>Manage work schedules</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/sites" || pathname.startsWith("/sites/")} tooltip="Manage sites">
+                  <Link href="/sites" onClick={() => setOpenMobile(false)} aria-label="Manage sites">
+                    <MapPin />
+                    <span>Manage sites</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

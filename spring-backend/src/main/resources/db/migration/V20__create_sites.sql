@@ -1,0 +1,9 @@
+CREATE TABLE sites (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(25) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_sites_name UNIQUE (name)
+);
+
+ALTER TABLE users ADD COLUMN site_id BIGINT NULL;
+ALTER TABLE users ADD CONSTRAINT fk_users_site FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE SET NULL;

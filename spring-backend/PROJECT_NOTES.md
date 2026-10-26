@@ -69,3 +69,5 @@ Run these from `spring-backend/`:
 - The frontend reverse-proxies `/api/*` to the backend, so its browser API requests remain same-origin. Direct cross-origin API requests are allowed from `FRONTEND_ORIGIN` (default `http://localhost:3000`) with credentials.
 - The assistant token endpoint validates the Spring session before issuing a short-lived JWT. The context endpoint derives the email from the verified token, then returns visible event fields and aggregate team counts without colleague email addresses.
 - `target/` contains generated Maven output and is not source.
+- Sites use SUPER_ADMIN-protected `/api/sites` CRUD endpoints with optional server-side name search. Names are limited to 25 characters and unique without regard to letter case; users reference zero or one Site through nullable `users.site_id`, cleared on Site deletion. Flyway migration `V20` creates the table and relationship.
+- User management supports Site filters (`siteId` and `withoutSite`) and includes Site choices in `GET /api/users/manage/filters`; SUPER_ADMIN user updates can set or clear `assignments.siteId`.

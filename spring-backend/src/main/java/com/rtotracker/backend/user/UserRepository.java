@@ -32,6 +32,8 @@ public interface UserRepository extends JpaRepository<User, String> {
             + "and (:withoutPlatform = false or user.platform is null) "
             + "and (:workScheduleId is null or user.workSchedule.id = :workScheduleId) "
             + "and (:withoutWorkSchedule = false or user.workSchedule is null) "
+            + "and (:siteId is null or user.site.id = :siteId) "
+            + "and (:withoutSite = false or user.site is null) "
             + "order by user.email asc",
             countQuery = "select count(distinct user) from User user left join user.roles role "
                     + "where (:search is null or lower(user.email) like concat('%', lower(:search), '%')) "
@@ -39,11 +41,15 @@ public interface UserRepository extends JpaRepository<User, String> {
                     + "and (:platformId is null or user.platform.id = :platformId) "
                     + "and (:withoutPlatform = false or user.platform is null) "
                     + "and (:workScheduleId is null or user.workSchedule.id = :workScheduleId) "
-                    + "and (:withoutWorkSchedule = false or user.workSchedule is null)")
+                    + "and (:withoutWorkSchedule = false or user.workSchedule is null) "
+                    + "and (:siteId is null or user.site.id = :siteId) "
+                    + "and (:withoutSite = false or user.site is null)")
     Page<User> findAllByFilters(@Param("platformId") Long platformId,
                                 @Param("withoutPlatform") boolean withoutPlatform,
                                 @Param("workScheduleId") Long workScheduleId,
                                 @Param("withoutWorkSchedule") boolean withoutWorkSchedule,
+                                @Param("siteId") Long siteId,
+                                @Param("withoutSite") boolean withoutSite,
                                 @Param("roleCode") String roleCode, @Param("search") String search,
                                 Pageable pageable);
 }

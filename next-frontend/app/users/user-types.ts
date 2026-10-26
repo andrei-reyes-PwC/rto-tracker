@@ -3,6 +3,7 @@ export type ManagedUser = {
   roles: string[];
   platform: { id: number; name: string } | null;
   workSchedule: { id: number; name: string } | null;
+  site: { id: number; name: string } | null;
 };
 
 export type AvailableRole = {
@@ -18,4 +19,5 @@ export type UserEditorValues = {
   roles: string[];
   platformId: number | null;
   workScheduleId: number | null;
+  siteId: number | null;
 };

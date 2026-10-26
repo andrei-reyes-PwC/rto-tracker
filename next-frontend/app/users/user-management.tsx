@@ -46,8 +46,8 @@ export default function UserManagement({ readOnly = false, platformName }: { rea
 }
 
 function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; platformName?: string }) {
-  const { users, platforms, workSchedules, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingFilters, loadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId, workScheduleId, setWorkScheduleId, roleCode, setRoleCode, keyword, setKeyword } = useUserManagement();
-  const hasActiveFilters = Boolean(keyword.trim()) || roleCode !== "all" || platformId !== "all" || workScheduleId !== "all";
+  const { users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingFilters, loadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId, workScheduleId, setWorkScheduleId, siteId, setSiteId, roleCode, setRoleCode, keyword, setKeyword } = useUserManagement();
+  const hasActiveFilters = Boolean(keyword.trim()) || roleCode !== "all" || platformId !== "all" || workScheduleId !== "all" || siteId !== "all";
   const orderedRoles = [...roles].sort((first, second) => {
     const firstPriority = rolePriority.indexOf(first.code);
     const secondPriority = rolePriority.indexOf(second.code);
@@ -110,6 +110,14 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
                 {workSchedules.map((schedule) => <SelectItem key={schedule.id} value={String(schedule.id)}>{schedule.name}</SelectItem>)}
               </SelectContent>
             </Select>
+            {!readOnly && <Select value={siteId} onValueChange={(value) => { setPage(0); setSiteId(value); }} disabled={isLoading || isLoadingFilters}>
+              <SelectTrigger className="w-fit max-w-full sm:w-[190px]" aria-label="Filter users by site"><SelectValue placeholder="All sites" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All sites</SelectItem>
+                <SelectItem value="none">No site</SelectItem>
+                {sites.map((site) => <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>)}
+              </SelectContent>
+            </Select>}
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -134,6 +142,9 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
                         {managedUser.workSchedule
                           ? <Badge variant="outline">Schedule: {managedUser.workSchedule.name}</Badge>
                           : <span className="inline-flex h-5 items-center text-xs text-muted-foreground">No work schedule</span>}
+                        {managedUser.site
+                          ? <Badge variant="outline">Site: {managedUser.site.name}</Badge>
+                          : <span className="inline-flex h-5 items-center text-xs text-muted-foreground">No site</span>}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {managedUser.roles.map((role) => <Badge key={role} variant={role === "ADMIN" || role === "SUPER_ADMIN" ? "secondary" : "outline"}>{role === "SUPER_ADMIN" && <Shield aria-hidden="true" />}{role}</Badge>)}
@@ -172,9 +183,11 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
         initialRoles={editor?.user?.roles ?? defaultRoleCodes}
         initialPlatformId={editor?.user?.platform?.id ?? null}
         initialWorkScheduleId={editor?.user?.workSchedule?.id ?? null}
+        initialSiteId={editor?.user?.site?.id ?? null}
         availableRoles={availableRoles}
         platforms={platforms}
         workSchedules={workSchedules}
+        sites={sites}
         onOpenChange={(open) => { if (!open) setEditor(null); }}
         onSave={saveUser}
       />}

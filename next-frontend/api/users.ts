@@ -18,6 +18,7 @@ export type UserPage = {
 export type UserManagementFilters = {
   platforms: PlatformOption[];
   workSchedules: PlatformOption[];
+  sites: PlatformOption[];
   roles: { code: string }[];
 };
 
@@ -26,6 +27,8 @@ export type UserManagementListFilters = {
   withoutPlatform?: boolean;
   workScheduleId?: number;
   withoutWorkSchedule?: boolean;
+  siteId?: number;
+  withoutSite?: boolean;
   roleCode?: string;
   search?: string;
 };
@@ -41,6 +44,7 @@ export type UpdateUserRequest = {
   assignments: {
     platformId: number | null;
     workScheduleId: number | null;
+    siteId: number | null;
   };
 };
 
@@ -129,6 +133,8 @@ export async function getManageUsers(page: number, size: number, filters: UserMa
   if (filters.withoutPlatform) params.set("withoutPlatform", "true");
   if (filters.workScheduleId !== undefined) params.set("workScheduleId", String(filters.workScheduleId));
   if (filters.withoutWorkSchedule) params.set("withoutWorkSchedule", "true");
+  if (filters.siteId !== undefined) params.set("siteId", String(filters.siteId));
+  if (filters.withoutSite) params.set("withoutSite", "true");
   if (filters.roleCode) params.set("roleCode", filters.roleCode);
   if (filters.search) params.set("search", filters.search);
   const response = await fetch(`/api/users/manage?${params}`, {
@@ -153,7 +159,8 @@ export async function getManageUserFilters(signal?: AbortSignal): Promise<UserMa
   });
   if (!response.ok) throw new Error(await responseError(response));
   const result = await response.json() as UserManagementFilters;
-  if (!result || !Array.isArray(result.platforms) || !Array.isArray(result.workSchedules) || !Array.isArray(result.roles)) {
+  if (!result || !Array.isArray(result.platforms) || !Array.isArray(result.workSchedules)
+    || !Array.isArray(result.sites) || !Array.isArray(result.roles)) {
     throw new Error("The user filters service returned an unexpected response. Please refresh and try again.");
   }
   return result;

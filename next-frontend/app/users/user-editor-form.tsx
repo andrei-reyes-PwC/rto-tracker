@@ -18,9 +18,11 @@ type UserEditorFormProps = {
   initialRoles: string[];
   initialPlatformId: number | null;
   initialWorkScheduleId: number | null;
+  initialSiteId: number | null;
   availableRoles: AvailableRole[];
   platforms: PlatformOption[];
   workSchedules: PlatformOption[];
+  sites: PlatformOption[];
   onCancel: () => void;
   onSave: (values: UserEditorValues) => string | null | Promise<string | null>;
 };
@@ -33,9 +35,11 @@ export default function UserEditorForm({
   initialRoles,
   initialPlatformId,
   initialWorkScheduleId,
+  initialSiteId,
   availableRoles,
   platforms,
   workSchedules,
+  sites,
   onCancel,
   onSave,
 }: UserEditorFormProps) {
@@ -44,6 +48,7 @@ export default function UserEditorForm({
   const [selectedRoles, setSelectedRoles] = useState(initialRoles);
   const [platformId, setPlatformId] = useState(initialPlatformId?.toString() ?? "none");
   const [workScheduleId, setWorkScheduleId] = useState(initialWorkScheduleId?.toString() ?? "none");
+  const [siteId, setSiteId] = useState(initialSiteId?.toString() ?? "none");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initialRolesKey = initialRoles.join("|");
@@ -59,8 +64,9 @@ export default function UserEditorForm({
     setSelectedRoles(initialRoles);
     setPlatformId(initialPlatformId?.toString() ?? "none");
     setWorkScheduleId(initialWorkScheduleId?.toString() ?? "none");
+    setSiteId(initialSiteId?.toString() ?? "none");
     setError("");
-  }, [open, initialEmail, initialRoles, initialRolesKey, initialPlatformId, initialWorkScheduleId]);
+  }, [open, initialEmail, initialRoles, initialRolesKey, initialPlatformId, initialWorkScheduleId, initialSiteId]);
 
   function toggleRole(role: string) {
     setSelectedRoles((current) => current.includes(role)
@@ -93,6 +99,7 @@ export default function UserEditorForm({
         roles: mode === "create" ? ["USER"] : selectedRoles,
         platformId: mode === "edit" && platformId !== "none" ? Number(platformId) : null,
         workScheduleId: mode === "edit" && workScheduleId !== "none" ? Number(workScheduleId) : null,
+        siteId: mode === "edit" && siteId !== "none" ? Number(siteId) : null,
       });
       if (saveError) setError(saveError);
     } catch (error: unknown) {
@@ -157,6 +164,18 @@ export default function UserEditorForm({
               <SelectContent>
                 <SelectItem value="none">No work schedule</SelectItem>
                 {workSchedules.map((schedule) => <SelectItem key={schedule.id} value={String(schedule.id)}>{schedule.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="user-editor-site">Site</Label>
+            <Select value={siteId} onValueChange={setSiteId}>
+              <SelectTrigger id="user-editor-site" aria-label="Site" className="w-full">
+                <SelectValue placeholder="Select a site" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No site</SelectItem>
+                {sites.map((site) => <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

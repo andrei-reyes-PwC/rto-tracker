@@ -8,6 +8,7 @@ import com.rtotracker.backend.role.RoleService;
 import com.rtotracker.backend.workschedule.WorkSchedule;
 import com.rtotracker.backend.workschedule.WorkScheduleService;
 import com.rtotracker.backend.role.Role;
+import com.rtotracker.backend.site.SiteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,15 +51,18 @@ public class UserController {
     private final UserService userService;
     private final PlatformService platformService;
     private final WorkScheduleService workScheduleService;
+    private final SiteService siteService;
     private final RoleService roleService;
     private final AdminAuthorizationService authorization;
 
     public UserController(UserService userService, PlatformService platformService, WorkScheduleService workScheduleService,
+                          SiteService siteService,
                           RoleService roleService,
                           AdminAuthorizationService authorization) {
         this.userService = userService;
         this.platformService = platformService;
         this.workScheduleService = workScheduleService;
+        this.siteService = siteService;
         this.roleService = roleService;
         this.authorization = authorization;
     }
@@ -72,6 +76,8 @@ public class UserController {
             @RequestParam(defaultValue = "false") boolean withoutPlatform,
             @RequestParam(required = false) @Min(1) Long workScheduleId,
             @RequestParam(defaultValue = "false") boolean withoutWorkSchedule,
+            @RequestParam(required = false) @Min(1) Long siteId,
+            @RequestParam(defaultValue = "false") boolean withoutSite,
             @RequestParam(required = false) @Size(max = 50) String roleCode,
             @RequestParam(required = false) @Size(max = 254) String search,
             @RequestParam(defaultValue = "true") boolean includePlatforms,
@@ -79,7 +85,7 @@ public class UserController {
         authorization.requireSuperAdmin(request);
         Pageable pageable = PageRequest.of(page, size);
         Page<UserResponse> users = userService.findAll(pageable, platformId, withoutPlatform,
-                workScheduleId, withoutWorkSchedule, roleCode, search);
+                workScheduleId, withoutWorkSchedule, siteId, withoutSite, roleCode, search);
         List<PlatformResponse> platforms = includePlatforms
                 ? platformService.findAll().stream().map(PlatformResponse::from).toList()
                 : List.of();
@@ -95,6 +101,8 @@ public class UserController {
             @RequestParam(defaultValue = "false") boolean withoutPlatform,
             @RequestParam(required = false) @Min(1) Long workScheduleId,
             @RequestParam(defaultValue = "false") boolean withoutWorkSchedule,
+            @RequestParam(required = false) @Min(1) Long siteId,
+            @RequestParam(defaultValue = "false") boolean withoutSite,
             @RequestParam(required = false) @Size(max = 50) String roleCode,
             @RequestParam(required = false) @Size(max = 254) String search,
             HttpServletRequest request) {
@@ -103,9 +111,10 @@ public class UserController {
         Long scopedPlatformId = isSuperAdmin ? platformId : manager.getPlatform().getId();
         Pageable pageable = PageRequest.of(page, size);
         Page<UserResponse> users = userService.findAll(pageable, scopedPlatformId, isSuperAdmin && withoutPlatform,
-                workScheduleId, withoutWorkSchedule, roleCode, search);
+                workScheduleId, withoutWorkSchedule, isSuperAdmin ? siteId : null,
+                isSuperAdmin && withoutSite, roleCode, search);
         List<ManagedUserResponse> content = users.getContent().stream()
-                .map(user -> new ManagedUserResponse(user.email(), user.roles(), user.platform(), user.workSchedule()))
+                .map(user -> new ManagedUserResponse(user.email(), user.roles(), user.platform(), user.workSchedule(), user.site()))
                 .toList();
         return new UserManagementPageResponse(content, users.getTotalElements(), users.getTotalPages(),
                 users.getNumber(), users.getSize());
@@ -125,9 +134,13 @@ public class UserController {
                 .map(schedule -> new WorkScheduleOption(schedule.getId(), schedule.getName())).toList()
                 : workScheduleService.findOptionsByPlatformId(manager.getPlatform().getId()).stream()
                 .map(schedule -> new WorkScheduleOption(schedule.getId(), schedule.getName())).toList();
+        List<WorkScheduleOption> sites = isSuperAdmin
+                ? siteService.findAll("").stream()
+                .map(site -> new WorkScheduleOption(site.getId(), site.getName())).toList()
+                : List.of();
         List<RoleFilterOption> roles = roleService.findAll().stream()
                 .map(role -> new RoleFilterOption(role.getCode())).toList();
-        return new UserManagementFiltersResponse(platforms, workSchedules, roles);
+        return new UserManagementFiltersResponse(platforms, workSchedules, sites, roles);
     }
 
     @GetMapping("/{email}")
@@ -159,7 +172,7 @@ public class UserController {
         boolean isSelf = administrator.getEmail().equalsIgnoreCase(email);
         UserService.MembershipUpdate memberships = request.assignments() == null ? null
                 : new UserService.MembershipUpdate(request.assignments().platformId(),
-                request.assignments().workScheduleId());
+                request.assignments().workScheduleId(), request.assignments().siteId());
         User updated = userService.update(email, request.email(), request.roles(), memberships, isSelf);
         if (isSelf) {
             servletRequest.getSession(false).setAttribute(
@@ -198,7 +211,8 @@ public class UserController {
             @Valid MembershipUpdateRequest assignments) {
     }
 
-    public record MembershipUpdateRequest(@Positive Long platformId, @Positive Long workScheduleId) {
+    public record MembershipUpdateRequest(@Positive Long platformId, @Positive Long workScheduleId,
+                                         @Positive Long siteId) {
     }
 
     public record UserPageResponse(List<UserResponse> content, long totalElements, int totalPages,
@@ -215,6 +229,7 @@ public class UserController {
 
     public record UserManagementFiltersResponse(List<PlatformOption> platforms,
                                                 List<WorkScheduleOption> workSchedules,
+                                                List<WorkScheduleOption> sites,
                                                 List<RoleFilterOption> roles) {
     }
 
@@ -222,12 +237,16 @@ public class UserController {
     }
 
     public record ManagedUserResponse(String email, List<String> roles, PlatformOption platform,
-                                      WorkScheduleOption workSchedule) {
+                                      WorkScheduleOption workSchedule, WorkScheduleOption site) {
     }
 
     public record WorkScheduleOption(Long id, String name) {
         static WorkScheduleOption from(WorkSchedule workSchedule) {
             return workSchedule == null ? null : new WorkScheduleOption(workSchedule.getId(), workSchedule.getName());
+        }
+
+        static WorkScheduleOption from(com.rtotracker.backend.site.Site site) {
+            return site == null ? null : new WorkScheduleOption(site.getId(), site.getName());
         }
     }
 
@@ -242,12 +261,12 @@ public class UserController {
     }
 
     public record UserResponse(String email, List<String> roles, PlatformOption platform,
-                               WorkScheduleOption workSchedule) {
+                               WorkScheduleOption workSchedule, WorkScheduleOption site) {
         public static UserResponse from(User user) {
             return new UserResponse(user.getEmail(), user.getRoles().stream()
                     .map(Role::getCode).sorted().toList(), user.getPlatform() == null ? null
                     : new PlatformOption(user.getPlatform().getId(), user.getPlatform().getName()),
-                    WorkScheduleOption.from(user.getWorkSchedule()));
+                    WorkScheduleOption.from(user.getWorkSchedule()), WorkScheduleOption.from(user.getSite()));
         }
     }
 }

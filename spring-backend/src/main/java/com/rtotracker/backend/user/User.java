@@ -3,6 +3,7 @@ package com.rtotracker.backend.user;
 import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.platform.Platform;
 import com.rtotracker.backend.workschedule.WorkSchedule;
+import com.rtotracker.backend.site.Site;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -40,6 +41,10 @@ public class User {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "work_schedule_id")
     private WorkSchedule workSchedule;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "site_id")
+    private Site site;
 
     protected User() {
     }
@@ -86,4 +91,8 @@ public class User {
     public void setWorkSchedule(WorkSchedule workSchedule) {
         this.workSchedule = workSchedule;
     }
+
+    public Site getSite() { return site; }
+
+    public void setSite(Site site) { this.site = site; }
 }
