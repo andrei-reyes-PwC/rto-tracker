@@ -20,6 +20,7 @@ This repository contains the RTO Tracker frontend and backend, plus a standalone
 ## Repository conventions
 
 - Each application has its own dependencies, run commands, and README.
+- Each application has a Dockerfile and `.dockerignore`. Frontend rewrite URLs are embedded during image build; Spring and AI containers share RSA JWT keys through secret mounts. The images expect a separately managed database.
 - Run frontend commands from `next-frontend/` and Maven commands from `spring-backend/`.
 - Build output and dependencies are local generated files, not source.
 - Sites are managed at `/manage/sites`; user assignments are managed in Manage Users. Each Site has a unique name up to 25 characters and can have multiple users; each user can belong to zero or one Site through nullable `users.site_id`, cleared when its Site is deleted.

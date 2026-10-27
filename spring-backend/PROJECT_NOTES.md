@@ -5,6 +5,7 @@ This file is the short working map for `spring-backend`. Read it before backend 
 ## What this project is
 
 - A standalone Spring Boot REST API built with Maven. A bounded in-memory store backs API request limits; it is intended for a single backend instance and resets when the process restarts.
+- `Dockerfile` builds the executable JAR with Java 25 and runs it in a Java 25 runtime image. Mount the shared JWT key pair and set the production profile and database configuration at runtime.
 - Spring Boot `4.1.1`, Java `25`, Spring MVC, Spring Data JPA, MySQL, Flyway, and springdoc OpenAPI are configured in `pom.xml`.
 - Spring Boot DevTools is an optional development dependency; with `mvn spring-boot:run`, the app restarts when compiled classpath files change. The root `.vscode/settings.json` enables Java auto-build on save.
 - Flyway migration `V1__baseline.sql` creates the complete current schema and role catalog for clean databases; Hibernate validates the mapped entities.
