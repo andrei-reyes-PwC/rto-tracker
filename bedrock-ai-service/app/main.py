@@ -36,7 +36,6 @@ JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "rto-assistant-services")
 JWT_PUBLIC_KEY_PATH = Path(os.getenv(
     "JWT_PUBLIC_KEY_PATH", "../spring-backend/.secrets/jwt-public.pem"
 ))
-JWT_PUBLIC_KEY_PEM = os.getenv("JWT_PUBLIC_KEY_PEM")
 SPRING_BACKEND_URL = os.getenv("SPRING_BACKEND_URL", "http://localhost:8080").rstrip("/")
 FRONTEND_ORIGINS = [
     origin.strip()
@@ -212,7 +211,7 @@ def require_assistant_claims(authorization: str | None) -> str:
     try:
         claims = jwt.decode(
             token,
-            JWT_PUBLIC_KEY_PEM or JWT_PUBLIC_KEY_PATH.read_text(encoding="utf-8"),
+            JWT_PUBLIC_KEY_PATH.read_text(encoding="utf-8"),
             algorithms=["RS256"],
             issuer=JWT_ISSUER,
             audience=JWT_AUDIENCE,
