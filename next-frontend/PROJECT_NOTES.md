@@ -44,7 +44,6 @@ This file is the short working map for future work in `next-frontend`. Read it f
 - `components.json` â€” shadcn preset, aliases, and style configuration.
 - `lib/utils.ts` â€” shared class name utility.
 - `next.config.ts` â€” Next config that registers the proxy rewrite from `api/proxy.ts`, plus Tailwind's Turbopack CSS loader.
-- `Dockerfile` and `.dockerignore` build a standalone production image. API rewrite URLs are read during `next build`, so pass `BACKEND_API_URL` and `AI_SERVICE_URL` as build arguments for the deployed service addresses.
 - `tsconfig.json` â€” strict TypeScript, bundler resolution, `@/*` maps to the frontend root.
 - `eslint.config.mjs` â€” flat ESLint config using `eslint-config-next/core-web-vitals` and `/typescript`.
 - `AGENTS.md` â€” local Next.js instructions; read relevant docs under `node_modules/next/dist/docs/` before changing Next.js APIs or conventions.

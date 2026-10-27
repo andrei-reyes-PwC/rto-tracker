@@ -3,7 +3,6 @@ import { getApiRewrites } from "./api/proxy";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: "standalone",
   experimental: {
     agentFeedback: true,
   },
