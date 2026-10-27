@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useRouter } from "next/navigation";
 import { LockKeyhole } from "lucide-react";
 import { getLunchDay, getLunchRosterOptions, lockLunchDay, scanLunchCredential, type LunchRosterOptions, type LunchScanResult, type LunchSummary } from "@/api/lunch";
 import DataLoadError from "@/components/DataLoadError";
@@ -32,8 +33,10 @@ function formatLunchDate(date: string) {
   return `${monthDayYear} (${weekday})`;
 }
 
-export default function LunchProcurement() {
-  const [date, setDate] = useState("");
+export default function LunchProcurement({ initialDate, initialSiteId }: { initialDate?: string; initialSiteId?: string }) {
+  const router = useRouter();
+  const initialSelection = useRef({ date: initialDate, siteId: initialSiteId });
+  const [date, setDate] = useState(initialDate ?? "");
   const [day, setDay] = useState<LunchSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [dayError, setDayError] = useState<string | null>(null);
@@ -42,17 +45,32 @@ export default function LunchProcurement() {
   const [confirmLockOpen, setConfirmLockOpen] = useState(false);
   const [rosterRefreshKey, setRosterRefreshKey] = useState(0);
   const [rosterOptions, setRosterOptions] = useState<LunchRosterOptions>({ platforms: [], workSchedules: [], sites: [] });
-  const [siteFilter, setSiteFilter] = useState("");
+  const [siteFilter, setSiteFilter] = useState(initialSiteId ?? "");
   const [siteOptionsLoaded, setSiteOptionsLoaded] = useState(false);
   const [siteOptionsError, setSiteOptionsError] = useState<string | null>(null);
 
-  useEffect(() => { setDate(currentLunchDate()); }, []);
+  const updateSelectionUrl = useCallback((nextDate: string, nextSiteId: string) => {
+    const params = new URLSearchParams();
+    if (nextSiteId) params.set("siteId", nextSiteId);
+    if (nextDate) params.set("date", nextDate);
+    const query = params.toString();
+    router.replace(query ? `/lunch?${query}` : "/lunch", { scroll: false });
+  }, [router]);
+
   useEffect(() => {
     const controller = new AbortController();
     void getLunchRosterOptions(controller.signal).then((result) => {
       if (!controller.signal.aborted) {
         setRosterOptions(result);
-        setSiteFilter((current) => current || (result.sites[0] ? String(result.sites[0].id) : ""));
+        const savedSelection = initialSelection.current;
+        const initialSiteIsValid = savedSelection.siteId && result.sites.some((site) => String(site.id) === savedSelection.siteId);
+        const nextSiteId = initialSiteIsValid ? savedSelection.siteId : result.sites[0] ? String(result.sites[0].id) : "";
+        setSiteFilter(nextSiteId);
+        const nextDate = savedSelection.date ?? currentLunchDate();
+        if (!savedSelection.date) setDate(nextDate);
+        if (savedSelection.date || savedSelection.siteId) {
+          updateSelectionUrl(nextDate, nextSiteId);
+        }
       }
     }).catch((error: unknown) => {
       if (!controller.signal.aborted) setSiteOptionsError(error instanceof Error ? error.message : "Could not load Sites.");
@@ -60,7 +78,7 @@ export default function LunchProcurement() {
       if (!controller.signal.aborted) setSiteOptionsLoaded(true);
     });
     return () => controller.abort();
-  }, []);
+  }, [updateSelectionUrl]);
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
     if (!date || !siteFilter) { setLoading(false); return; }
@@ -109,12 +127,12 @@ export default function LunchProcurement() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="grid w-fit max-w-full gap-2 sm:w-64">
               <Label htmlFor="lunch-site-filter">Site</Label>
-              <Select value={siteFilter} onValueChange={(value) => { setActionError(null); setSiteFilter(value ?? ""); }} disabled={!siteOptionsLoaded || !rosterOptions.sites.length || loading || busy || confirmLockOpen}>
+              <Select value={siteFilter} onValueChange={(value) => { const nextSiteId = value ?? ""; setActionError(null); setSiteFilter(nextSiteId); updateSelectionUrl(date, nextSiteId); }} disabled={!siteOptionsLoaded || !rosterOptions.sites.length || loading || busy || confirmLockOpen}>
                 <SelectTrigger id="lunch-site-filter" aria-label="Select lunch site" className="w-fit max-w-[calc(100vw-6rem)] bg-background sm:w-full"><SelectValue placeholder="Select a site" /></SelectTrigger>
                 <SelectContent>{rosterOptions.sites.map((site) => <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="grid w-fit max-w-full gap-2"><Label htmlFor="lunch-date">Lunch date</Label><Input id="lunch-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} className="w-fit max-w-full sm:w-48" /></div>
+            <div className="grid w-fit max-w-full gap-2"><Label htmlFor="lunch-date">Lunch date</Label><Input id="lunch-date" type="date" value={date} onChange={(event) => { const nextDate = event.target.value; setDate(nextDate); updateSelectionUrl(nextDate, siteFilter); }} className="w-fit max-w-full sm:w-48" /></div>
           </div>
         </section>
         {actionError && <Alert variant="destructive"><AlertDescription>{actionError}</AlertDescription></Alert>}

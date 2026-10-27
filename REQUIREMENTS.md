@@ -106,6 +106,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **LUNCH-04** — The system stores one received status and handout operator identity per locked recipient, Site, and date. Deleted user accounts are removed from recipient records.
 - **LUNCH-05** — The daily overview shows recipient received/total counts by platform in rows and work schedule in columns once locked.
 - **LUNCH-10** — An authenticated user can see a Lunch badge on calendar dates when a procurement is locked for the user's assigned Site; the calendar lookup exposes dates only, not recipients or receipt details.
+- **LUNCH-11** — The lunch procurement page stores the selected Site ID and date in its URL so users can bookmark or refresh the page and return to that selection.
 
 ### RTO planning assistant
 
