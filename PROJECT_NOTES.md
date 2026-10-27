@@ -2,6 +2,8 @@
 
 This repository contains the RTO Tracker frontend and backend, plus a standalone Bedrock AI service for experimenting with Nova Micro.
 
+- `TECHNICAL_DOCUMENTATION.md` summarizes implemented system scope, application boundaries, responsibilities, data flow, stack, and open roadmap/deployment decisions.
+
 - `REQUIREMENTS.md` is the shared source of truth for user types, access rules, feature behavior, system boundaries, and unresolved product questions. Update it with changes to user-visible behavior or permissions.
 
 ## Projects
