@@ -54,6 +54,7 @@ All authenticated users have a personal account identified by email. User accoun
 - **USER-06** — User listing supports page navigation and page sizes of 10, 25, 50, or 100 in the management interface; the API accepts page sizes up to 100.
 - **USER-07** — User creation and update validate email and password/role inputs. Duplicate emails are rejected, and `SUPER_ADMIN` cannot be assigned through this flow. `LUNCH` is assignable to grant lunch procurement access.
 - **USER-08** — Role, platform, work-schedule, and Site filter choices for Manage Users are returned together. Search and filters apply across pages and can be combined, including filters for users with no platform, no work schedule, or no Site.
+- **USER-09** — As a `SUPER_ADMIN`, I can select multiple editable users and batch update their platform, work schedule, Site, and roles. Each assignment can be left unchanged or set/cleared; role replacement is explicit, and protected users cannot be batch edited.
 
 ### Platform administration
 

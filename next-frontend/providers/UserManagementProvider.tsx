@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { PlatformOption } from "@/api/platforms";
-import { createUser, deleteUser, getManageUserFilters, getManageUsers, updateUser } from "@/api/users";
+import { createUser, deleteUser, getManageUserFilters, getManageUsers, updateUser, updateUserAssignments, type BatchUserAssignments } from "@/api/users";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useAuth } from "@/providers/AuthProvider";
 import type { ManagedUser, UserEditorMode, UserEditorValues } from "@/app/users/user-types";
@@ -17,6 +17,7 @@ type UserManagementContextValue = {
   setEditor: (editor: Editor) => void; deletingUser: ManagedUser | null;
   setDeletingUser: (user: ManagedUser | null) => void; refresh: () => Promise<void>;
   saveUser: (values: UserEditorValues) => Promise<string | null>; confirmDelete: () => Promise<void>;
+  saveBatchAssignments: (emails: string[], assignments: BatchUserAssignments, roles?: string[]) => Promise<string | null>;
   signedInUser: ReturnType<typeof useAuth>["user"]; isAuthLoading: boolean;
 };
 
@@ -134,7 +135,19 @@ export function UserManagementProvider({ children }: { children: ReactNode }) {
     finally { setIsDeleting(false); }
   }, [deletingUser, isDeleting, page, refresh, users.length]);
 
-  const value = useMemo(() => ({ users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, platformId, workScheduleId, siteId, roleCode, keyword, setPlatformId, setWorkScheduleId, setSiteId, setRoleCode, setKeyword, isLoading, isLoadingFilters, loadError: loadError || filterLoadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading }), [users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, pageSize, platformId, workScheduleId, siteId, roleCode, keyword, isLoading, isLoadingFilters, loadError, filterLoadError, retryLoad, dismissLoadError, error, notice, isDeleting, editor, deletingUser, refresh, saveUser, confirmDelete, signedInUser, isAuthLoading]);
+  const saveBatchAssignments = useCallback(async (emails: string[], assignments: BatchUserAssignments, roles?: string[]) => {
+    try {
+      await updateUserAssignments(emails, assignments, roles);
+      setError("");
+      setNotice(`Assignments updated for ${emails.length} ${emails.length === 1 ? "user" : "users"}.`);
+      await refresh();
+      return null;
+    } catch (cause) {
+      return cause instanceof Error ? cause.message : "Could not update these assignments. Please try again.";
+    }
+  }, [refresh]);
+
+  const value = useMemo(() => ({ users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, platformId, workScheduleId, siteId, roleCode, keyword, setPlatformId, setWorkScheduleId, setSiteId, setRoleCode, setKeyword, isLoading, isLoadingFilters, loadError: loadError || filterLoadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, refresh, saveUser, confirmDelete, saveBatchAssignments, signedInUser, isAuthLoading }), [users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, pageSize, platformId, workScheduleId, siteId, roleCode, keyword, isLoading, isLoadingFilters, loadError, filterLoadError, retryLoad, dismissLoadError, error, notice, isDeleting, editor, deletingUser, refresh, saveUser, confirmDelete, saveBatchAssignments, signedInUser, isAuthLoading]);
   return <UserManagementContext.Provider value={value}>{children}</UserManagementContext.Provider>;
 }
 

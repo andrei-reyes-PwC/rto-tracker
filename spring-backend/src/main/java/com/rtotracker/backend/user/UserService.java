@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Locale;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -143,6 +144,44 @@ public class UserService {
         users.delete(current);
         users.flush();
         return findByEmail(replacement.getEmail());
+    }
+
+    public void updateAssignments(List<String> emails, Map<String, Long> assignments, List<String> requestedRoleCodes) {
+        Set<String> allowed = Set.of("platformId", "workScheduleId", "siteId");
+        Map<String, Long> requestedAssignments = assignments == null ? Map.of() : assignments;
+        if ((requestedAssignments.isEmpty() && requestedRoleCodes == null) || !allowed.containsAll(requestedAssignments.keySet())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Choose at least one valid field to update");
+        }
+        Platform platform = requestedAssignments.containsKey("platformId") && requestedAssignments.get("platformId") != null
+                ? platforms.findById(requestedAssignments.get("platformId"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Platform not found")) : null;
+        WorkSchedule workSchedule = requestedAssignments.containsKey("workScheduleId") && requestedAssignments.get("workScheduleId") != null
+                ? workSchedules.findById(requestedAssignments.get("workScheduleId"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work schedule not found")) : null;
+        Site site = requestedAssignments.containsKey("siteId") && requestedAssignments.get("siteId") != null
+                ? sites.findById(requestedAssignments.get("siteId"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Site not found")) : null;
+        List<Role> replacementRoles = null;
+        if (requestedRoleCodes != null) {
+            Set<String> requestedCodes = requestedRoleCodes.stream().map(String::trim).collect(Collectors.toSet());
+            if (requestedCodes.isEmpty() || requestedCodes.contains("")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Select at least one valid role");
+            }
+            replacementRoles = roles.findAllById(requestedCodes);
+            if (replacementRoles.size() != requestedCodes.size() || replacementRoles.stream().anyMatch(Role::isProtectedRole)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more selected roles are invalid");
+            }
+        }
+        List<User> selected = emails.stream().map(this::findByEmail).distinct().toList();
+        if (selected.stream().anyMatch(user -> user.getRoles().stream().anyMatch(Role::isProtectedRole))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected users cannot be batch edited");
+        }
+        for (User user : selected) {
+            if (requestedAssignments.containsKey("platformId")) user.setPlatform(platform);
+            if (requestedAssignments.containsKey("workScheduleId")) user.setWorkSchedule(workSchedule);
+            if (requestedAssignments.containsKey("siteId")) user.setSite(site);
+            if (replacementRoles != null) user.setRoles(new java.util.HashSet<>(replacementRoles));
+        }
     }
 
     public void delete(String email) {

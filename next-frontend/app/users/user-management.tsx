@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, RefreshCw, Search, Shield, Trash2, UserRoundPen, Users } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -46,8 +48,37 @@ export default function UserManagement({ readOnly = false, platformName }: { rea
 }
 
 function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; platformName?: string }) {
-  const { users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingFilters, loadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, signedInUser, isAuthLoading, platformId, setPlatformId, workScheduleId, setWorkScheduleId, siteId, setSiteId, roleCode, setRoleCode, keyword, setKeyword } = useUserManagement();
+  const { users, platforms, workSchedules, sites, roles, totalUsers, totalPages, page, setPage, pageSize, setPageSize, isLoading, isLoadingFilters, loadError, retryLoad, dismissLoadError, error, notice, setNotice, isDeleting, editor, setEditor, deletingUser, setDeletingUser, saveUser, confirmDelete, saveBatchAssignments, signedInUser, isAuthLoading, platformId, setPlatformId, workScheduleId, setWorkScheduleId, siteId, setSiteId, roleCode, setRoleCode, keyword, setKeyword } = useUserManagement();
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchPlatform, setBatchPlatform] = useState("unchanged");
+  const [batchSchedule, setBatchSchedule] = useState("unchanged");
+  const [batchSite, setBatchSite] = useState("unchanged");
+  const [batchRolesEnabled, setBatchRolesEnabled] = useState(false);
+  const [batchRoles, setBatchRoles] = useState<string[]>(["USER"]);
+  const [isBatchSaving, setIsBatchSaving] = useState(false);
+  const [batchError, setBatchError] = useState("");
   const hasActiveFilters = Boolean(keyword.trim()) || roleCode !== "all" || platformId !== "all" || workScheduleId !== "all" || siteId !== "all";
+  const eligibleUsers = users.filter((managedUser) => !managedUser.roles.includes("SUPER_ADMIN"));
+  const allVisibleSelected = eligibleUsers.length > 0 && eligibleUsers.every((managedUser) => selectedEmails.includes(managedUser.email));
+  const toggleVisibleUsers = () => setSelectedEmails((current) => allVisibleSelected
+    ? current.filter((email) => !eligibleUsers.some((managedUser) => managedUser.email === email))
+    : [...new Set([...current, ...eligibleUsers.map((managedUser) => managedUser.email)])]);
+  const submitBatchAssignments = async () => {
+    const assignments: { platformId?: number | null; workScheduleId?: number | null; siteId?: number | null } = {};
+    if (batchPlatform !== "unchanged") assignments.platformId = batchPlatform === "none" ? null : Number(batchPlatform);
+    if (batchSchedule !== "unchanged") assignments.workScheduleId = batchSchedule === "none" ? null : Number(batchSchedule);
+    if (batchSite !== "unchanged") assignments.siteId = batchSite === "none" ? null : Number(batchSite);
+    if (Object.keys(assignments).length === 0 && !batchRolesEnabled) { setBatchError("Choose at least one field to update."); return; }
+    if (batchRolesEnabled && batchRoles.length === 0) { setBatchError("Select at least one role."); return; }
+    setIsBatchSaving(true); setBatchError("");
+    const failure = await saveBatchAssignments(selectedEmails, assignments, batchRolesEnabled ? batchRoles : undefined);
+    setIsBatchSaving(false);
+    if (failure) { setBatchError(failure); return; }
+    setSelectedEmails([]); setBatchOpen(false);
+    setBatchPlatform("unchanged"); setBatchSchedule("unchanged"); setBatchSite("unchanged");
+    setBatchRolesEnabled(false); setBatchRoles(["USER"]);
+  };
   const orderedRoles = [...roles].sort((first, second) => {
     const firstPriority = rolePriority.indexOf(first.code);
     const secondPriority = rolePriority.indexOf(second.code);
@@ -119,6 +150,11 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
               </SelectContent>
             </Select>}
           </div>
+          {!readOnly && selectedEmails.length > 0 && <div className="col-span-2 flex flex-wrap items-center gap-3 sm:col-span-2 sm:col-start-1 sm:row-start-3">
+            <span className="text-sm text-muted-foreground">{selectedEmails.length} selected</span>
+            <Button size="sm" onClick={() => { setBatchError(""); setBatchOpen(true); }}>Edit assignments</Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedEmails([])}>Clear selection</Button>
+          </div>}
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -127,13 +163,19 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
             <div className="px-6 py-16 text-center"><Users className="mx-auto size-8 text-muted-foreground/50" /><p className="mt-3 text-sm font-medium">{loadError ? "Users could not be loaded" : hasActiveFilters ? "No users match these filters" : "No users yet"}</p><p className="mt-1 text-sm text-muted-foreground">{loadError ? "Check your connection and try refreshing." : hasActiveFilters ? "Try changing or clearing your search and filters." : "No accounts are available."}</p></div>
           ) : (
             <div className="divide-y">
+              {!readOnly && <div className="flex items-center gap-3 px-5 py-3 text-sm text-muted-foreground">
+                <Checkbox checked={allVisibleSelected} onCheckedChange={toggleVisibleUsers} aria-label="Select all editable users on this page" />
+                <span>Select editable users on this page</span>
+              </div>}
               {users.map((managedUser) => {
                 const isProtected = managedUser.roles.includes("SUPER_ADMIN");
                 const isCurrentUser = signedInUser?.email.toLowerCase() === managedUser.email.toLowerCase();
                 const userPlatform = managedUser.platform;
                 return (
                   <div key={managedUser.email} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
+                    <div className="flex min-w-0 items-start gap-3">
+                      {!readOnly && <Checkbox className="mt-0.5" checked={selectedEmails.includes(managedUser.email)} disabled={isProtected} onCheckedChange={(checked) => setSelectedEmails((current) => checked ? [...new Set([...current, managedUser.email])] : current.filter((email) => email !== managedUser.email))} aria-label={`Select ${managedUser.email}`} />}
+                      <div className="min-w-0">
                       <p className="truncate text-sm font-medium" title={managedUser.email}>{managedUser.email}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {userPlatform
@@ -148,6 +190,7 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {managedUser.roles.map((role) => <Badge key={role} variant={role === "ADMIN" || role === "SUPER_ADMIN" ? "secondary" : "outline"}>{role === "SUPER_ADMIN" && <Shield aria-hidden="true" />}{role}</Badge>)}
+                      </div>
                       </div>
                     </div>
                     {!readOnly && <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
@@ -191,6 +234,36 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
         onOpenChange={(open) => { if (!open) setEditor(null); }}
         onSave={saveUser}
       />}
+      {!readOnly && <AlertDialog open={batchOpen} onOpenChange={(open) => { if (!isBatchSaving) setBatchOpen(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit assignments for {selectedEmails.length} users</AlertDialogTitle>
+            <AlertDialogDescription>Choose which assignments to change. “No change” keeps each selected user’s current value; “None” clears it.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-2">
+            <BatchAssignmentSelect label="Platform" value={batchPlatform} onValueChange={setBatchPlatform} options={platforms} />
+            <BatchAssignmentSelect label="Work schedule" value={batchSchedule} onValueChange={setBatchSchedule} options={workSchedules} />
+            <BatchAssignmentSelect label="Site" value={batchSite} onValueChange={setBatchSite} options={sites} />
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Checkbox checked={batchRolesEnabled} onCheckedChange={(checked) => setBatchRolesEnabled(checked === true)} aria-label="Replace roles for all selected users" />
+                Replace roles for all selected users
+              </div>
+              {batchRolesEnabled && <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {roles.filter((role) => role.code !== "SUPER_ADMIN").map((role) => <div key={role.code} className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={batchRoles.includes(role.code)} onCheckedChange={(checked) => setBatchRoles((current) => checked ? [...new Set([...current, role.code])] : current.filter((code) => code !== role.code))} aria-label={`Assign ${role.code} role`} />
+                  {role.code}
+                </div>)}
+              </div>}
+            </div>
+            {batchError && <p role="alert" className="text-sm text-destructive">{batchError}</p>}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBatchSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={isBatchSaving || selectedEmails.length === 0} onClick={(event) => { event.preventDefault(); void submitBatchAssignments(); }}>{isBatchSaving ? "Saving…" : "Update users"}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>}
       {!readOnly && <AlertDialog open={deletingUser !== null} onOpenChange={(open) => { if (!open) setDeletingUser(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -216,4 +289,18 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
       </AlertDialog>}
     </SidebarPageLayout>
   );
+}
+
+function BatchAssignmentSelect({ label, value, onValueChange, options }: { label: string; value: string; onValueChange: (value: string) => void; options: { id: number; name: string }[] }) {
+  return <div className="space-y-2">
+    <p className="text-sm font-medium">{label}</p>
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger aria-label={`Batch edit ${label}`} className="w-full"><SelectValue /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="unchanged">No change</SelectItem>
+        <SelectItem value="none">None</SelectItem>
+        {options.map((option) => <SelectItem key={option.id} value={String(option.id)}>{option.name}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  </div>;
 }

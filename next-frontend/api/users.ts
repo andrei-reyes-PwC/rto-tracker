@@ -48,6 +48,12 @@ export type UpdateUserRequest = {
   };
 };
 
+export type BatchUserAssignments = Partial<{
+  platformId: number | null;
+  workScheduleId: number | null;
+  siteId: number | null;
+}>;
+
 async function responseError(response: Response) {
   const error = (await response.json().catch(() => null)) as ApiErrorResponse | null;
   return error?.details?.join(" ") || error?.message || "Could not load users. Please try again.";
@@ -81,6 +87,16 @@ export async function updateUser(currentEmail: string, user: UpdateUserRequest):
   });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as ManagedUser;
+}
+
+export async function updateUserAssignments(emails: string[], assignments: BatchUserAssignments, roles?: string[]): Promise<void> {
+  const response = await fetch("/api/users/manage/assignments", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ emails, assignments, roles }),
+  });
+  if (!response.ok) throw new Error(await responseError(response));
 }
 
 export async function getUsers(page: number, size: number, platformId?: number, includePlatforms = true): Promise<UserPage> {

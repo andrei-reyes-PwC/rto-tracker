@@ -41,6 +41,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Validated
@@ -181,6 +182,15 @@ public class UserController {
         return UserResponse.from(updated);
     }
 
+    @PutMapping("/manage/assignments")
+    @Operation(summary = "Batch update user platform, work schedule, and Site assignments")
+    public ResponseEntity<Void> updateAssignments(@Valid @RequestBody BatchAssignmentsRequest request,
+                                                  HttpServletRequest servletRequest) {
+        authorization.requireSuperAdmin(servletRequest);
+        userService.updateAssignments(request.emails(), request.assignments(), request.roles());
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{email}")
     @Operation(summary = "Delete a user")
     public ResponseEntity<Void> delete(@PathVariable String email, HttpServletRequest request) {
@@ -213,6 +223,12 @@ public class UserController {
 
     public record MembershipUpdateRequest(@Positive Long platformId, @Positive Long workScheduleId,
                                          @Positive Long siteId) {
+    }
+
+    public record BatchAssignmentsRequest(
+            @NotEmpty @Size(max = 1000) List<@NotBlank @Email @Size(max = 254) String> emails,
+            Map<@NotBlank String, @Positive Long> assignments,
+            List<@NotBlank @Size(max = 50) String> roles) {
     }
 
     public record UserPageResponse(List<UserResponse> content, long totalElements, int totalPages,
