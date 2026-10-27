@@ -94,13 +94,13 @@ All authenticated users have a personal account identified by email. User accoun
 
 ### Lunch procurement
 
-- **LUNCH-01** — As a user with the `LUNCH` or `SUPER_ADMIN` role, I can lock all existing users as free-lunch recipients for a selected date with one action.
-- **LUNCH-06** — Before locking, I can review the full user roster and a platform-row/work-schedule-column summary for the selected date.
+- **LUNCH-01** — As a user with the `LUNCH` or `SUPER_ADMIN` role, I can lock all users assigned to a selected Site as free-lunch recipients for a selected date with one action.
+- **LUNCH-06** — Before locking, I can review the full user roster and a platform-row/work-schedule-column summary for the selected Site and date.
 - **LUNCH-08** — Before locking, I must choose a Site and lunch date, and can filter the roster by platform and work schedule. The Site and date together identify the lock; the summary, breakdown, roster, scan list, and lock action use that Site. Separate Sites can be locked for the same date. There is no All Sites option.
 - **LUNCH-09** — The filtered “Users to be included” list supports pagination with selectable page sizes.
-- **LUNCH-02** — A date can have only one locked lunch list. Once locked, its recipients cannot be added or removed.
-- **LUNCH-03** — As a user with the `LUNCH` or `SUPER_ADMIN` role, I can scan a recipient's credential to mark lunch received; scans identify recipients not on the locked list and recipients already marked received.
-- **LUNCH-04** — The system stores one received status per locked recipient and date. Deleted user accounts are removed from recipient records.
+- **LUNCH-02** — A Site and date can have only one locked lunch list. Once locked, its Site and recipients cannot be changed.
+- **LUNCH-03** — As a user with the `LUNCH` or `SUPER_ADMIN` role, I can scan a recipient's credential to mark lunch received; scans identify recipients not on the locked list and recipients already marked received. The system records the authenticated person in charge who handed out the lunch.
+- **LUNCH-04** — The system stores one received status and handout operator identity per locked recipient, Site, and date. Deleted user accounts are removed from recipient records.
 - **LUNCH-05** — The daily overview shows recipient received/total counts by platform in rows and work schedule in columns once locked.
 
 ### RTO planning assistant

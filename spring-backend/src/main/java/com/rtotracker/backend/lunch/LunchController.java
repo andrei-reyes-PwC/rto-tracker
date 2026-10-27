@@ -29,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,12 +40,15 @@ import java.util.stream.Collectors;
 @Transactional
 public class LunchController {
     private final LunchDayRepository lunches;
+    private final LunchRecipientRepository recipients;
     private final UserRepository users;
     private final SiteRepository sites;
     private final AdminAuthorizationService authorization;
 
-    public LunchController(LunchDayRepository lunches, UserRepository users, SiteRepository sites, AdminAuthorizationService authorization) {
+    public LunchController(LunchDayRepository lunches, LunchRecipientRepository recipients, UserRepository users,
+                           SiteRepository sites, AdminAuthorizationService authorization) {
         this.lunches = lunches;
+        this.recipients = recipients;
         this.users = users;
         this.sites = sites;
         this.authorization = authorization;
@@ -78,7 +82,7 @@ public class LunchController {
         Page<User> result = users.findLunchRoster(siteId, platform, workSchedule, normalizeSearch(search),
                 PageRequest.of(page, size, Sort.by("email").ascending()));
         return new RosterPageResponse(result.getContent().stream().map(user ->
-                new RecipientResponse(user.getEmail(), false, user.getSite() == null ? null : user.getSite().getId(),
+                new RecipientResponse(user.getEmail(), false, null, user.getSite() == null ? null : user.getSite().getId(),
                         user.getPlatform() == null ? null : user.getPlatform().getName(),
                         user.getWorkSchedule() == null ? null : user.getWorkSchedule().getName())).toList(),
                 result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
@@ -127,7 +131,7 @@ public class LunchController {
                                        @RequestParam(required = false) @jakarta.validation.constraints.Min(1) Long siteId,
                                        @Valid @RequestBody ScanRequest body,
                                        HttpServletRequest request) {
-        authorization.requireLunchAccess(request);
+        User actor = authorization.requireLunchAccess(request);
         LunchDay day = lunches.findById(new LunchDayId(date, siteScope(siteId)))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lunch is not locked for this date and Site"));
         String credential = body.credential().trim();
@@ -135,7 +139,8 @@ public class LunchController {
                 .filter(item -> item.getUserEmail().equalsIgnoreCase(credential)).findFirst().orElse(null);
         if (recipient == null) return new ScanResponse("NOT_ON_LIST", credential, false);
         if (recipient.isReceived()) return new ScanResponse("ALREADY_RECEIVED", recipient.getUserEmail(), true);
-        recipient.markReceived();
+        int updated = recipients.markReceivedIfPending(date, siteScope(siteId), recipient.getUserEmail(), actor.getEmail());
+        if (updated == 0) return new ScanResponse("ALREADY_RECEIVED", recipient.getUserEmail(), true);
         return new ScanResponse("MARKED_RECEIVED", recipient.getUserEmail(), true);
     }
 
@@ -161,13 +166,17 @@ public class LunchController {
 
     private LunchDayResponse recipientResponses(LunchDay day) {
         List<String> emails = day.getRecipients().stream().map(LunchRecipient::getUserEmail).toList();
-        Map<String, Boolean> receivedByEmail = day.getRecipients().stream()
+        Map<String, Boolean> receiptStatusByEmail = day.getRecipients().stream()
                 .collect(Collectors.toMap(LunchRecipient::getUserEmail, LunchRecipient::isReceived));
-        return new LunchDayResponse(day.getLunchDate(), true, recipientResponses(emails, receivedByEmail));
+        Map<String, String> handedOutByEmail = new HashMap<>();
+        day.getRecipients().forEach(recipient -> {
+            if (recipient.getHandedOutBy() != null) handedOutByEmail.put(recipient.getUserEmail(), recipient.getHandedOutBy());
+        });
+        return new LunchDayResponse(day.getLunchDate(), true, recipientResponses(emails, receiptStatusByEmail, handedOutByEmail));
     }
 
     private LunchDayResponse previewFor(LocalDate date, Long siteId) {
-        return new LunchDayResponse(date, false, recipientResponses(users.findLunchEmailsBySiteId(siteId), Map.of()));
+        return new LunchDayResponse(date, false, recipientResponses(users.findLunchEmailsBySiteId(siteId), Map.of(), Map.of()));
     }
 
     private LunchSummaryResponse summaryFor(LocalDate date, boolean locked, Long siteId, String siteName, List<RecipientResponse> recipients) {
@@ -195,12 +204,13 @@ public class LunchController {
         return search.trim();
     }
 
-    private List<RecipientResponse> recipientResponses(List<String> emails, Map<String, Boolean> receivedByEmail) {
+    private List<RecipientResponse> recipientResponses(List<String> emails, Map<String, Boolean> receivedByEmail,
+                                                       Map<String, String> actorByEmail) {
         Map<String, User> userByEmail = users.findAllById(emails).stream()
                 .collect(Collectors.toMap(User::getEmail, Function.identity()));
         return emails.stream().map(email -> {
             User user = userByEmail.get(email);
-            return new RecipientResponse(email, receivedByEmail.getOrDefault(email, false),
+            return new RecipientResponse(email, receivedByEmail.getOrDefault(email, false), actorByEmail.get(email),
                     user == null || user.getSite() == null ? null : user.getSite().getId(),
                     user == null || user.getPlatform() == null ? null : user.getPlatform().getName(),
                     user == null || user.getWorkSchedule() == null ? null : user.getWorkSchedule().getName());
@@ -210,7 +220,7 @@ public class LunchController {
     public record LockLunchRequest(@NotNull LocalDate date, @NotNull @jakarta.validation.constraints.Min(1) Long siteId) { }
     public record ScanRequest(@NotBlank @Size(max = 254) String credential) { }
     public record ScanResponse(String status, String email, boolean received) { }
-    public record RecipientResponse(String email, boolean received, Long siteId, String platform, String workSchedule) { }
+    public record RecipientResponse(String email, boolean received, String handedOutBy, Long siteId, String platform, String workSchedule) { }
     public record LunchDayResponse(LocalDate date, boolean locked, List<RecipientResponse> recipients) {
     }
     public record BreakdownCount(String platform, String workSchedule, int total, int received) { }

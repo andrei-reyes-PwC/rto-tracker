@@ -1,4 +1,4 @@
-export type LunchRecipient = { email: string; received: boolean; siteId: number | null; platform: string | null; workSchedule: string | null };
+export type LunchRecipient = { email: string; received: boolean; handedOutBy: string | null; siteId: number | null; platform: string | null; workSchedule: string | null };
 export type LunchSummary = { date: string; locked: boolean; siteId: number | null; siteName: string | null; totalRecipients: number; totalReceived: number; breakdown: { platform: string; workSchedule: string; total: number; received: number }[] };
 export type LunchScanResult = { status: "MARKED_RECEIVED" | "ALREADY_RECEIVED" | "NOT_ON_LIST"; email: string; received: boolean };
 

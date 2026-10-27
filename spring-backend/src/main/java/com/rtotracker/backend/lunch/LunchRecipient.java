@@ -27,6 +27,8 @@ public class LunchRecipient {
     private String userEmail;
     @Column(nullable = false)
     private boolean received;
+    @Column(name = "handed_out_by", length = 254)
+    private String handedOutBy;
     @ManyToOne(fetch = FetchType.LAZY)
     @jakarta.persistence.JoinColumns({
             @jakarta.persistence.JoinColumn(name = "lunch_date", referencedColumnName = "lunch_date", insertable = false, updatable = false),
@@ -43,7 +45,7 @@ public class LunchRecipient {
     }
     public String getUserEmail() { return userEmail; }
     public boolean isReceived() { return received; }
-    public void markReceived() { this.received = true; }
+    public String getHandedOutBy() { return handedOutBy; }
     public static class Key implements Serializable {
         private LocalDate lunchDate;
         private Long siteId;
