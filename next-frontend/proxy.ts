@@ -5,7 +5,7 @@ export async function proxy(request: NextRequest) {
   const sessionId = request.cookies.get("JSESSIONID")?.value;
   const sessionUser = sessionId ? await getSessionUser(sessionId) : null;
   const isAuthenticated = sessionUser !== null;
-  const isProtectedAdminRoute = ["/users", "/platforms", "/work-schedules", "/dashboard", "/lunch"]
+  const isProtectedAdminRoute = ["/manage", "/users", "/platforms", "/work-schedules", "/sites", "/dashboard", "/lunch"]
     .some((path) => request.nextUrl.pathname.startsWith(path));
 
   if ((request.nextUrl.pathname === "/" || isProtectedAdminRoute) && !isAuthenticated) {
@@ -20,5 +20,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/users/:path*", "/platforms/:path*", "/work-schedules/:path*", "/dashboard/:path*", "/lunch/:path*"],
+  matcher: ["/", "/login", "/manage", "/manage/:path*", "/users/:path*", "/platforms/:path*", "/work-schedules/:path*", "/sites/:path*", "/dashboard/:path*", "/lunch/:path*"],
 };

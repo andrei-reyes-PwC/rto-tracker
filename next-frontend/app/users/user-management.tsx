@@ -216,7 +216,7 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
   );
 
   return (
-    <SidebarPageLayout headerContent={<span className="text-sm font-medium">Users</span>}>
+    <SidebarPageLayout headerContent={<span className="text-sm font-medium">People & assignments</span>} managementTabs={{ active: "users", isSuperAdmin: !readOnly }}>
       {content}
       {!readOnly && <UserEditorSheet
         open={editor !== null}

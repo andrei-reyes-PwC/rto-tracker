@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, CalendarDays, CalendarRange, MapPin, Utensils, Users } from "lucide-react";
+import { BarChart3, CalendarDays, CalendarRange, Utensils, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import { useAuth } from "@/providers/AuthProvider";
 import {
@@ -70,39 +70,13 @@ export default function Sidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>}
               {canViewUsers && <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/users" || pathname.startsWith("/users/")} tooltip="Manage users">
-                  <Link href="/users" onClick={() => setOpenMobile(false)} aria-label="Manage users">
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/manage")} tooltip="Manage people">
+                  <Link href="/manage/users" onClick={() => setOpenMobile(false)} aria-label="Manage people and assignments">
                     <Users />
-                    <span>Manage users</span>
+                    <span>Manage people</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>}
-              {isSuperAdmin && <>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/platforms" || pathname.startsWith("/platforms/")} tooltip="Manage platforms">
-                  <Link href="/platforms" onClick={() => setOpenMobile(false)} aria-label="Manage platforms">
-                    <Boxes />
-                    <span>Manage platforms</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/work-schedules" || pathname.startsWith("/work-schedules/")} tooltip="Manage work schedules">
-                  <Link href="/work-schedules" onClick={() => setOpenMobile(false)} aria-label="Manage work schedules">
-                    <CalendarDays />
-                    <span>Manage work schedules</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/sites" || pathname.startsWith("/sites/")} tooltip="Manage sites">
-                  <Link href="/sites" onClick={() => setOpenMobile(false)} aria-label="Manage sites">
-                    <MapPin />
-                    <span>Manage sites</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              </>}
               {canManageEvents && <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/events" || pathname.startsWith("/events/")} tooltip="Manage events">
                   <Link href="/events" onClick={() => setOpenMobile(false)} aria-label="Manage events">
