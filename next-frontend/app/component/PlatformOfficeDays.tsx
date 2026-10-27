@@ -54,7 +54,7 @@ export default function PlatformOfficeDays() {
           {formatDate(selectedPlatformDate)} · {visibleSchedule?.platformName ?? user.platform.name}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-80 overflow-y-auto overscroll-contain">
         {error ? <DataLoadError message={error} onRetry={() => setRetryCount((count) => count + 1)} retrying={loading} /> : loading ? (
           <div role="status" aria-label="Loading platform plans" aria-busy="true" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
             {[0, 1, 2, 3].map((row) => <Skeleton key={row} className="h-9 w-full" />)}

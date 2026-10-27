@@ -1,1 +1,0 @@
-ALTER TABLE lunch_recipients ADD COLUMN received BOOLEAN NOT NULL DEFAULT FALSE;

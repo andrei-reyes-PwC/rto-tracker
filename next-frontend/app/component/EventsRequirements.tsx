@@ -53,7 +53,7 @@ export default function EventsRequirements() {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-80 overflow-y-auto overscroll-contain">
         {events.length ? (
           <div className="space-y-2">
             {events.map((event) => {
