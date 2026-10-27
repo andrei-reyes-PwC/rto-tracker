@@ -56,12 +56,14 @@ public class AssistantJwtService {
             @Value("${app.jwt.issuer:rto-tracker-local}") String issuer,
             @Value("${app.jwt.audience:rto-assistant-services}") String audience,
             @Value("${app.jwt.private-key-path:.secrets/jwt-private.pem}") String privateKeyPath,
-            @Value("${app.jwt.public-key-path:.secrets/jwt-public.pem}") String publicKeyPath) {
+            @Value("${app.jwt.public-key-path:.secrets/jwt-public.pem}") String publicKeyPath,
+            @Value("${app.jwt.private-key-pem:}") String privateKeyPem,
+            @Value("${app.jwt.public-key-pem:}") String publicKeyPem) {
         this.issuer = issuer;
         this.audience = audience;
         try {
-            RSAPublicKey publicKey = loadPublicKey(publicKeyPath);
-            RSAPrivateKey privateKey = loadPrivateKey(privateKeyPath);
+            RSAPublicKey publicKey = loadPublicKey(publicKeyPath, publicKeyPem);
+            RSAPrivateKey privateKey = loadPrivateKey(privateKeyPath, privateKeyPem);
             RSAKey signingKey = new RSAKey.Builder(publicKey)
                     .privateKey(privateKey)
                     .keyID(KEY_ID)
@@ -125,14 +127,18 @@ public class AssistantJwtService {
         }
     }
 
-    private static RSAPrivateKey loadPrivateKey(String path) throws IOException, GeneralSecurityException {
-        byte[] der = decodePem(Files.readString(Path.of(path)), "PRIVATE KEY");
+    private static RSAPrivateKey loadPrivateKey(String path, String pem) throws IOException, GeneralSecurityException {
+        byte[] der = decodePem(readPem(path, pem), "PRIVATE KEY");
         return (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(der));
     }
 
-    private static RSAPublicKey loadPublicKey(String path) throws IOException, GeneralSecurityException {
-        byte[] der = decodePem(Files.readString(Path.of(path)), "PUBLIC KEY");
+    private static RSAPublicKey loadPublicKey(String path, String pem) throws IOException, GeneralSecurityException {
+        byte[] der = decodePem(readPem(path, pem), "PUBLIC KEY");
         return (RSAPublicKey) KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(der));
+    }
+
+    private static String readPem(String path, String pem) throws IOException {
+        return pem == null || pem.isBlank() ? Files.readString(Path.of(path)) : pem;
     }
 
     private static byte[] decodePem(String pem, String label) {
