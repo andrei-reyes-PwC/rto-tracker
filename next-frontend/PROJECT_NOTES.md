@@ -86,3 +86,6 @@ Keep these notes concise and factual. When work changes architecture, routes, da
 - `/manage/sites` is a URL-backed tab in the shared People & assignments area. SUPER_ADMIN users can list, create, edit, and delete Sites. The list searches server-side and paginates locally. Editors manage Site names only; user assignments are managed in Manage Users. Names are limited to 25 characters and unique without regard to letter case; each user can belong to zero or one Site. Deleting a Site leaves users unassigned.
 - Manage Users includes a Site filter with an unassigned option and shows each user's Site. The SUPER_ADMIN account editor can assign or clear a Site.
 - `/dashboard` has a prominent Site filter above the week selector. It narrows daily attendance and all platform/work-schedule breakdown totals to all Sites or one Site.
+
+- ``api/return-path.ts`` validates same-origin post-login destinations. The root ``proxy.ts`` carries protected route paths and query strings to ``/login?next=...``, and successful sign-in returns to that destination.
+- Root and `/users` 404 routes share the PwC-themed `components/NotFoundPage.tsx`, with a home link that follows the normal root authentication guard.

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionUser } from "./api/session";
+import { getSafeReturnPath } from "./api/return-path";
 
 export async function proxy(request: NextRequest) {
   const sessionId = request.cookies.get("JSESSIONID")?.value;
@@ -9,11 +10,14 @@ export async function proxy(request: NextRequest) {
     .some((path) => request.nextUrl.pathname.startsWith(path));
 
   if ((request.nextUrl.pathname === "/" || isProtectedAdminRoute) && !isAuthenticated) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (request.nextUrl.pathname === "/login" && isAuthenticated) {
-    return NextResponse.redirect(new URL("/", request.url));
+    const returnPath = getSafeReturnPath(request.nextUrl.searchParams.get("next")) ?? "/";
+    return NextResponse.redirect(new URL(returnPath, request.url));
   }
 
   return NextResponse.next();

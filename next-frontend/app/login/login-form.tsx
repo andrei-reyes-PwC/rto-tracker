@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "@/api/auth";
+import { getSafeReturnPath } from "@/api/return-path";
 import { useAuth } from "@/providers/AuthProvider";
 import { loginSchema, type LoginFormValues } from "@/validation/login";
 import { ArrowRight, Building2, CalendarDays, ShieldCheck } from "lucide-react";
@@ -39,7 +40,8 @@ export default function LoginForm() {
     }
     await refreshUser();
     form.reset();
-    router.replace("/");
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.replace(getSafeReturnPath(next) ?? "/");
   }
 
   return (

@@ -33,6 +33,8 @@ All authenticated users have a personal account identified by email. User accoun
 - **AUTH-02** — As an account holder, I can see the identity, roles, and optional platform associated with my active session.
 - **AUTH-03** — As an account holder, I can sign out, after which the session is no longer valid.
 - **AUTH-04** — Invalid credentials or an invalid session do not grant access to protected features.
+- **AUTH-05** — When an unauthenticated visitor opens a protected route, successful sign-in returns them to that same route, including its query string; unsafe external return destinations are ignored.
+- **AUTH-06** — Unmatched routes show a PwC-themed not-found page with a link home; unauthenticated visitors are routed to sign-in by the existing root route guard.
 
 ### Office planner
 

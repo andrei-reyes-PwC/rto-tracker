@@ -7,9 +7,9 @@ export const instant = false;
 
 export default async function LunchPage() {
   const sessionId = (await cookies()).get("JSESSIONID")?.value;
-  if (!sessionId) redirect("/login");
+  if (!sessionId) redirect(`/login?next=${encodeURIComponent("/lunch")}`);
   const user = await getSessionUser(sessionId);
-  if (!user) redirect("/login");
+  if (!user) redirect(`/login?next=${encodeURIComponent("/lunch")}`);
   if (!user.roles.includes("LUNCH") && !user.roles.includes("SUPER_ADMIN")) notFound();
   return <LunchProcurement />;
 }
