@@ -57,7 +57,7 @@ export default function LoginForm() {
 
           <a href="/" className="relative inline-flex w-fit items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
             <span className="flex size-10 items-center justify-center rounded-xl bg-[#e65300] text-xs font-bold tracking-wide">PwC</span>
-            <span className="text-sm font-semibold tracking-wide">AC Manila</span>
+            <span className="text-sm font-semibold tracking-wide">RTO Planner</span>
           </a>
 
           <div className="relative max-w-sm py-12">
@@ -71,7 +71,7 @@ export default function LoginForm() {
 
           <div className="relative flex items-center gap-3 text-xs text-white/55">
             <span className="flex size-8 items-center justify-center rounded-full bg-white/10"><CalendarDays className="size-4" aria-hidden="true" /></span>
-            RTO Planner · AC Manila
+            RTO Planner
           </div>
         </section>
 
@@ -80,7 +80,7 @@ export default function LoginForm() {
             <CardHeader className="mb-8 gap-0 p-0">
               <a href="/" className="mb-12 inline-flex w-fit items-center gap-2 rounded-lg text-sm font-semibold text-[#302b27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e65300] md:hidden">
                 <span className="flex size-9 items-center justify-center rounded-xl bg-[#e65300] text-[10px] font-bold text-white">PwC</span>
-                AC Manila
+                RTO Planner
               </a>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#c64a0a]">Welcome back</p>
               <CardTitle className="text-3xl font-semibold tracking-tight text-[#282522]">Sign in to your account</CardTitle>

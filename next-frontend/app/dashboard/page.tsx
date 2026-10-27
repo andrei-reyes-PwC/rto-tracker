@@ -2,6 +2,9 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/api/session";
 import RtoDashboard from "./rto-dashboard";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "RTO dashboard" };
 
 export const instant = false;
 

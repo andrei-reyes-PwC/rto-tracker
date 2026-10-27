@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RTO Planner | PwC",
+  title: { default: "My Schedule | RTO Planner", template: "%s | RTO Planner" },
   description: "Plan your week and see who youâ€™ll catch at the office.",
 };
 

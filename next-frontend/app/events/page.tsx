@@ -2,6 +2,9 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/api/session";
 import EventManagement from "./event-management";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Events" };
 
 export const instant = false;
 export default async function EventsPage() {

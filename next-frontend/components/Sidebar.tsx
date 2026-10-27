@@ -34,10 +34,10 @@ export default function Sidebar() {
       <SidebarHeader className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" tooltip="AC Manila" className="h-12">
-              <Link href="/" aria-label="AC Manila RTO planner home">
+            <SidebarMenuButton asChild size="lg" tooltip="RTO Planner" className="h-12">
+              <Link href="/" aria-label="RTO Planner home">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#e65300] text-[10px] font-bold text-white">PwC</span>
-                <span className="truncate text-[15px] font-semibold tracking-tight">AC Manila</span>
+                <span className="truncate text-[15px] font-semibold tracking-tight">RTO Planner</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

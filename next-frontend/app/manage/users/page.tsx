@@ -1,5 +1,8 @@
 import { requireManagementUser } from "../authorization";
 import UserManagement from "@/app/users/user-management";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Users" };
 
 export const instant = false;
 

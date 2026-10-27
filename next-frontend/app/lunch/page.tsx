@@ -2,6 +2,9 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/api/session";
 import LunchProcurement from "./lunch-procurement";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Lunch procurement" };
 
 export const instant = false;
 

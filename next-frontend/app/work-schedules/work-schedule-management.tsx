@@ -40,7 +40,7 @@ function WorkScheduleManagementContent() {
 
 
   return (
-    <SidebarPageLayout headerContent={<span className="text-sm font-medium">People & assignments</span>} managementTabs={{ active: "work-schedules", isSuperAdmin: true }}>
+    <SidebarPageLayout headerContent={<span className="text-sm font-medium">Work schedules</span>} managementTabs={{ active: "work-schedules", isSuperAdmin: true }}>
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p><h1 className="text-3xl font-semibold tracking-tight">Work schedule management</h1><p className="mt-2 text-sm text-muted-foreground">Create and manage work schedules. Assign users from Manage Users.</p></div>
