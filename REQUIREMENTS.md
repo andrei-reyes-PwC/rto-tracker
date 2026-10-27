@@ -122,7 +122,7 @@ All authenticated users have a personal account identified by email. User accoun
 - MySQL stores users, roles, platform memberships, work schedules, events, and office-day records. Flyway manages schema changes.
 - A user's office-day schedule is stored by date and queried or replaced by month. The account identity comes from the authenticated session.
 - The frontend sends assistant prompts directly to the Python Bedrock AI service using a short-lived Spring-issued token. Bedrock may choose among allowlisted, read-only Spring tools for user-scoped events, attendance counts, and saved office days; the AI service does not persist schedule data.
-- The assistant is restricted to this application's RTO planning, the authenticated user's visible events, and accessible team RTO attendance. The AI service gates out-of-scope requests before invoking Bedrock and its system instructions prohibit answering about other platforms, companies, or services.
+- The assistant first assesses whether a request or its context can help the authenticated user plan or understand their RTO schedule. It can answer relevant practical questions; when relevance or a needed planning constraint is unclear, it asks a focused clarification before refusing. Clearly unrelated requests are declined. The assistant may use only this application's user-visible events, saved schedule, and accessible team attendance, and must not provide or infer another platform's or company's private RTO information.
 - Platform office-day visibility is limited to same-platform colleagues and a selected date; only saved plans are shown.
 - The system has no company-calendar integration; administrators manage events directly. There is no public self-service registration.
 
