@@ -1,13 +1,11 @@
 package com.rtotracker.backend.platform;
 
 import com.rtotracker.backend.auth.AdminAuthorizationService;
-import com.rtotracker.backend.user.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,20 +54,13 @@ public class PlatformController {
                 .toList();
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get a platform and its members")
-    public PlatformResponse findById(@PathVariable Long id, HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
-        return PlatformResponse.from(platformService.findById(id));
-    }
-
     @PostMapping
     @Operation(summary = "Create a platform")
     public ResponseEntity<PlatformResponse> create(@Valid @RequestBody PlatformRequest request,
                                                     HttpServletRequest servletRequest) {
         authorization.requireSuperAdmin(servletRequest);
         PlatformResponse created = PlatformResponse.from(
-                platformService.create(request.name(), request.userEmails()));
+                platformService.create(request.name()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -78,7 +69,7 @@ public class PlatformController {
     public PlatformResponse update(@PathVariable Long id, @Valid @RequestBody PlatformRequest request,
                                    HttpServletRequest servletRequest) {
         authorization.requireSuperAdmin(servletRequest);
-        return PlatformResponse.from(platformService.update(id, request.name(), request.userEmails()));
+        return PlatformResponse.from(platformService.update(id, request.name()));
     }
 
     @DeleteMapping("/{id}")
@@ -89,14 +80,12 @@ public class PlatformController {
         return ResponseEntity.noContent().build();
     }
 
-    public record PlatformRequest(@NotBlank @Size(max = 20) String name,
-                                  @NotNull List<@NotBlank @Size(max = 254) String> userEmails) {
+    public record PlatformRequest(@NotBlank @Size(max = 20) String name) {
     }
 
-    public record PlatformResponse(Long id, String name, List<String> userEmails) {
+    public record PlatformResponse(Long id, String name) {
         public static PlatformResponse from(Platform platform) {
-            return new PlatformResponse(platform.getId(), platform.getName(), platform.getUsers().stream()
-                    .map(User::getEmail).sorted().toList());
+            return new PlatformResponse(platform.getId(), platform.getName());
         }
     }
 

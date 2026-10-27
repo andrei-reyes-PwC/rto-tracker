@@ -2,14 +2,7 @@ export type PlatformOption = { id: number; name: string };
 
 export type Platform = PlatformOption & { userCount: number };
 
-export type PlatformMembership = PlatformOption & { userEmails: string[] };
-
-export type PlatformDetails = { id: number; name: string; userEmails: string[] };
-
-export type PlatformInput = {
-  name: string;
-  userEmails: string[];
-};
+export type PlatformInput = { name: string };
 
 type ApiErrorResponse = { message?: string; details?: string[] };
 
@@ -30,12 +23,6 @@ export async function getPlatformOptions(signal?: AbortSignal): Promise<Platform
   const response = await fetch("/api/platforms/options", { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as PlatformOption[];
-}
-
-export async function getPlatform(id: number, signal?: AbortSignal): Promise<PlatformDetails> {
-  const response = await fetch(`/api/platforms/${id}`, { credentials: "include", cache: "no-store", signal });
-  if (!response.ok) throw new Error(await responseError(response));
-  return (await response.json()) as PlatformDetails;
 }
 
 export async function createPlatform(platform: PlatformInput): Promise<void> {

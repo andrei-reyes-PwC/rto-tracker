@@ -1,7 +1,5 @@
 package com.rtotracker.backend.platform;
 
-import com.rtotracker.backend.user.User;
-import com.rtotracker.backend.user.UserSelectionService;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -9,18 +7,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Set;
 
 @Service
 @Transactional
 public class PlatformService {
 
     private final PlatformRepository platforms;
-    private final UserSelectionService userSelection;
-
-    public PlatformService(PlatformRepository platforms, UserSelectionService userSelection) {
+    public PlatformService(PlatformRepository platforms) {
         this.platforms = platforms;
-        this.userSelection = userSelection;
     }
 
     @Transactional(readOnly = true)
@@ -39,32 +33,26 @@ public class PlatformService {
     }
 
     @Transactional(readOnly = true)
-    public Platform findById(Long id) {
-        return platforms.findByIdWithUsers(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found"));
-    }
-
-    @Transactional(readOnly = true)
     public java.util.Optional<PlatformRepository.PlatformOptionProjection> findForUser(String email) {
         return platforms.findForUser(email);
     }
 
-    public Platform create(String name, List<String> userEmails) {
+    public Platform create(String name) {
         String normalizedName = normalizeName(name);
         if (platforms.existsByNameIgnoreCase(normalizedName)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A platform with this name already exists");
         }
-        return platforms.save(new Platform(normalizedName, findUsers(userEmails, null)));
+        return platforms.save(new Platform(normalizedName));
     }
 
-    public Platform update(Long id, String name, List<String> userEmails) {
+    public Platform update(Long id, String name) {
         Platform platform = platforms.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found"));
         String normalizedName = normalizeName(name);
         if (platforms.existsByNameIgnoreCaseAndIdNot(normalizedName, id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A platform with this name already exists");
         }
-        platform.update(normalizedName, findUsers(userEmails, id));
+        platform.updateName(normalizedName);
         return platform;
     }
 
@@ -72,17 +60,6 @@ public class PlatformService {
         Platform platform = platforms.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found"));
         platforms.delete(platform);
-    }
-
-    private Set<User> findUsers(List<String> requestedEmails, Long currentPlatformId) {
-        Set<User> foundUsers = userSelection.findExistingByEmails(requestedEmails);
-        boolean alreadyAssigned = foundUsers.stream().anyMatch(user -> user.getPlatform() != null
-                && !user.getPlatform().getId().equals(currentPlatformId));
-        if (alreadyAssigned) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Each user can belong to only one platform");
-        }
-        return Set.copyOf(foundUsers);
     }
 
     private static String normalizeName(String name) {

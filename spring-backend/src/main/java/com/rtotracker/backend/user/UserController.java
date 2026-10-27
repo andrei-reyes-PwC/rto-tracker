@@ -269,10 +269,9 @@ public class UserController {
     public record PlatformOption(Long id, String name) {
     }
 
-    public record PlatformResponse(Long id, String name, List<String> userEmails) {
+    public record PlatformResponse(Long id, String name) {
         static PlatformResponse from(Platform platform) {
-            return new PlatformResponse(platform.getId(), platform.getName(), platform.getUsers().stream()
-                    .map(User::getEmail).sorted().toList());
+            return new PlatformResponse(platform.getId(), platform.getName());
         }
     }
 

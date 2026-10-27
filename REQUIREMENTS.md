@@ -59,21 +59,21 @@ All authenticated users have a personal account identified by email. User accoun
 ### Platform administration
 
 - **PLAT-01** — As a `SUPER_ADMIN`, I can view platforms and each platform's member count.
-- **PLAT-02** — As a `SUPER_ADMIN`, I can create and edit a platform by setting its name and assigning users by email. When editing, I can expand a bounded, scrollable list of its currently assigned users. A user may belong to zero or one platform; a platform may contain multiple users.
+- **PLAT-02** — As a `SUPER_ADMIN`, I can create, edit, list, and delete platforms by name. User platform assignments are managed from Manage Users. A user may belong to zero or one platform; a platform may contain multiple users.
 - **PLAT-03** — As a `SUPER_ADMIN`, I can inspect a platform's member email addresses and remove a platform.
-- **PLAT-04** — Platform names are required, limited to 20 characters, and unique without regard to letter case. Membership references must identify existing users.
+- **PLAT-04** — Platform names are required, limited to 20 characters, and unique without regard to letter case.
 - **PLAT-05** — Platform names appear in the signed-in user's session profile when the user belongs to those platforms.
 
 ### Work schedule administration
 
-- **WSCH-01** — As a `SUPER_ADMIN`, I can list, create, edit, and delete named work schedules and assign users to them. When editing, I can expand a bounded, scrollable list of its currently assigned users.
+- **WSCH-01** — As a `SUPER_ADMIN`, I can list, create, edit, and delete named work schedules by name. User work schedule assignments are managed from Manage Users.
 - **WSCH-02** — Work schedule names are required, limited to 10 characters, and unique without regard to letter case.
 - **WSCH-03** — A user may have zero or one work schedule; a work schedule may be assigned to multiple users.
 - **WSCH-04** — Deleting a work schedule keeps its user accounts and clears their work schedule assignment.
 
 ### Site administration
 
-- **SITE-01** - As a SUPER_ADMIN, I can list, create, edit, and delete named Sites and assign users to them.
+- **SITE-01** - As a SUPER_ADMIN, I can list, create, edit, and delete named Sites. User Site assignments are managed from Manage Users.
 - **SITE-02** - Site names are required, limited to 25 characters, and unique without regard to letter case.
 - **SITE-03** - A user may have zero or one Site; a Site may be assigned to multiple users.
 - **SITE-04** - Deleting a Site keeps its user accounts and clears their Site assignment.

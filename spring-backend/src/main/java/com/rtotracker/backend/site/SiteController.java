@@ -1,11 +1,9 @@
 package com.rtotracker.backend.site;
 
 import com.rtotracker.backend.auth.AdminAuthorizationService;
-import com.rtotracker.backend.user.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,16 +37,10 @@ public class SiteController {
                 .toList();
     }
 
-    @GetMapping("/{id}")
-    public SiteResponse findById(@PathVariable Long id, HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
-        return SiteResponse.from(sites.findById(id));
-    }
-
     @PostMapping
     public ResponseEntity<SiteResponse> create(@Valid @RequestBody SiteRequest body, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
-        SiteResponse created = SiteResponse.from(sites.create(body.name(), body.userEmails()));
+        SiteResponse created = SiteResponse.from(sites.create(body.name()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -56,7 +48,7 @@ public class SiteController {
     public SiteResponse update(@PathVariable Long id, @Valid @RequestBody SiteRequest body,
                                HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
-        return SiteResponse.from(sites.update(id, body.name(), body.userEmails()));
+        return SiteResponse.from(sites.update(id, body.name()));
     }
 
     @DeleteMapping("/{id}")
@@ -66,16 +58,14 @@ public class SiteController {
         return ResponseEntity.noContent().build();
     }
 
-    public record SiteRequest(@NotBlank @Size(max = 25) String name,
-                              @NotNull List<@NotBlank @Size(max = 254) String> userEmails) {
+    public record SiteRequest(@NotBlank @Size(max = 25) String name) {
     }
 
     public record SiteSummary(Long id, String name, long userCount) { }
 
-    public record SiteResponse(Long id, String name, List<String> userEmails) {
+    public record SiteResponse(Long id, String name) {
         static SiteResponse from(Site site) {
-            return new SiteResponse(site.getId(), site.getName(), site.getUsers().stream()
-                    .map(User::getEmail).sorted().toList());
+            return new SiteResponse(site.getId(), site.getName());
         }
     }
 }

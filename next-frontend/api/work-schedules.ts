@@ -1,8 +1,6 @@
 export type WorkSchedule = { id: number; name: string; userCount: number };
 
-export type WorkScheduleDetails = { id: number; name: string; userEmails: string[] };
-
-export type WorkScheduleInput = { name: string; userEmails: string[] };
+export type WorkScheduleInput = { name: string };
 
 type ApiErrorResponse = { message?: string; details?: string[] };
 
@@ -17,12 +15,6 @@ export async function getWorkSchedules(search = "", signal?: AbortSignal): Promi
   const response = await fetch(`/api/work-schedules?${params}`, { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await responseError(response));
   return (await response.json()) as WorkSchedule[];
-}
-
-export async function getWorkSchedule(id: number): Promise<WorkScheduleDetails> {
-  const response = await fetch(`/api/work-schedules/${id}`, { credentials: "include", cache: "no-store" });
-  if (!response.ok) throw new Error(await responseError(response));
-  return (await response.json()) as WorkScheduleDetails;
 }
 
 export async function createWorkSchedule(schedule: WorkScheduleInput): Promise<void> {

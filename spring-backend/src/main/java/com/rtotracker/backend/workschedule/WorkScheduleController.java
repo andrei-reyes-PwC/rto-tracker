@@ -1,13 +1,11 @@
 package com.rtotracker.backend.workschedule;
 
 import com.rtotracker.backend.auth.AdminAuthorizationService;
-import com.rtotracker.backend.user.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,20 +45,13 @@ public class WorkScheduleController {
                 .toList();
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get a work schedule and its users")
-    public WorkScheduleResponse findById(@PathVariable Long id, HttpServletRequest request) {
-        authorization.requireSuperAdmin(request);
-        return WorkScheduleResponse.from(workScheduleService.findById(id));
-    }
-
     @PostMapping
     @Operation(summary = "Create a work schedule")
     public ResponseEntity<WorkScheduleResponse> create(@Valid @RequestBody WorkScheduleRequest request,
                                                        HttpServletRequest servletRequest) {
         authorization.requireSuperAdmin(servletRequest);
         WorkScheduleResponse created = WorkScheduleResponse.from(
-                workScheduleService.create(request.name(), request.userEmails()));
+                workScheduleService.create(request.name()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -69,7 +60,7 @@ public class WorkScheduleController {
     public WorkScheduleResponse update(@PathVariable Long id, @Valid @RequestBody WorkScheduleRequest request,
                                       HttpServletRequest servletRequest) {
         authorization.requireSuperAdmin(servletRequest);
-        return WorkScheduleResponse.from(workScheduleService.update(id, request.name(), request.userEmails()));
+        return WorkScheduleResponse.from(workScheduleService.update(id, request.name()));
     }
 
     @DeleteMapping("/{id}")
@@ -80,17 +71,15 @@ public class WorkScheduleController {
         return ResponseEntity.noContent().build();
     }
 
-    public record WorkScheduleRequest(@NotBlank @Size(max = 10) String name,
-                                      @NotNull List<@NotBlank @Size(max = 254) String> userEmails) {
+    public record WorkScheduleRequest(@NotBlank @Size(max = 10) String name) {
     }
 
     public record WorkScheduleSummary(Long id, String name, long userCount) {
     }
 
-    public record WorkScheduleResponse(Long id, String name, List<String> userEmails) {
+    public record WorkScheduleResponse(Long id, String name) {
         static WorkScheduleResponse from(WorkSchedule schedule) {
-            return new WorkScheduleResponse(schedule.getId(), schedule.getName(), schedule.getUsers().stream()
-                    .map(User::getEmail).sorted().toList());
+            return new WorkScheduleResponse(schedule.getId(), schedule.getName());
         }
     }
 }
