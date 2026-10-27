@@ -63,8 +63,9 @@ export default function LunchProcurement({ initialDate, initialSiteId }: { initi
       if (!controller.signal.aborted) {
         setRosterOptions(result);
         const savedSelection = initialSelection.current;
-        const initialSiteIsValid = savedSelection.siteId && result.sites.some((site) => String(site.id) === savedSelection.siteId);
-        const nextSiteId = initialSiteIsValid ? savedSelection.siteId : result.sites[0] ? String(result.sites[0].id) : "";
+        const savedSiteId = savedSelection.siteId ?? "";
+        const initialSiteIsValid = savedSiteId !== "" && result.sites.some((site) => String(site.id) === savedSiteId);
+        const nextSiteId = initialSiteIsValid ? savedSiteId : result.sites[0] ? String(result.sites[0].id) : "";
         setSiteFilter(nextSiteId);
         const nextDate = savedSelection.date ?? currentLunchDate();
         if (!savedSelection.date) setDate(nextDate);
