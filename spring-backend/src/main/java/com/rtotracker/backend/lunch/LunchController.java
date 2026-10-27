@@ -1,6 +1,7 @@
 package com.rtotracker.backend.lunch;
 
 import com.rtotracker.backend.auth.AdminAuthorizationService;
+import com.rtotracker.backend.auth.AuthSession;
 import com.rtotracker.backend.site.SiteRepository;
 import com.rtotracker.backend.user.User;
 import com.rtotracker.backend.user.UserRepository;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -54,6 +56,16 @@ public class LunchController {
         this.authorization = authorization;
     }
 
+    @GetMapping("/calendar")
+    @Transactional(readOnly = true)
+    public List<LocalDate> getCalendarProcurementDates(@RequestParam YearMonth month,
+                                                       HttpServletRequest request) {
+        User user = users.findById(AuthSession.requireEmail(request))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated"));
+        if (user.getSite() == null) return List.of();
+        return lunches.findProcurementDatesForSite(user.getSite().getId(), month.atDay(1), month.atEndOfMonth());
+    }
+
     @GetMapping("/{date}")
     @Transactional(readOnly = true)
     public LunchSummaryResponse getDay(@PathVariable LocalDate date,
@@ -72,6 +84,7 @@ public class LunchController {
     @Transactional(readOnly = true)
     public RosterPageResponse getRosterPage(@RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "10") int size,
+                                            @RequestParam LocalDate date,
                                             @RequestParam(required = false) @jakarta.validation.constraints.Min(1) Long siteId,
                                             @RequestParam(required = false) String platform,
                                             @RequestParam(required = false) String workSchedule,
@@ -79,7 +92,7 @@ public class LunchController {
                                             HttpServletRequest request) {
         authorization.requireLunchAccess(request);
         if (page < 0 || size < 1 || size > 50) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid roster page or size");
-        Page<User> result = users.findLunchRoster(siteId, platform, workSchedule, normalizeSearch(search),
+        Page<User> result = users.findLunchRosterForOfficeDate(siteId, platform, workSchedule, normalizeSearch(search), date,
                 PageRequest.of(page, size, Sort.by("email").ascending()));
         return new RosterPageResponse(result.getContent().stream().map(user ->
                 new RecipientResponse(user.getEmail(), false, null, user.getSite() == null ? null : user.getSite().getId(),
@@ -153,8 +166,8 @@ public class LunchController {
         }
         if (lunches.existsById(id)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Lunch is already locked for this date and Site");
         String selectedSiteName = siteName(body.siteId());
-        List<String> userEmails = users.findLunchEmailsBySiteId(body.siteId());
-        if (userEmails.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "There are no users to lock for this Site");
+        List<String> userEmails = users.findLunchEmailsBySiteIdAndOfficeDate(body.siteId(), body.date());
+        if (userEmails.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "There are no users scheduled to work at the office for this Site and date");
         LunchDay day = new LunchDay(body.date(), body.siteId(), selectedSiteName, actor.getEmail(), userEmails);
         try {
             LunchDay saved = lunches.saveAndFlush(day);
@@ -176,7 +189,7 @@ public class LunchController {
     }
 
     private LunchDayResponse previewFor(LocalDate date, Long siteId) {
-        return new LunchDayResponse(date, false, recipientResponses(users.findLunchEmailsBySiteId(siteId), Map.of(), Map.of()));
+        return new LunchDayResponse(date, false, recipientResponses(users.findLunchEmailsBySiteIdAndOfficeDate(siteId, date), Map.of(), Map.of()));
     }
 
     private LunchSummaryResponse summaryFor(LocalDate date, boolean locked, Long siteId, String siteName, List<RecipientResponse> recipients) {

@@ -125,12 +125,12 @@ export default function LunchProcurement() {
         ) : day && (
           <>
             <Card>
-              <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>{day.locked ? "Lunch is locked" : "Lock lunch for this date"}</CardTitle><CardDescription>{day.locked ? `${day.totalRecipients} users are on the ${day.siteName ?? "selected Site"} locked list. The Site and recipient list cannot be changed.` : `${day.totalRecipients} users from ${day.siteName ?? "selected Site"} will be included. Review the overview below, then lock this Site and date.`}</CardDescription></div><Badge variant={day.locked ? "default" : "secondary"}>{day.locked ? "Locked" : "Open"}</Badge></div></CardHeader>
+              <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>{day.locked ? "Lunch is locked" : "Lock lunch for this date"}</CardTitle><CardDescription>{day.locked ? `${day.totalRecipients} users are on the ${day.siteName ?? "selected Site"} locked list. The Site and recipient list cannot be changed.` : `${day.totalRecipients} users with a saved office day at ${day.siteName ?? "the selected Site"} will be included. Review the overview below, then lock this Site and date.`}</CardDescription></div><Badge variant={day.locked ? "default" : "secondary"}>{day.locked ? "Locked" : "Open"}</Badge></div></CardHeader>
               {!day.locked && <CardContent><Button onClick={() => setConfirmLockOpen(true)} disabled={busy || !date || !siteFilter || day.totalRecipients === 0}><LockKeyhole />Lock {day.siteName ?? "selected Site"}</Button></CardContent>}
             </Card>
             <div className={day.locked ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start" : "space-y-4"}>
               <Card>
-                <CardHeader><CardTitle>User overview</CardTitle><CardDescription>Review users from {day.siteName ?? "the selected Site"} by platform and work schedule before locking.</CardDescription></CardHeader>
+                <CardHeader><CardTitle>User overview</CardTitle><CardDescription>Users with an office day saved for this date at {day.siteName ?? "the selected Site"}, grouped by platform and work schedule.</CardDescription></CardHeader>
                 <CardContent>
                   <LunchSummaryBreakdown breakdown={day.breakdown} totalRecipients={day.totalRecipients} locked={day.locked} />
                 </CardContent>
@@ -144,7 +144,7 @@ export default function LunchProcurement() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Lock lunch for {formatLunchDate(date)}?</AlertDialogTitle>
-            <AlertDialogDescription>This will lock the current roster of {day?.totalRecipients ?? 0} users for {day?.siteName ?? "the selected Site"} on this date. The Site and recipient list cannot be changed after locking.</AlertDialogDescription>
+            <AlertDialogDescription>This will lock the current roster of {day?.totalRecipients ?? 0} users with a saved office day for {day?.siteName ?? "the selected Site"} on this date. The Site and recipient list cannot be changed after locking.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>

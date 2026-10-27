@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Check,
   CalendarDays,
+  Utensils,
   RotateCcw,
   Users,
 } from "lucide-react";
@@ -25,6 +26,7 @@ export default function MonthlyCalendar() {
   const {
     monthName,
     allMonthEvents,
+    lunchProcurementDates,
     isCurrentDateReady,
     calendarDays,
     officeDays,
@@ -89,6 +91,7 @@ export default function MonthlyCalendar() {
             const isWeekend = date.getDay() === 0 || date.getDay() === 6;
             const platformColleagues = platformAttendanceCounts?.[key] ?? 0;
             const eventCount = eventCounts.get(key) ?? 0;
+            const hasLunchProcurement = lunchProcurementDates.includes(key);
             return (
               <div key={key} className={`group relative flex min-h-[78px] flex-col border-b border-r border-slate-100 p-1 transition sm:min-h-[112px] sm:p-3 ${isOfficeDay ? "bg-[#fff0e6]/70 hover:bg-[#fff0e6]" : "bg-white hover:bg-slate-50"} ${isWeekend ? "bg-slate-50/40" : ""} ${selectedPlatformDate === key ? "z-10 ring-2 ring-inset ring-[#e65300]" : ""}`}>
                 {user?.platform && <button type="button" aria-label={`Show platform office plans for ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)}`} aria-pressed={selectedPlatformDate === key} onClick={() => selectPlatformDate(key)} className="absolute inset-0 z-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#e65300]"><span className="sr-only">View platform RTO plans</span></button>}
@@ -99,14 +102,15 @@ export default function MonthlyCalendar() {
                     </span>
                     <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => toggleDay(key)} disabled={disabled || key <= todayKey} title={key <= todayKey ? "Today and past office days are locked" : undefined} className="pointer-events-auto size-4 cursor-pointer accent-[#e65300] disabled:cursor-not-allowed disabled:opacity-50" />
                   </span>
-                  {(user?.platform && platformAttendanceCounts || eventCount > 0) && (
+                  {(user?.platform && platformAttendanceCounts || eventCount > 0 || hasLunchProcurement) && (
                     <span className="mt-auto flex flex-wrap items-start gap-1">
                       {user?.platform && platformAttendanceCounts && platformColleagues > 0 && (
-                        <span aria-label={`${platformColleagues} colleagues planning an office day`} title={`${platformColleagues} colleagues planning an office day`} className={`inline-flex h-5 items-center gap-1 self-start rounded-full px-1.5 text-[9px] font-semibold ${platformColleagues > 0 ? "bg-orange-50 text-[#b83b00]" : "bg-slate-100 text-slate-500"}`}>
+                        <span aria-label={`${platformColleagues} colleagues planning an office day`} title={`${platformColleagues} colleagues planning an office day`} className={`inline-flex h-5 items-center gap-1 self-start rounded-full px-0 text-[9px] font-semibold sm:px-1.5 ${platformColleagues > 0 ? "bg-orange-50 text-[#b83b00]" : "bg-slate-100 text-slate-500"}`}>
                           <Users className="size-3" />{platformColleagues}
                         </span>
                       )}
-                      {eventCount > 0 && <span title={eventCount + (eventCount === 1 ? " event" : " events")} aria-label={eventCount + (eventCount === 1 ? " event" : " events")} className="inline-flex h-5 items-center gap-0.5 rounded-full bg-violet-50 px-1.5 text-[9px] font-semibold text-violet-700"><CalendarDays className="size-3" />{eventCount}</span>}
+                      {eventCount > 0 && <span title={eventCount + (eventCount === 1 ? " event" : " events")} aria-label={eventCount + (eventCount === 1 ? " event" : " events")} className="inline-flex h-5 items-center gap-0.5 rounded-full bg-violet-50 px-0 text-[9px] font-semibold text-violet-700 sm:px-1.5"><CalendarDays className="size-3" />{eventCount}</span>}
+                      {hasLunchProcurement && <span title="Lunch procurement" aria-label="Lunch procurement" className="inline-flex size-5 items-center justify-center rounded-full bg-emerald-50 text-[9px] font-semibold text-emerald-700 sm:h-5 sm:w-auto sm:gap-0.5 sm:px-1.5"><Utensils className="size-3" /><span className="sr-only sm:not-sr-only sm:inline">Lunch</span></span>}
                     </span>
                   )}
                 </div>

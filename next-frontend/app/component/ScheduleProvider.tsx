@@ -13,6 +13,7 @@ import {
 } from "react";
 import { getOfficeDays, replaceOfficeDays } from "@/api/office-days";
 import { getCalendarEvents } from "@/api/events";
+import { getLunchProcurementDates } from "@/api/lunch";
 import type { PlannerEvent } from "@/app/component/EventsRequirements";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -33,6 +34,7 @@ type ScheduleContextValue = {
   calendarDays: (Date | null)[];
   todayKey: string;
   allMonthEvents: PlannerEvent[];
+  lunchProcurementDates: string[];
   visibleEvents: PlannerEvent[];
   retryLoading: () => void;
   saveSchedule: () => Promise<void>;
@@ -86,6 +88,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [events, setEvents] = useState<PlannerEvent[]>([]);
+  const [lunchProcurementDates, setLunchProcurementDates] = useState<string[]>([]);
   const [loadRetry, setLoadRetry] = useState(0);
   const loadedMonths = useRef(new Set<string>());
   const previousUser = useRef<typeof user>(null);
@@ -170,7 +173,8 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        setLoadError(error instanceof Error ? error.message : "Could not load this month's schedule.");
+        const cause = error instanceof Error ? error.message : "The server did not return schedule data.";
+        setLoadError(`Could not load this month's RTO days and platform attendance counts. Calendar dates and counts may be missing until the schedule loads successfully. ${cause}`);
       })
       .finally(() => {
         if (!controller.signal.aborted) setIsLoadingMonth(false);
@@ -194,6 +198,19 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         })));
       })
       .catch(() => { if (!controller.signal.aborted) setEvents([]); });
+    return () => controller.abort();
+  }, [isAuthLoading, monthKey, user]);
+
+  useEffect(() => {
+    if (isAuthLoading || !user || monthKey === serverDateSnapshot) {
+      setLunchProcurementDates([]);
+      return;
+    }
+    setLunchProcurementDates([]);
+    const controller = new AbortController();
+    getLunchProcurementDates(monthKey, controller.signal)
+      .then((dates) => { if (!controller.signal.aborted) setLunchProcurementDates(dates); })
+      .catch(() => { if (!controller.signal.aborted) setLunchProcurementDates([]); });
     return () => controller.abort();
   }, [isAuthLoading, monthKey, user]);
 
@@ -286,6 +303,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     calendarDays,
     todayKey,
     allMonthEvents,
+    lunchProcurementDates,
     visibleEvents,
     retryLoading,
     saveSchedule,

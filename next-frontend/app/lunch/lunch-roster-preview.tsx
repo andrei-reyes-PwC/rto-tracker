@@ -30,7 +30,7 @@ export default function LunchRosterPreview({ locked = false, date, totalCount, r
   useEffect(() => {
     const controller = new AbortController();
     setRosterError(null);
-    void getLunchRosterPage(page, pageSize, siteFilter, platformFilter, workScheduleFilter, statusFilter, debouncedEmailSearch, controller.signal, locked ? date : undefined).then((result) => {
+    void getLunchRosterPage(page, pageSize, date, siteFilter, platformFilter, workScheduleFilter, statusFilter, debouncedEmailSearch, controller.signal, locked).then((result) => {
       if (!controller.signal.aborted) { setServerRecipients(result.recipients); setTotalElements(result.totalElements); }
     }).catch((error: unknown) => {
       if (!controller.signal.aborted) setRosterError(error instanceof Error ? error.message : "Could not load this roster page.");
@@ -44,7 +44,7 @@ export default function LunchRosterPreview({ locked = false, date, totalCount, r
   return (
     <Card>
       <CardHeader className="gap-4 sm:grid-cols-[1fr_auto]">
-        <div><CardTitle>Users to be included</CardTitle><CardDescription>Review the roster for the selected lunch date.</CardDescription></div>
+        <div><CardTitle>Users to be included</CardTitle><CardDescription>Only users with an office day saved for this date are eligible.</CardDescription></div>
         <p className="flex items-center gap-2 py-2 text-sm"><Users className="size-4 shrink-0 text-[#b83b00]" /><span className="font-semibold">{totalCount}</span><span className="text-muted-foreground">{totalCount === 1 ? "user" : "users"}</span></p>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface UserRepository extends JpaRepository<User, String> {
@@ -13,15 +14,20 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("select user.email from User user order by user.email asc")
     List<String> findAllEmails();
 
-    @Query("select user.email from User user where (:siteId is null or user.site.id = :siteId) order by user.email asc")
-    List<String> findLunchEmailsBySiteId(@Param("siteId") Long siteId);
+    @Query("select user.email from User user where (:siteId is null or user.site.id = :siteId) "
+            + "and exists (select officeDay.id from OfficeDay officeDay "
+            + "where officeDay.userEmail = user.email and officeDay.officeDate = :date) order by user.email asc")
+    List<String> findLunchEmailsBySiteIdAndOfficeDate(@Param("siteId") Long siteId, @Param("date") LocalDate date);
 
     @Query("select user from User user where (:siteId is null or user.site.id = :siteId) "
             + "and (:platform is null or coalesce(user.platform.name, 'No platform') = :platform) "
             + "and (:workSchedule is null or coalesce(user.workSchedule.name, 'No work schedule') = :workSchedule) "
-            + "and (:search is null or lower(user.email) like concat('%', lower(:search), '%'))")
-    Page<User> findLunchRoster(@Param("siteId") Long siteId, @Param("platform") String platform, @Param("workSchedule") String workSchedule,
-                               @Param("search") String search, Pageable pageable);
+            + "and (:search is null or lower(user.email) like concat('%', lower(:search), '%')) "
+            + "and exists (select officeDay.id from OfficeDay officeDay "
+            + "where officeDay.userEmail = user.email and officeDay.officeDate = :date)")
+    Page<User> findLunchRosterForOfficeDate(@Param("siteId") Long siteId, @Param("platform") String platform,
+                                           @Param("workSchedule") String workSchedule, @Param("search") String search,
+                                           @Param("date") LocalDate date, Pageable pageable);
 
     @Query("select distinct coalesce(user.platform.name, 'No platform') from User user order by coalesce(user.platform.name, 'No platform')")
     List<String> findLunchPlatforms();

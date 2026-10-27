@@ -1,4 +1,9 @@
 export type LunchRecipient = { email: string; received: boolean; handedOutBy: string | null; siteId: number | null; platform: string | null; workSchedule: string | null };
+export async function getLunchProcurementDates(month: string, signal?: AbortSignal): Promise<string[]> {
+  const response = await fetch(`/api/lunch/calendar?month=${encodeURIComponent(month)}`, { credentials: "include", cache: "no-store", signal });
+  if (!response.ok) throw new Error(await errorMessage(response));
+  return await response.json() as string[];
+}
 export type LunchSummary = { date: string; locked: boolean; siteId: number | null; siteName: string | null; totalRecipients: number; totalReceived: number; breakdown: { platform: string; workSchedule: string; total: number; received: number }[] };
 export type LunchScanResult = { status: "MARKED_RECEIVED" | "ALREADY_RECEIVED" | "NOT_ON_LIST"; email: string; received: boolean };
 
@@ -19,14 +24,15 @@ export async function getLunchDay(date: string, siteId: string, signal?: AbortSi
   return await response.json() as LunchSummary;
 }
 
-export async function getLunchRosterPage(page: number, size: number, siteId: string, platform: string, workSchedule: string, status: string, search: string, signal?: AbortSignal, lockedDate?: string): Promise<LunchRosterPage> {
+export async function getLunchRosterPage(page: number, size: number, date: string, siteId: string, platform: string, workSchedule: string, status: string, search: string, signal?: AbortSignal, locked = false): Promise<LunchRosterPage> {
   const query = new URLSearchParams({ page: String(page), size: String(size) });
+  if (!locked) query.set("date", date);
   if (siteId) query.set("siteId", siteId);
   if (platform !== "all") query.set("platform", platform);
   if (workSchedule !== "all") query.set("workSchedule", workSchedule);
   if (search.trim()) query.set("search", search.trim());
-  if (lockedDate && status !== "all") query.set("status", status);
-  const path = lockedDate ? `/api/lunch/${lockedDate}/roster/page` : "/api/lunch/roster/page";
+  if (locked && status !== "all") query.set("status", status);
+  const path = locked ? `/api/lunch/${date}/roster/page` : "/api/lunch/roster/page";
   const response = await fetch(`${path}?${query}`, { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new Error(await errorMessage(response));
   return await response.json() as LunchRosterPage;
