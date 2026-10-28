@@ -1,0 +1,75 @@
+package com.rtotracker.backend.auth;
+
+import com.rtotracker.backend.role.Role;
+import com.rtotracker.backend.user.User;
+import com.rtotracker.backend.user.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+public class AdminAuthorizationService {
+
+    private final UserService users;
+
+    public AdminAuthorizationService(UserService users) {
+        this.users = users;
+    }
+
+    public User requireSuperAdmin(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean isSuperAdmin = user.getRoles().stream().map(Role::getCode)
+                .anyMatch("SUPER_ADMIN"::equals);
+        if (!isSuperAdmin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "SUPER_ADMIN access required");
+        }
+        return user;
+    }
+
+    public User requireDashboardAccess(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean canViewDashboard = user.getRoles().stream().map(Role::getCode)
+                .anyMatch(code -> "ADMIN".equals(code) || "SUPER_ADMIN".equals(code));
+        if (!canViewDashboard) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ADMIN access required");
+        }
+        return user;
+    }
+
+    public User requireLunchAccess(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean hasLunchRole = user.getRoles().stream().map(Role::getCode).anyMatch("LUNCH"::equals);
+        if (!hasLunchRole && !isSuperAdmin(user)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "LUNCH or SUPER_ADMIN access required");
+        }
+        return user;
+    }
+
+    public User requireUserManagementAccess(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean canViewUsers = user.getRoles().stream().map(Role::getCode)
+                .anyMatch(code -> "ADMIN".equals(code) || "SUPER_ADMIN".equals(code));
+        if (!canViewUsers) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ADMIN access required");
+        }
+        if (!isSuperAdmin(user) && user.getPlatform() == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Platform assignment required");
+        }
+        return user;
+    }
+
+    public User requireEventManager(HttpServletRequest request) {
+        User user = users.findByEmail(AuthSession.requireEmail(request));
+        boolean canManageEvents = user.getRoles().stream().map(Role::getCode)
+                .anyMatch(code -> "ADMIN".equals(code) || "SUPER_ADMIN".equals(code));
+        if (!canManageEvents) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ADMIN access required");
+        }
+        return user;
+    }
+
+    public boolean isSuperAdmin(User user) {
+        return user.getRoles().stream().map(Role::getCode).anyMatch("SUPER_ADMIN"::equals);
+    }
+}

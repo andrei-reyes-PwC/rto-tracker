@@ -1,5 +1,8 @@
-import OfficePlannerShell from "@/components/office-planner-shell";
+import OfficePlanner from "./component/OfficePlanner";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: { absolute: "My Schedule | RTO Planner" } };
 
 export default function Home() {
-  return <OfficePlannerShell />;
+  return <OfficePlanner />;
 }

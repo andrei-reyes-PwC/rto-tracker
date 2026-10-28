@@ -1,0 +1,53 @@
+export type DailyAttendance = { date: string; attendees: number };
+export type GroupAttendance = {
+  id: number | null;
+  name: string;
+  attendees: number;
+  rtoDays: number;
+  daily: DailyAttendance[];
+};
+
+export type WeeklyRtoSummary = {
+  weekStart: string;
+  weekEnd: string;
+  totalRtoDays: number;
+  uniqueAttendees: number;
+  daily: DailyAttendance[];
+  byPlatform: GroupAttendance[];
+  byWorkSchedule: GroupAttendance[];
+};
+
+export type DashboardSiteOption = { id: number; name: string };
+
+type ApiErrorResponse = { message?: string; details?: string[] };
+
+async function responseError(response: Response) {
+  const error = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+  return error?.details?.join(" ") || error?.message || "Could not load the RTO dashboard. Please try again.";
+}
+
+export async function getRtoDashboardSites(signal?: AbortSignal): Promise<DashboardSiteOption[]> {
+  const response = await fetch("/api/dashboard/rto/sites", {
+    credentials: "include",
+    cache: "no-store",
+    signal,
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+  return (await response.json()) as DashboardSiteOption[];
+}
+
+export async function getWeeklyRtoSummary(
+  weekStart: string,
+  siteFilter = "all",
+  signal?: AbortSignal,
+): Promise<WeeklyRtoSummary> {
+  const params = new URLSearchParams({ weekStart });
+  if (siteFilter !== "all") params.set("siteId", siteFilter);
+  const response = await fetch(`/api/dashboard/rto?${params}`, {
+    credentials: "include",
+    cache: "no-store",
+    signal,
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+  return (await response.json()) as WeeklyRtoSummary;
+}

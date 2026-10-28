@@ -14,7 +14,9 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result. The Next.js server proxies `/api/*` requests to the Spring backend at `http://localhost:8080` by default.
+
+To use a different backend, set `BACKEND_API_URL` before running Next.js in development or building for deployment (for example, `http://spring-backend:8080` in a container network). The rewrite keeps browser API calls on the frontend origin, including the login session cookie. Chat requests use the same-origin `/api/assistant/chat` route, which the Next.js server proxies to the AI service. Set `AI_SERVICE_URL` in the frontend server environment when the service is not at `http://127.0.0.1:8010`; this setting is server-only.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

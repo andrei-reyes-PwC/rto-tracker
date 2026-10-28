@@ -1,0 +1,43 @@
+export type WorkSchedule = { id: number; name: string; userCount: number };
+
+export type WorkScheduleInput = { name: string };
+
+type ApiErrorResponse = { message?: string; details?: string[] };
+
+async function responseError(response: Response) {
+  const error = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+  return error?.details?.join(" ") || error?.message || "Could not complete this work schedule request. Please try again.";
+}
+
+export async function getWorkSchedules(search = "", signal?: AbortSignal): Promise<WorkSchedule[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const response = await fetch(`/api/work-schedules?${params}`, { credentials: "include", cache: "no-store", signal });
+  if (!response.ok) throw new Error(await responseError(response));
+  return (await response.json()) as WorkSchedule[];
+}
+
+export async function createWorkSchedule(schedule: WorkScheduleInput): Promise<void> {
+  const response = await fetch("/api/work-schedules", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(schedule),
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+}
+
+export async function updateWorkSchedule(id: number, schedule: WorkScheduleInput): Promise<void> {
+  const response = await fetch(`/api/work-schedules/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(schedule),
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+}
+
+export async function deleteWorkSchedule(id: number): Promise<void> {
+  const response = await fetch(`/api/work-schedules/${id}`, { method: "DELETE", credentials: "include" });
+  if (!response.ok) throw new Error(await responseError(response));
+}
