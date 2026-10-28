@@ -6,6 +6,7 @@ import { LockKeyhole } from "lucide-react";
 import { getLunchDay, getLunchRosterOptions, lockLunchDay, scanLunchCredential, type LunchRosterOptions, type LunchScanResult, type LunchSummary } from "@/api/lunch";
 import DataLoadError from "@/components/DataLoadError";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
+import PageHeading from "@/components/PageHeading";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,9 +124,8 @@ export default function LunchProcurement({ initialDate, initialSiteId }: { initi
   return (
     <SidebarPageLayout headerContent={<h1 className="text-base font-semibold">Lunch procurement</h1>}>
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
-        <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p><h1 className="text-3xl font-semibold tracking-tight">Lunch procurement</h1><p className="mt-2 text-sm text-muted-foreground">Review the roster before locking lunch for a day.</p></div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <PageHeading category="Daily operations" title="Lunch procurement" description="Review the roster before locking lunch for a day."
+          actions={<div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="grid w-fit max-w-full gap-2 sm:w-64">
               <Label htmlFor="lunch-site-filter">Site</Label>
               <Select value={siteFilter} onValueChange={(value) => { const nextSiteId = value ?? ""; setActionError(null); setSiteFilter(nextSiteId); updateSelectionUrl(date, nextSiteId); }} disabled={!siteOptionsLoaded || !rosterOptions.sites.length || loading || busy || confirmLockOpen}>
@@ -134,8 +134,8 @@ export default function LunchProcurement({ initialDate, initialSiteId }: { initi
               </Select>
             </div>
             <div className="grid w-fit max-w-full gap-2"><Label htmlFor="lunch-date">Lunch date</Label><Input id="lunch-date" type="date" value={date} onChange={(event) => { const nextDate = event.target.value; setDate(nextDate); updateSelectionUrl(nextDate, siteFilter); }} className="w-fit max-w-full sm:w-48" /></div>
-          </div>
-        </section>
+          </div>}
+        />
         {actionError && <Alert variant="destructive"><AlertDescription>{actionError}</AlertDescription></Alert>}
         {siteOptionsError && <Alert variant="destructive"><AlertDescription>{siteOptionsError} Refresh the page to try again.</AlertDescription></Alert>}
         {siteOptionsLoaded && !siteOptionsError && rosterOptions.sites.length === 0 && <Alert><AlertDescription>No Sites are available for lunch procurement. Ask an administrator to configure a Site.</AlertDescription></Alert>}

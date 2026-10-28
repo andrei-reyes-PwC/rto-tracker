@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
+import PageHeading from "@/components/PageHeading";
 import CrudActionNotice from "@/components/CrudActionNotice";
 import CrudListSkeleton from "@/components/CrudListSkeleton";
 import DataLoadError from "@/components/DataLoadError";
@@ -89,14 +90,8 @@ function UserManagementContent({ readOnly, platformName }: { readOnly: boolean; 
 
   const content = (
     <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p>
-          <h1 className="text-3xl font-semibold tracking-tight">User management</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{readOnly ? `Read-only view of users assigned to ${platformName}.` : "Review registered accounts and their assigned roles."}</p>
-        </div>
-        {!readOnly && <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add user</Button>}
-      </div>
+      <PageHeading category="People & access" title="Users" description={readOnly ? `Read-only view of users assigned to ${platformName}.` : "Review registered accounts and their assigned roles."}
+        actions={!readOnly && <Button onClick={() => setEditor({ mode: "create" })}><Plus /> Add user</Button>} />
 
       {loadError && <DataLoadError message={loadError} onRetry={retryLoad} retrying={isLoading || isLoadingFilters} onDismiss={dismissLoadError} />}
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}

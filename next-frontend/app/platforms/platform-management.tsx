@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
+import PageHeading from "@/components/PageHeading";
 import CrudActionNotice from "@/components/CrudActionNotice";
 import CrudListSkeleton from "@/components/CrudListSkeleton";
 import DataLoadError from "@/components/DataLoadError";
@@ -39,10 +40,8 @@ function PlatformManagementContent() {
   return (
     <SidebarPageLayout headerContent={<span className="text-sm font-medium">Platforms</span>} managementTabs={{ active: "platforms", isSuperAdmin: true }}>
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div><p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p><h1 className="text-3xl font-semibold tracking-tight">Platform management</h1><p className="mt-2 text-sm text-muted-foreground">Create and manage platforms. Assign users from Manage Users.</p></div>
-          <Button onClick={() => openEditor("create")}><Plus /> Add platform</Button>
-        </div>
+        <PageHeading category="Workspace setup" title="Platforms" description="Create and manage platforms. Assign users from Manage Users."
+          actions={<Button onClick={() => openEditor("create")}><Plus /> Add platform</Button>} />
         {loadError && <DataLoadError message={loadError} onRetry={() => void load()} retrying={loading} />}
         {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
         {notice && <CrudActionNotice message={notice} onDismiss={() => setNotice("")} />}

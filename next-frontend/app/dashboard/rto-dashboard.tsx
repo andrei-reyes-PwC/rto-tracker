@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import DataLoadError from "@/components/DataLoadError";
+import PageHeading from "@/components/PageHeading";
 
 function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat(undefined, options).format(new Date(`${dateKey}T12:00:00`));
@@ -31,13 +32,8 @@ function RtoDashboardContent() {
   return (
     <SidebarPageLayout headerContent={<span className="text-sm font-medium">RTO dashboard</span>}>
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p>
-            <h1 className="text-3xl font-semibold tracking-tight">RTO dashboard</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Saved office-day plans for the selected Monday–Friday week.</p>
-          </div>
-          <div className="flex flex-col gap-3 sm:items-end">
+        <PageHeading category="Workplace insights" title="RTO dashboard" description="Saved office-day plans for the selected Monday to Friday week."
+          actions={<div className="flex flex-col gap-3 sm:items-end">
           <div className="flex w-fit max-w-full items-center gap-3 sm:grid sm:w-64 sm:grid-cols-[auto_minmax(0,1fr)]">
             <label htmlFor="dashboard-site-filter" className="text-sm font-medium">Site</label>
             <Select value={siteFilter} onValueChange={setSiteFilter} disabled={loading}>
@@ -56,8 +52,8 @@ function RtoDashboardContent() {
             <Button variant="outline" size="icon" aria-label="Next week" onClick={nextWeek}><ChevronRight /></Button>
             <Button variant="outline" onClick={currentWeek}><CalendarDays /><span className="hidden sm:inline">This week</span></Button>
           </div>
-          </div>
-        </div>
+          </div>}
+        />
 
         {error && <DataLoadError message={error} onRetry={retry} retrying={loading} />}
 

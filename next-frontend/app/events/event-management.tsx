@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
+import PageHeading from "@/components/PageHeading";
 import CrudActionNotice from "@/components/CrudActionNotice";
 import CrudListSkeleton from "@/components/CrudListSkeleton";
 import DataLoadError from "@/components/DataLoadError";
@@ -69,7 +70,8 @@ function Content({ isSuperAdmin, platform }: EventManagementProps) {
   }
   return <SidebarPageLayout headerContent={<span className="text-sm font-medium">Events</span>}>
     <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-xs font-semibold tracking-[0.16em] text-[#b83b00] uppercase">Administration</p><h1 className="text-3xl font-semibold tracking-tight">Event management</h1><p className="mt-2 text-sm text-muted-foreground">{isSuperAdmin ? "Manage global events and events for any platform." : `Manage events for ${platform?.name ?? "your platform"}.`}</p></div><Button onClick={() => { setError(""); setEditor("new"); }}><Plus /> Add event</Button></div>
+      <PageHeading category="Workplace calendar" title="Events" description={isSuperAdmin ? "Manage global events and events for any platform." : `Manage events for ${platform?.name ?? "your platform"}.`}
+        actions={<Button onClick={() => { setError(""); setEditor("new"); }}><Plus /> Add event</Button>} />
       {loadError && <DataLoadError message={loadError} onRetry={() => void load()} retrying={loading} />}
       {error && !editor && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
       {notice && <CrudActionNotice message={notice} onDismiss={() => setNotice("")} />}
