@@ -77,6 +77,8 @@ All authenticated users have a personal account identified by email. User accoun
 
 - **SET-07** - Returning to My Schedule or revisiting a month refreshes its effective scheduling mode, daily capacity, day-off rules, saved plans, and attendance counts without a manual page refresh. Unsaved edits remain drafts; failed reads show the existing retry action.
 
+- **SET-08** - The first planner summary card shows the current effective scheduling mode and a brief description. PEZA explains the daily 50% limit, booked/capacity badges, and saving to reserve a slot without repeating the slot count; unassigned users see that the platform limit does not apply. The calendar omits the duplicated PEZA explanation.
+
 ### Work schedule administration
 
 - **WSCH-01** — As a `SUPER_ADMIN`, I can list, create, edit, and delete named work schedules by name. User work schedule assignments are managed from Manage Users.

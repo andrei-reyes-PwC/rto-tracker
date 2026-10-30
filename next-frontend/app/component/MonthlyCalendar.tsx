@@ -79,7 +79,6 @@ export default function MonthlyCalendar() {
       </CardHeader>
       <CardContent>
         {daysOff.length > 0 && <p className="mb-3 text-xs text-slate-500">{daysOff.map((day) => day === 6 ? "Saturday" : "Sunday").join(" and ")} {daysOff.length === 1 ? "is" : "are"} excluded by your day-off settings.</p>}
-        {dailyCapacity !== null && <p className="mb-3 text-xs text-slate-500">PEZA: {dailyCapacity} daily slots (50% of platform members, rounded up). Badges show booked / capacity, including your current selection. Full dates cannot accept new bookings. Save to reserve your slot.</p>}
         <div className="grid border-b border-slate-200 pb-2" style={calendarGridStyle}>
           {calendarWeekdays.map((day) => <div key={day} className="py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400">{weekdays[day]}</div>)}
         </div>

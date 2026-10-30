@@ -12,6 +12,8 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 ## Key files
 
+- `PlannerSummary.tsx` shows the effective scheduling mode and a brief description in the first summary card, before planned office days. PEZA explains the daily 50% limit and badges/saving without repeating the slot count, with an unassigned-platform exception; loading uses skeletons and failed reads show Unavailable. The calendar keeps its badges and capacity controls without the duplicated PEZA paragraph.
+
 - Planner monthly reads revalidate whenever their effect starts, including returning from Settings through Next.js Activity and revisiting a month. Mode, daily capacity, day-off rules, and attendance counts refresh together while per-month drafts remain in state. Requests are aborted when the route is hidden; there is no already-loaded-month shortcut that can bypass revalidation.
 
 - `MonthlyCalendar.tsx` places the save status and Save schedule action directly below the month picker, with loading/saving states supplied by `ScheduleProvider`. On mobile, cell badges stack from bottom to top (attendance, events, lunch); at `sm` and above they use the existing wrapping row. `PlannerHeading.tsx` renders the page introduction.
