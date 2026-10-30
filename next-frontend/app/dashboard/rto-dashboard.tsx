@@ -1,7 +1,7 @@
 "use client";
 
 import { RtoDashboardProvider, useRtoDashboard } from "@/providers/RtoDashboardProvider";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Download, LoaderCircle } from "lucide-react";
 import type { WeeklyRtoSummary } from "@/api/rto-dashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import SidebarPageLayout from "@/components/SidebarPageLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import DataLoadError from "@/components/DataLoadError";
 import PageHeading from "@/components/PageHeading";
+import InlineNotification from "@/components/InlineNotification";
 
 function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat(undefined, options).format(new Date(`${dateKey}T12:00:00`));
@@ -23,7 +24,7 @@ export default function RtoDashboard() {
 }
 
 function RtoDashboardContent() {
-  const { weekStart, siteFilter, setSiteFilter, sites, summary, loading, error, retry, previousWeek, nextWeek, currentWeek, addDays } = useRtoDashboard();
+  const { weekStart, siteFilter, setSiteFilter, sites, summary, loading, error, retry, previousWeek, nextWeek, currentWeek, addDays, exporting, exportError, exportData, dismissExportError } = useRtoDashboard();
 
   const weekLabel = summary
     ? `${formatDate(summary.weekStart, { month: "short", day: "numeric" })} – ${formatDate(summary.weekEnd, { month: "short", day: "numeric", year: "numeric" })}`
@@ -32,28 +33,36 @@ function RtoDashboardContent() {
   return (
     <SidebarPageLayout headerContent={<span className="text-sm font-medium">RTO dashboard</span>}>
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
-        <PageHeading category="Workplace insights" title="RTO dashboard" description="Saved office-day plans for the selected Monday to Friday week."
-          actions={<div className="flex flex-col gap-3 sm:items-end">
-          <div className="flex w-fit max-w-full items-center gap-3 sm:grid sm:w-64 sm:grid-cols-[auto_minmax(0,1fr)]">
-            <label htmlFor="dashboard-site-filter" className="text-sm font-medium">Site</label>
-            <Select value={siteFilter} onValueChange={setSiteFilter} disabled={loading}>
-              <SelectTrigger id="dashboard-site-filter" aria-label="Filter dashboard by site" className="w-fit max-w-[calc(100vw-6rem)] bg-background sm:w-full">
-                <SelectValue placeholder="All sites" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All sites</SelectItem>
-                {sites.map((site) => <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+        <PageHeading category="Workplace insights" title="RTO dashboard" description="Saved office-day plans for the selected Monday to Friday week." />
+
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex w-fit max-w-full items-center gap-3 sm:grid sm:w-64 sm:grid-cols-[auto_minmax(0,1fr)]">
+              <label htmlFor="dashboard-site-filter" className="text-sm font-medium">Site</label>
+              <Select value={siteFilter} onValueChange={setSiteFilter} disabled={loading || exporting}>
+                <SelectTrigger id="dashboard-site-filter" aria-label="Filter dashboard by site" className="w-fit max-w-[calc(100vw-6rem)] bg-background sm:w-full">
+                  <SelectValue placeholder="All sites" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All sites</SelectItem>
+                  {sites.map((site) => <SelectItem key={site.id} value={String(site.id)}>{site.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="icon" aria-label="Previous week" onClick={previousWeek} disabled={exporting}><ChevronLeft /></Button>
+              <span className="min-w-40 text-center text-sm font-medium">{weekLabel}</span>
+              <Button variant="outline" size="icon" aria-label="Next week" onClick={nextWeek} disabled={exporting}><ChevronRight /></Button>
+              <Button variant="outline" onClick={currentWeek} disabled={exporting}><CalendarDays /><span className="hidden sm:inline">This week</span></Button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="icon" aria-label="Previous week" onClick={previousWeek}><ChevronLeft /></Button>
-            <span className="min-w-40 text-center text-sm font-medium">{weekLabel}</span>
-            <Button variant="outline" size="icon" aria-label="Next week" onClick={nextWeek}><ChevronRight /></Button>
-            <Button variant="outline" onClick={currentWeek}><CalendarDays /><span className="hidden sm:inline">This week</span></Button>
-          </div>
-          </div>}
-        />
+          <Button className="w-full shrink-0 md:w-auto" onClick={() => void exportData()} disabled={loading || exporting || !summary || !!error} aria-busy={exporting}>
+            {exporting ? <LoaderCircle className="animate-spin" /> : <Download />}
+            {exporting ? "Exporting…" : "Export data"}
+          </Button>
+        </div>
+
+        {exportError && <InlineNotification message={exportError} onDismiss={dismissExportError} />}
 
         {error && <DataLoadError message={error} onRetry={retry} retrying={loading} />}
 

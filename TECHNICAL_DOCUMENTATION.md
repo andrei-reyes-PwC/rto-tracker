@@ -16,6 +16,7 @@ The application does not currently enforce a company-wide RTO quota or integrate
 - Monthly personal office-day planning, editing future dates, and viewing same-platform daily totals and colleagues' saved plans.
 - Global and platform-scoped event management and visibility.
 - Weekly RTO reporting with Site, platform, and work-schedule breakdowns.
+- Site-filtered weekly Excel downloads with summary and breakdown formulas connected to an included raw office-day table; access follows dashboard ADMIN/SUPER_ADMIN authorization.
 - User, platform, Site, and work-schedule administration.
 - Site-and-date lunch procurement, recipient snapshots, credential scans, and receipt tracking.
 - An optional RTO planning assistant that can read the current user's schedule, visible events, and permitted aggregate attendance data.

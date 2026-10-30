@@ -3,11 +3,13 @@ package com.rtotracker.backend.dashboard;
 import com.rtotracker.backend.office.OfficeDay;
 import com.rtotracker.backend.office.OfficeDayRepository;
 import com.rtotracker.backend.platform.Platform;
+import com.rtotracker.backend.site.Site;
 import com.rtotracker.backend.site.SiteRepository;
 import com.rtotracker.backend.user.User;
 import com.rtotracker.backend.user.UserRepository;
 import com.rtotracker.backend.workschedule.WorkSchedule;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +46,11 @@ public class RtoDashboardService {
 
     @Transactional(readOnly = true)
     public WeeklyRtoSummary getWeeklySummary(LocalDate weekStart, Long siteId) {
+        return getWeeklyReport(weekStart, siteId).summary();
+    }
+
+    @Transactional(readOnly = true)
+    public WeeklyRtoReport getWeeklyReport(LocalDate weekStart, Long siteId) {
         LocalDate weekEnd = weekStart.plusDays(4);
         List<@NonNull OfficeDay> plannedDays = officeDays.findAllByOfficeDateBetweenOrderByOfficeDateAsc(weekStart, weekEnd);
         Set<String> emails = new HashSet<>();
@@ -56,6 +63,9 @@ public class RtoDashboardService {
         Set<@NonNull String> weeklyAttendees = new HashSet<>();
         Map<GroupKey, GroupAccumulator> platforms = new HashMap<>();
         Map<GroupKey, GroupAccumulator> workSchedules = new HashMap<>();
+        List<@NonNull AttendanceRecord> records = new ArrayList<>();
+        String siteName = siteId == null ? "All Sites" : sites.findById(siteId)
+                .map(Site::getName).orElse("Selected Site");
 
         for (OfficeDay plannedDay : plannedDays) {
             @NonNull String email = plannedDay.getUserEmail();
@@ -78,6 +88,10 @@ public class RtoDashboardService {
                     ? new GroupKey(null, "No work schedule")
                     : new GroupKey(workSchedule.getId(), workSchedule.getName());
             addAttendance(workSchedules, scheduleKey, plannedDay.getOfficeDate(), email);
+            Site site = user == null ? null : user.getSite();
+            records.add(new AttendanceRecord(plannedDay.getOfficeDate(), email,
+                    site == null ? null : site.getName(), platformKey.id(), platformKey.name(),
+                    scheduleKey.id(), scheduleKey.name()));
         }
 
         List<@NonNull DailyAttendance> daily = dailyAttendees.entrySet().stream()
@@ -85,8 +99,11 @@ public class RtoDashboardService {
                 .toList();
         List<@NonNull GroupAttendance> byPlatform = groupAttendance(platforms, weekStart);
         List<@NonNull GroupAttendance> byWorkSchedule = groupAttendance(workSchedules, weekStart);
-        return new WeeklyRtoSummary(weekStart, weekEnd, plannedDays.size(), weeklyAttendees.size(),
+        records.sort(Comparator.<@NonNull AttendanceRecord, LocalDate>comparing(AttendanceRecord::date)
+                .thenComparing(AttendanceRecord::email));
+        WeeklyRtoSummary summary = new WeeklyRtoSummary(weekStart, weekEnd, records.size(), weeklyAttendees.size(),
                 daily, byPlatform, byWorkSchedule);
+        return new WeeklyRtoReport(summary, siteName, List.copyOf(records));
     }
 
     private static void addAttendance(Map<GroupKey, GroupAccumulator> groups, GroupKey key,
@@ -119,6 +136,11 @@ public class RtoDashboardService {
 
     public record SiteOption(Long id, String name) {
     }
+
+    public record AttendanceRecord(LocalDate date, String email, @Nullable String site, Long platformId, String platform,
+                                   Long workScheduleId, String workSchedule) { }
+
+    public record WeeklyRtoReport(WeeklyRtoSummary summary, String siteName, List<@NonNull AttendanceRecord> records) { }
 
     public record DailyAttendance(LocalDate date, long attendees) {
     }
