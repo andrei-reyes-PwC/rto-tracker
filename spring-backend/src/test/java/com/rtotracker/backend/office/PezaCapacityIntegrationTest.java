@@ -64,11 +64,11 @@ class PezaCapacityIntegrationTest {
         var firstSaved = new CountDownLatch(1);
         var allowCommit = new CountDownLatch(1);
         var secondStarted = new CountDownLatch(1);
-        var transaction = new TransactionTemplate(transactionManager);
+        var transaction = new TransactionTemplate(Objects.requireNonNull(transactionManager));
         transaction.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
 
         try (var workers = Executors.newFixedThreadPool(2)) {
-            var first = workers.submit(() -> transaction.executeWithoutResult(status -> {
+            var first = workers.submit(() -> transaction.executeWithoutResult(_ -> {
                 service.replaceMonth("first@example.com", month, List.of(date));
                 firstSaved.countDown();
                 await(allowCommit);
@@ -77,7 +77,7 @@ class PezaCapacityIntegrationTest {
             var second = workers.submit(() -> {
                 secondStarted.countDown();
                 return assertThrows(ResponseStatusException.class,
-                        () -> transaction.execute(status -> service.replaceMonth("second@example.com", month, List.of(date))));
+                        () -> transaction.execute(_ -> service.replaceMonth("second@example.com", month, List.of(date))));
             });
             try {
                 assertTrue(secondStarted.await(5, TimeUnit.SECONDS));
@@ -86,7 +86,7 @@ class PezaCapacityIntegrationTest {
                 allowCommit.countDown();
             }
             first.get(10, TimeUnit.SECONDS);
-            assertEquals(409, second.get(10, TimeUnit.SECONDS).getStatusCode().value());
+            assertEquals(409, Objects.requireNonNull(second.get(10, TimeUnit.SECONDS)).getStatusCode().value());
         } finally {
             allowCommit.countDown();
         }
@@ -133,7 +133,7 @@ class PezaCapacityIntegrationTest {
         }
 
         @Bean
-        JpaTransactionManager transactionManager(EntityManagerFactory factory) {
+        JpaTransactionManager transactionManager(@NonNull EntityManagerFactory factory) {
             return new JpaTransactionManager(factory);
         }
     }

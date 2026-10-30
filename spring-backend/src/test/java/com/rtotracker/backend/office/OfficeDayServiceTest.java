@@ -102,7 +102,7 @@ class OfficeDayServiceTest {
         var result = service.getMonthlySchedule(email, month);
         assertEquals(PEZA, result.schedulingMode());
         assertEquals(3L, result.dailyCapacity());
-        assertEquals(2, result.platformAttendance().getFirst().attendees());
+        assertEquals(2, Objects.requireNonNull(result.platformAttendance().getFirst()).attendees());
         assertEquals(List.of(saturday), result.officeDays());
         when(users.countByPlatformId(2L)).thenReturn(10L);
         assertEquals(5L, service.getMonthlySchedule(email, month).dailyCapacity());
@@ -130,8 +130,8 @@ class OfficeDayServiceTest {
     void pezaAllowsLastSlotAndExistingOverCapacityBookingsCanBeRetainedOrRemoved() {
         pezaPlatform(5, 2);
         assertDoesNotThrow(() -> service.replaceMonth(email, month, List.<@NonNull LocalDate>of(saturday, saturday)));
-        verify(days).saveAll(argThat(records -> {
-            var selected = new java.util.ArrayList<OfficeDay>();
+        verify(days).saveAll(ArgumentMatchers.<@NonNull Iterable<@NonNull OfficeDay>>argThat(records -> {
+            var selected = new java.util.ArrayList<@NonNull OfficeDay>();
             records.forEach(selected::add);
             return selected.size() == 1 && selected.getFirst().getOfficeDate().equals(saturday);
         }));
