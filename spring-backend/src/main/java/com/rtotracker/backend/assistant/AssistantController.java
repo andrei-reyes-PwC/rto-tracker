@@ -55,7 +55,7 @@ public class AssistantController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         String email = assistantJwtService.requireUserEmail(authorization);
         return new ScheduleResponse(startDate, endDate,
-                assistantService.myOfficeSchedule(email, startDate, endDate));
+                assistantService.myOfficeSchedule(email, startDate, endDate), assistantService.daysOffForUser(email));
     }
 
     public record EventsResponse(LocalDate startDate, LocalDate endDate,
@@ -65,5 +65,6 @@ public class AssistantController {
                                        List<AssistantService.@NonNull MemberCount> dailyCounts) { }
 
     public record ScheduleResponse(LocalDate startDate, LocalDate endDate,
-                                   List<AssistantService.@NonNull ScheduledDay> officeDays) { }
+                                   List<AssistantService.@NonNull ScheduledDay> officeDays,
+                                   List<@NonNull Integer> daysOff) { }
 }

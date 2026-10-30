@@ -23,7 +23,7 @@ function ScheduleContent() {
       <main className="mx-auto w-full max-w-7xl space-y-6 px-5 py-8 md:px-8 md:py-10">
         <PlannerHeading />
         {loadError && <DataLoadError message={loadError} onRetry={retryLoading} retrying={isLoadingMonth} />}
-        {saveError && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{saveError} Your changes are still here; you can try saving again.</div>}
+        {saveError && <DataLoadError message={`${saveError} Your unsaved changes are still here. Reload to check the latest schedule and day-off rules.`} onRetry={retryLoading} retrying={isLoadingMonth} />}
         <PlannerSummary />
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
           <MonthlyCalendar />

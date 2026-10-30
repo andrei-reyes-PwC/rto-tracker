@@ -18,6 +18,7 @@ The application does not currently enforce a company-wide RTO quota or integrate
 - Weekly RTO reporting with Site, platform, and work-schedule breakdowns.
 - Site-filtered weekly Excel downloads with summary and breakdown formulas connected to an included raw office-day table; access follows dashboard ADMIN/SUPER_ADMIN authorization.
 - User, platform, Site, and work-schedule administration.
+- Global and platform-specific Saturday/Sunday day-off settings, enforced for new office-day selections and assistant monthly recommendations while preserving saved plans.
 - Site-and-date lunch procurement, recipient snapshots, credential scans, and receipt tracking.
 - An optional RTO planning assistant that can read the current user's schedule, visible events, and permitted aggregate attendance data.
 
@@ -47,6 +48,7 @@ The repository contains three independently configured applications. They form a
 - **Authentication and authorization:** login, current session, logout, assistant JWT, role and admin checks.
 - **Users and organizational assignments:** users, roles, platforms, Sites, and work schedules.
 - **Office planning:** authenticated monthly schedule reads/replacements and same-platform colleague views.
+- **Settings:** global weekend defaults and optional platform overrides, with SUPER_ADMIN/global and assigned ADMIN/platform management access.
 - **Events:** global and platform-scoped event persistence, visibility, and management.
 - **Reporting:** Monday–Friday weekly attendance aggregation and group breakdowns.
 - **Lunch procurement:** Site/date locks, eligible roster snapshots, receipt scans, and calendar date indicators.

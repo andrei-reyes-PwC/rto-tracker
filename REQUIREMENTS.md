@@ -66,6 +66,13 @@ All authenticated users have a personal account identified by email. User accoun
 - **PLAT-04** — Platform names are required, limited to 20 characters, and unique without regard to letter case.
 - **PLAT-05** — Platform names appear in the signed-in user's session profile when the user belongs to those platforms.
 
+### Global and platform settings
+
+- **SET-01** - A dedicated `/settings` page lets SUPER_ADMIN users manage global defaults and settings for all platforms. Platform-assigned ADMIN users can read global defaults and manage only their own platform. The backend independently enforces these permissions.
+- **SET-02** - Saturday and Sunday can each be marked as days off. Platforms inherit global defaults unless an explicit platform override is saved; restoring inheritance follows future global changes. Users without a platform use global defaults. Initial defaults allow both weekend days to preserve existing behavior.
+- **SET-03** - My Schedule excludes effective days off from calendar columns, planned office-day totals, and the next office day. Each blocked Saturday/Sunday column is hidden independently; remaining dates stay aligned with their weekday headers. The API rejects newly added future dates on days off using the current rules, even when a planner has stale data. Existing saved plans remain stored and reappear when the day is unlocked. Editing, clearing, and saving visible dates preserves hidden saved selections; today/past dates remain locked.
+- **SET-04** - Assistant monthly recommendations exclude effective days off even when other dates cannot meet a target. Weekly dashboard reporting and exports continue to cover Monday through Friday.
+
 ### Work schedule administration
 
 - **WSCH-01** — As a `SUPER_ADMIN`, I can list, create, edit, and delete named work schedules by name. User work schedule assignments are managed from Manage Users.

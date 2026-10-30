@@ -6,6 +6,7 @@ import com.rtotracker.backend.office.OfficeDay;
 import com.rtotracker.backend.office.OfficeDayRepository;
 import com.rtotracker.backend.user.User;
 import com.rtotracker.backend.user.UserService;
+import com.rtotracker.backend.settings.SettingsService;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +27,13 @@ public class AssistantService {
     private final EventRepository events;
     private final OfficeDayRepository officeDays;
     private final UserService users;
+    private final SettingsService settings;
 
-    public AssistantService(EventRepository events, OfficeDayRepository officeDays, UserService users) {
+    public AssistantService(EventRepository events, OfficeDayRepository officeDays, UserService users, SettingsService settings) {
         this.events = events;
         this.officeDays = officeDays;
         this.users = users;
+        this.settings = settings;
     }
 
     public List<@NonNull EventData> visibleEventsForUser(String email, LocalDate startDate, LocalDate endDate) {
@@ -78,6 +81,10 @@ public class AssistantService {
                     HttpStatus.BAD_REQUEST,
                     "Read-only assistant data must stay between the first of this month and the end of next month.");
         }
+    }
+
+    public List<@NonNull Integer> daysOffForUser(String email) {
+        return settings.rulesForUser(email).daysOff();
     }
 
     private Long platformIdFor(String email) {

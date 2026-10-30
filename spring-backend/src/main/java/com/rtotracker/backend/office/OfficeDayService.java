@@ -1,6 +1,7 @@
 package com.rtotracker.backend.office;
 
 import com.rtotracker.backend.user.UserRepository;
+import com.rtotracker.backend.settings.SettingsService;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,10 +19,12 @@ public class OfficeDayService {
 
     private final OfficeDayRepository officeDays;
     private final UserRepository users;
+    private final SettingsService settings;
 
-    public OfficeDayService(OfficeDayRepository officeDays, UserRepository users) {
+    public OfficeDayService(OfficeDayRepository officeDays, UserRepository users, SettingsService settings) {
         this.officeDays = officeDays;
         this.users = users;
+        this.settings = settings;
     }
 
     @Transactional(readOnly = true)
@@ -41,7 +44,7 @@ public class OfficeDayService {
         var currentUser = users.findById(userEmail);
         var platform = currentUser.isEmpty() ? null : Objects.requireNonNull(currentUser.get()).getPlatform();
         if (platform == null) {
-            return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), List.of());
+            return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), List.of(), settings.rulesForUser(userEmail).daysOff());
         }
 
         List<@NonNull PlatformDailyAttendance> attendance = officeDays.findPlatformAttendance(
@@ -50,7 +53,7 @@ public class OfficeDayService {
                 .stream()
                 .map(day -> new PlatformDailyAttendance(day.getOfficeDate(), day.getAttendees()))
                 .toList();
-        return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), attendance);
+        return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), attendance, settings.rulesForUser(userEmail).daysOff());
     }
 
     @Transactional(readOnly = true)
@@ -96,16 +99,22 @@ public class OfficeDayService {
         LocalDate startInclusive = month.atDay(1);
         LocalDate endExclusive = month.plusMonths(1).atDay(1);
         LocalDate today = LocalDate.now();
-        List<@NonNull LocalDate> lockedDates = officeDays
+        List<@NonNull LocalDate> savedDates = officeDays
                 .findAllByUserEmailAndOfficeDateGreaterThanEqualAndOfficeDateLessThanOrderByOfficeDateAsc(
                         userEmail, startInclusive, endExclusive)
                 .stream()
                 .map(OfficeDay::getOfficeDate)
-                .filter(date -> !date.isAfter(today))
                 .toList();
+        List<@NonNull LocalDate> lockedDates = savedDates.stream().filter(date -> !date.isAfter(today)).toList();
         if (dates.stream().anyMatch(date -> !date.isAfter(today) && !lockedDates.contains(date))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Today and past office days cannot be added or changed");
+        }
+
+        var rules = settings.rulesForUser(userEmail);
+        if (dates.stream().anyMatch(date -> date.isAfter(today) && rules.isDayOff(date) && !savedDates.contains(date))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "New office days cannot be selected on configured days off. Reload your schedule to see the current rules.");
         }
 
         LocalDate editableStart = today.plusDays(1).isAfter(startInclusive) ? today.plusDays(1) : startInclusive;
@@ -130,7 +139,8 @@ public class OfficeDayService {
     public record MonthlyScheduleQueryResponse(
             YearMonth month,
             List<@NonNull LocalDate> officeDays,
-            List<@NonNull PlatformDailyAttendance> platformAttendance) {
+            List<@NonNull PlatformDailyAttendance> platformAttendance,
+            List<@NonNull Integer> daysOff) {
     }
 
     public record PlatformOfficeDayQueryResponse(

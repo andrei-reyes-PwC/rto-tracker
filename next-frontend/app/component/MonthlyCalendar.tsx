@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useSchedule } from "@/app/component/ScheduleProvider";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -28,8 +29,10 @@ export default function MonthlyCalendar() {
     allMonthEvents,
     lunchProcurementDates,
     isCurrentDateReady,
+    calendarWeekdays,
     calendarDays,
     officeDays,
+    daysOff,
     platformAttendanceCounts,
     selectedPlatformDate,
     todayKey,
@@ -49,6 +52,7 @@ export default function MonthlyCalendar() {
     eventCounts.set(key, (eventCounts.get(key) ?? 0) + 1);
   }
   const disabled = isLoadingMonth || Boolean(loadError) || isSaving;
+  const calendarGridStyle = { gridTemplateColumns: `repeat(${calendarWeekdays.length}, minmax(0, 1fr))` };
 
   return (
     <Card id="calendar" className="gap-0 border-slate-200/80 shadow-none">
@@ -62,10 +66,11 @@ export default function MonthlyCalendar() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-7 border-b border-slate-200 pb-2">
-          {weekdays.map((day) => <div key={day} className="py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400">{day}</div>)}
+        {daysOff.length > 0 && <p className="mb-3 text-xs text-slate-500">{daysOff.map((day) => day === 6 ? "Saturday" : "Sunday").join(" and ")} {daysOff.length === 1 ? "is" : "are"} excluded by your day-off settings.</p>}
+        <div className="grid border-b border-slate-200 pb-2" style={calendarGridStyle}>
+          {calendarWeekdays.map((day) => <div key={day} className="py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400">{weekdays[day]}</div>)}
         </div>
-        {isLoadingMonth ? <div role="status" aria-label="Loading monthly schedule" aria-busy="true" className="grid grid-cols-7">
+        {isLoadingMonth ? <div role="status" aria-label="Loading monthly schedule" aria-busy="true" className="grid" style={calendarGridStyle}>
   {calendarDays.map((date, index) => date ? (
     <div key={`loading-${index}`} className="flex min-h-[78px] flex-col border-b border-r border-slate-100 p-1 sm:min-h-[112px] sm:p-3">
       <div className="flex items-center justify-between">
@@ -82,7 +87,7 @@ export default function MonthlyCalendar() {
     <div key={`blank-${index}`} className="min-h-[78px] border-b border-r border-slate-100 bg-slate-50/50 sm:min-h-[112px]" />
   ))}
           <span className="sr-only">Loading monthly schedule</span>
-        </div> : <div className="grid grid-cols-7">
+        </div> : <div className="grid" style={calendarGridStyle}>
           {calendarDays.map((date, index) => {
             if (!date) return <div key={`blank-${index}`} className="min-h-[78px] border-b border-r border-slate-100 bg-slate-50/50 sm:min-h-[112px]" />;
             const key = dateKey(date);
@@ -100,7 +105,7 @@ export default function MonthlyCalendar() {
                     <span className="flex min-w-0 items-center gap-1">
                       <span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs ${isToday ? "bg-[#e65300] font-semibold text-white" : "font-medium text-slate-700"}`}>{date.getDate()}</span>
                     </span>
-                    <input type="checkbox" aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onChange={() => toggleDay(key)} disabled={disabled || key <= todayKey} title={key <= todayKey ? "Today and past office days are locked" : undefined} className="pointer-events-auto size-4 cursor-pointer accent-[#e65300] disabled:cursor-not-allowed disabled:opacity-50" />
+                    <Checkbox aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onCheckedChange={() => toggleDay(key)} disabled={disabled || key <= todayKey} title={key <= todayKey ? "Today and past office days are locked" : undefined} className="pointer-events-auto cursor-pointer data-checked:bg-[#e65300] data-checked:border-[#e65300]" />
                   </span>
                   {(user?.platform && platformAttendanceCounts || eventCount > 0 || hasLunchProcurement) && (
                     <span className="mt-auto flex flex-wrap items-start gap-1">

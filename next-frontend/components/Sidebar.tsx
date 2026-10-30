@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, CalendarDays, CalendarRange, Utensils, Users } from "lucide-react";
+import { BarChart3, CalendarDays, CalendarRange, Settings, Utensils, Users } from "lucide-react";
 import ProfileMenu from "@/components/sidebar/ProfileMenu";
 import { useAuth } from "@/providers/AuthProvider";
 import {
@@ -82,6 +82,14 @@ export default function Sidebar() {
                   <Link href="/events" onClick={() => setOpenMobile(false)} aria-label="Manage events">
                     <CalendarRange />
                     <span>Manage events</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>}
+              {canViewUsers && <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/settings"} tooltip="Settings">
+                  <Link href="/settings" onClick={() => setOpenMobile(false)} aria-label="Global and platform settings">
+                    <Settings />
+                    <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>}

@@ -5,6 +5,7 @@ export type OfficeDaySchedule = {
 
 export type MonthlyOfficeDaySchedule = OfficeDaySchedule & {
   platformAttendance: { date: string; attendees: number }[];
+  daysOff: number[];
 };
 
 export type PlatformOfficeDaySchedule = {

@@ -24,6 +24,7 @@ type ScheduleContextValue = {
   loadError: string;
   saveError: string;
   officeDays: string[];
+  daysOff: number[];
   platformAttendanceCounts: Record<string, number> | null;
   selectedPlatformDate: string | null;
   weekdayCount: number;
@@ -31,6 +32,7 @@ type ScheduleContextValue = {
   monthName: string;
   isCurrentDateReady: boolean;
   nextOfficeDay: Date | null;
+  calendarWeekdays: number[];
   calendarDays: (Date | null)[];
   todayKey: string;
   allMonthEvents: PlannerEvent[];
@@ -47,6 +49,8 @@ type ScheduleContextValue = {
 };
 
 const serverDateSnapshot = "2000-01-01";
+const emptyOfficeDays: string[] = [];
+const emptyDaysOff: number[] = [];
 let clientDateSnapshot: string | undefined;
 
 function dateKey(date: Date) {
@@ -74,6 +78,10 @@ function getMonthKey(year: number, month: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}`;
 }
 
+function isDayOff(key: string, daysOff: number[]) {
+  return daysOff.includes(new Date(`${key}T12:00:00`).getDay() || 7);
+}
+
 const ScheduleContext = createContext<ScheduleContextValue | null>(null);
 
 export function ScheduleProvider({ children }: { children: ReactNode }) {
@@ -81,6 +89,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const [visibleMonthOverride, setVisibleMonthOverride] = useState<string | null>(null);
   const [savedByMonth, setSavedByMonth] = useState<Record<string, string[]>>({});
   const [draftByMonth, setDraftByMonth] = useState<Record<string, string[]>>({});
+  const [daysOffByMonth, setDaysOffByMonth] = useState<Record<string, number[]>>({});
   const [platformAttendanceByMonth, setPlatformAttendanceByMonth] = useState<Record<string, Record<string, number>>>({});
   const [selectedPlatformDate, setSelectedPlatformDate] = useState<string | null>(null);
   const [isLoadingMonth, setIsLoadingMonth] = useState(true);
@@ -105,7 +114,9 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
   const monthKey = getMonthKey(year, month);
-  const officeDays = draftByMonth[monthKey] ?? savedByMonth[monthKey] ?? [];
+  const allOfficeDays = draftByMonth[monthKey] ?? savedByMonth[monthKey] ?? emptyOfficeDays;
+  const daysOff = daysOffByMonth[monthKey] ?? emptyDaysOff;
+  const officeDays = useMemo(() => allOfficeDays.filter((key) => !isDayOff(key, daysOff)), [allOfficeDays, daysOff]);
   const platformAttendanceCounts = platformAttendanceByMonth[monthKey] ?? null;
   const hasUnsavedChanges = draftByMonth[monthKey] !== undefined;
   const today = new Date(`${currentDateKey}T12:00:00`);
@@ -114,10 +125,10 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const monthName = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(visibleMonth);
 
   useEffect(() => {
-    if (selectedPlatformDate && !selectedPlatformDate.startsWith(`${monthKey}-`)) {
+    if (selectedPlatformDate && (!selectedPlatformDate.startsWith(`${monthKey}-`) || isDayOff(selectedPlatformDate, daysOff))) {
       setSelectedPlatformDate(null);
     }
-  }, [monthKey, selectedPlatformDate]);
+  }, [monthKey, selectedPlatformDate, daysOff]);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -129,6 +140,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       previousUser.current = null;
       loadedMonths.current.clear();
       setSavedByMonth({});
+      setDaysOffByMonth({});
       setDraftByMonth({});
       setPlatformAttendanceByMonth({});
       setLoadError("");
@@ -144,6 +156,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     if (accountChanged) {
       loadedMonths.current.clear();
       setSavedByMonth({});
+      setDaysOffByMonth({});
       setDraftByMonth({});
       setPlatformAttendanceByMonth({});
       setLoadError("");
@@ -168,6 +181,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         if (controller.signal.aborted) return;
         loadedMonths.current.add(monthKey);
         setSavedByMonth((current) => ({ ...current, [monthKey]: schedule.officeDays }));
+        setDaysOffByMonth((current) => ({ ...current, [monthKey]: schedule.daysOff }));
         const counts = Object.fromEntries(schedule.platformAttendance.map((day) => [day.date, day.attendees]));
         setPlatformAttendanceByMonth((current) => ({ ...current, [monthKey]: counts }));
       })
@@ -214,6 +228,8 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [isAuthLoading, monthKey, user]);
 
+  const calendarWeekdays = useMemo(() => [0, 1, 2, 3, 4, 5, 6].filter((day) => !daysOff.includes(day || 7)), [daysOff]);
+
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
     const offset = firstDay.getDay();
@@ -223,8 +239,13 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       ...Array.from({ length: daysInMonth }, (_, index) => new Date(year, month, index + 1)),
     ];
     while (cells.length % 7 !== 0) cells.push(null);
-    return cells;
-  }, [year, month]);
+    const visibleCells: (Date | null)[] = [];
+    for (let index = 0; index < cells.length; index += 7) {
+      const week = cells.slice(index, index + 7).filter((_, weekday) => calendarWeekdays.includes(weekday));
+      if (week.some((date) => date !== null)) visibleCells.push(...week);
+    }
+    return visibleCells;
+  }, [year, month, calendarWeekdays]);
 
   const plannedDates = officeDays.map((key) => new Date(`${key}T12:00:00`)).sort((a, b) => a.getTime() - b.getTime());
   const weekdayCount = plannedDates.filter((date) => date.getDay() !== 0 && date.getDay() !== 6).length;
@@ -236,16 +257,19 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     .sort((first, second) => first.date.getTime() - second.date.getTime() || first.id - second.id);
 
   const updateOfficeDays = useCallback((update: (current: string[]) => string[]) => {
-    setDraftByMonth((current) => ({
-      ...current,
-      [monthKey]: update(current[monthKey] ?? savedByMonth[monthKey] ?? []),
-    }));
-  }, [monthKey, savedByMonth]);
+    setDraftByMonth((current) => {
+      const allDays = current[monthKey] ?? savedByMonth[monthKey] ?? [];
+      const hiddenDays = (savedByMonth[monthKey] ?? []).filter((key) => isDayOff(key, daysOff));
+      const visibleDays = allDays.filter((key) => !isDayOff(key, daysOff));
+      return { ...current, [monthKey]: [...hiddenDays, ...update(visibleDays)].sort() };
+    });
+  }, [monthKey, savedByMonth, daysOff]);
 
   const toggleDay = useCallback((key: string) => {
-    if (key <= todayKey) return;
+    if (key <= todayKey || isLoadingMonth || loadError || isSaving) return;
+    if (isDayOff(key, daysOff)) return;
     updateOfficeDays((current) => current.includes(key) ? current.filter((day) => day !== key) : [...current, key].sort());
-  }, [todayKey, updateOfficeDays]);
+  }, [todayKey, isLoadingMonth, loadError, isSaving, daysOff, updateOfficeDays]);
 
   const setWeekdays = useCallback(() => {
     const weekdays = calendarDays.flatMap((date) => date && dateKey(date) > todayKey && date.getDay() !== 0 && date.getDay() !== 6 ? [dateKey(date)] : []);
@@ -258,7 +282,8 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     setIsSaving(true);
     setSaveError("");
     try {
-      const schedule = await replaceOfficeDays(monthKey, officeDays);
+      const hiddenSavedDays = (savedByMonth[monthKey] ?? []).filter((key) => isDayOff(key, daysOff));
+      const schedule = await replaceOfficeDays(monthKey, [...officeDays, ...hiddenSavedDays].sort());
       setSavedByMonth((current) => ({ ...current, [monthKey]: schedule.officeDays }));
       setDraftByMonth((current) => {
         const next = { ...current };
@@ -271,7 +296,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsSaving(false);
     }
-  }, [monthKey, officeDays]);
+  }, [monthKey, officeDays, daysOff, savedByMonth]);
 
   const changeMonth = useCallback((offset: number) => {
     const nextMonth = new Date(year, month + offset, 1);
@@ -283,8 +308,13 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     setSelectedPlatformDate(null);
     setVisibleMonthOverride(null);
   }, []);
-  const selectPlatformDate = useCallback((date: string) => setSelectedPlatformDate(date), []);
-  const retryLoading = useCallback(() => setLoadRetry((attempt) => attempt + 1), []);
+  const selectPlatformDate = useCallback((date: string) => {
+    if (!isDayOff(date, daysOff)) setSelectedPlatformDate(date);
+  }, [daysOff]);
+  const retryLoading = useCallback(() => {
+    loadedMonths.current.delete(monthKey);
+    setLoadRetry((attempt) => attempt + 1);
+  }, [monthKey]);
 
   const value: ScheduleContextValue = {
     hasUnsavedChanges,
@@ -293,6 +323,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     loadError,
     saveError,
     officeDays,
+    daysOff,
     platformAttendanceCounts,
     selectedPlatformDate,
     weekdayCount,
@@ -300,6 +331,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     monthName,
     isCurrentDateReady,
     nextOfficeDay,
+    calendarWeekdays,
     calendarDays,
     todayKey,
     allMonthEvents,
