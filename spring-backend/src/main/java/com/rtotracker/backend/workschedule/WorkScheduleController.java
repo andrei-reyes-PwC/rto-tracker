@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -38,7 +39,7 @@ public class WorkScheduleController {
 
     @GetMapping
     @Operation(summary = "List work schedules")
-    public List<WorkScheduleSummary> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
+    public List<@NonNull WorkScheduleSummary> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
         return workScheduleService.findAllSummaries(search).stream()
                 .map(schedule -> new WorkScheduleSummary(schedule.getId(), schedule.getName(), schedule.getUserCount()))
@@ -47,7 +48,7 @@ public class WorkScheduleController {
 
     @PostMapping
     @Operation(summary = "Create a work schedule")
-    public ResponseEntity<WorkScheduleResponse> create(@Valid @RequestBody WorkScheduleRequest request,
+    public ResponseEntity<@NonNull WorkScheduleResponse> create(@Valid @RequestBody WorkScheduleRequest request,
                                                        HttpServletRequest servletRequest) {
         authorization.requireSuperAdmin(servletRequest);
         WorkScheduleResponse created = WorkScheduleResponse.from(
@@ -78,7 +79,7 @@ public class WorkScheduleController {
     }
 
     public record WorkScheduleResponse(Long id, String name) {
-        static WorkScheduleResponse from(WorkSchedule schedule) {
+        static @NonNull WorkScheduleResponse from(WorkSchedule schedule) {
             return new WorkScheduleResponse(schedule.getId(), schedule.getName());
         }
     }

@@ -2,6 +2,7 @@ package com.rtotracker.backend.role;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.jspecify.annotations.NonNull;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +22,7 @@ public class RoleController {
 
     @GetMapping
     @Operation(summary = "List available roles")
-    public List<RoleResponse> findAll() {
+    public List<@NonNull RoleResponse> findAll() {
         return roleService.findAll().stream()
                 .map(role -> new RoleResponse(role.getCode(), role.isProtectedRole()))
                 .toList();

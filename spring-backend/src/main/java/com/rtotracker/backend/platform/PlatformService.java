@@ -1,5 +1,6 @@
 package com.rtotracker.backend.platform;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -7,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -18,18 +20,18 @@ public class PlatformService {
     }
 
     @Transactional(readOnly = true)
-    public List<PlatformRepository.PlatformSummaryProjection> findAllSummaries(String search) {
+    public List<PlatformRepository.@NonNull PlatformSummaryProjection> findAllSummaries(String search) {
         return platforms.findAllSummaries(search.trim().toLowerCase());
     }
 
     @Transactional(readOnly = true)
-    public List<PlatformRepository.PlatformOptionProjection> findAllOptions() {
+    public List<PlatformRepository.@NonNull PlatformOptionProjection> findAllOptions() {
         return platforms.findAllOptions();
     }
 
     @Transactional(readOnly = true)
-    public List<Platform> findAll() {
-        return platforms.findAll(Sort.by(Sort.Direction.ASC, "name"));
+    public List<@NonNull Platform> findAll() {
+        return platforms.findAll(Sort.<@NonNull Platform>by(Sort.Direction.ASC, Platform::getName));
     }
 
     @Transactional(readOnly = true)
@@ -46,8 +48,8 @@ public class PlatformService {
     }
 
     public Platform update(Long id, String name) {
-        Platform platform = platforms.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found"));
+        Platform platform = Objects.requireNonNull(platforms.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found")));
         String normalizedName = normalizeName(name);
         if (platforms.existsByNameIgnoreCaseAndIdNot(normalizedName, id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A platform with this name already exists");
@@ -57,8 +59,8 @@ public class PlatformService {
     }
 
     public void delete(Long id) {
-        Platform platform = platforms.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found"));
+        Platform platform = Objects.requireNonNull(platforms.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found")));
         platforms.delete(platform);
     }
 

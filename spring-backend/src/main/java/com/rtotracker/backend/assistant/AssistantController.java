@@ -2,13 +2,14 @@ package com.rtotracker.backend.assistant;
 
 import com.rtotracker.backend.auth.AssistantJwtService;
 import jakarta.validation.constraints.NotBlank;
+import org.jspecify.annotations.NonNull;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
@@ -16,7 +17,7 @@ import java.util.List;
 
 @RestController
 @Validated
-@RequestMapping("/api/assistant")
+@RequestMapping("/api/assistant/tools")
 public class AssistantController {
 
     private final AssistantService assistantService;
@@ -27,7 +28,7 @@ public class AssistantController {
         this.assistantJwtService = assistantJwtService;
     }
 
-    @GetMapping("/tools/events")
+    @GetMapping("/events")
     public EventsResponse events(
             @NotBlank @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -37,7 +38,7 @@ public class AssistantController {
                 assistantService.visibleEventsForUser(email, startDate, endDate));
     }
 
-    @GetMapping("/tools/rto-member-counts")
+    @GetMapping("/rto-member-counts")
     public MemberCountsResponse rtoMemberCounts(
             @NotBlank @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -47,7 +48,7 @@ public class AssistantController {
                 assistantService.rtoMemberCountsForUser(email, startDate, endDate));
     }
 
-    @GetMapping("/tools/my-schedule")
+    @GetMapping("/my-schedule")
     public ScheduleResponse mySchedule(
             @NotBlank @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -58,11 +59,11 @@ public class AssistantController {
     }
 
     public record EventsResponse(LocalDate startDate, LocalDate endDate,
-                                 List<AssistantService.EventData> events) { }
+                                 List<AssistantService.@NonNull EventData> events) { }
 
     public record MemberCountsResponse(LocalDate startDate, LocalDate endDate,
-                                       List<AssistantService.MemberCount> dailyCounts) { }
+                                       List<AssistantService.@NonNull MemberCount> dailyCounts) { }
 
     public record ScheduleResponse(LocalDate startDate, LocalDate endDate,
-                                   List<AssistantService.ScheduledDay> officeDays) { }
+                                   List<AssistantService.@NonNull ScheduledDay> officeDays) { }
 }

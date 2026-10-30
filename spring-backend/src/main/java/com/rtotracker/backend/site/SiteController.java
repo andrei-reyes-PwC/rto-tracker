@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,7 +31,7 @@ public class SiteController {
     }
 
     @GetMapping
-    public List<SiteSummary> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
+    public List<@NonNull SiteSummary> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
         return sites.findAll(search).stream()
                 .map(site -> new SiteSummary(site.getId(), site.getName(), site.getUserCount()))
@@ -38,7 +39,7 @@ public class SiteController {
     }
 
     @PostMapping
-    public ResponseEntity<SiteResponse> create(@Valid @RequestBody SiteRequest body, HttpServletRequest request) {
+    public ResponseEntity<@NonNull SiteResponse> create(@Valid @RequestBody SiteRequest body, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
         SiteResponse created = SiteResponse.from(sites.create(body.name()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -64,7 +65,7 @@ public class SiteController {
     public record SiteSummary(Long id, String name, long userCount) { }
 
     public record SiteResponse(Long id, String name) {
-        static SiteResponse from(Site site) {
+        static @NonNull SiteResponse from(Site site) {
             return new SiteResponse(site.getId(), site.getName());
         }
     }

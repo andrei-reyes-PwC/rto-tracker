@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.jspecify.annotations.NonNull;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -43,10 +44,11 @@ public class LunchRecipient {
         this.siteId = day.getScopeSiteId();
         this.userEmail = email;
     }
-    public String getUserEmail() { return userEmail; }
+    public @NonNull String getUserEmail() { return Objects.requireNonNull(userEmail, "userEmail is not initialized"); }
     public boolean isReceived() { return received; }
     public String getHandedOutBy() { return handedOutBy; }
     public static class Key implements Serializable {
+        private static final long serialVersionUID = 1L;
         private LocalDate lunchDate;
         private Long siteId;
         private String userEmail;

@@ -1,17 +1,18 @@
 package com.rtotracker.backend.ratelimit;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.List;
 
 @Component
 public class ClientAddressResolver {
 
-    private final List<Cidr> trustedProxies;
+    private final List<@NonNull Cidr> trustedProxies;
 
     public ClientAddressResolver(RateLimitProperties properties) {
         this.trustedProxies = properties.getTrustedProxies().stream()
@@ -26,11 +27,10 @@ public class ClientAddressResolver {
 
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded == null || forwarded.isBlank()) return remote;
-        List<String> chain = Arrays.stream(forwarded.split(","))
-                .map(String::trim).map(ClientAddressResolver::normalize).toList();
+        String[] chain = forwarded.split(",");
         String candidate = remote;
-        for (int index = chain.size() - 1; index >= 0; index--) {
-            String hop = chain.get(index);
+        for (int index = chain.length - 1; index >= 0; index--) {
+            String hop = normalize(chain[index].trim());
             if (hop == null) break;
             candidate = hop;
             String current = hop;
@@ -39,7 +39,7 @@ public class ClientAddressResolver {
         return candidate;
     }
 
-    private static String normalize(String value) {
+    private static @Nullable String normalize(@Nullable String value) {
         if (value == null || !value.matches("[0-9a-fA-F:.]+")) return null;
         try {
             return InetAddress.getByName(value).getHostAddress();
@@ -49,7 +49,7 @@ public class ClientAddressResolver {
     }
 
     private record Cidr(byte[] network, int prefix) {
-        static Cidr parse(String value) {
+        static @NonNull Cidr parse(String value) {
             String[] parts = value.split("/", -1);
             String address = normalize(parts[0]);
             if (address == null) throw new IllegalArgumentException("Invalid trusted proxy address: " + value);

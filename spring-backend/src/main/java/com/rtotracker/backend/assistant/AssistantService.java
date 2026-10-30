@@ -6,6 +6,7 @@ import com.rtotracker.backend.office.OfficeDay;
 import com.rtotracker.backend.office.OfficeDayRepository;
 import com.rtotracker.backend.user.User;
 import com.rtotracker.backend.user.UserService;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -32,10 +33,10 @@ public class AssistantService {
         this.users = users;
     }
 
-    public List<EventData> visibleEventsForUser(String email, LocalDate startDate, LocalDate endDate) {
+    public List<@NonNull EventData> visibleEventsForUser(String email, LocalDate startDate, LocalDate endDate) {
         validateAssistantDataRange(startDate, endDate);
         Long platformId = platformIdFor(email);
-        List<Event> visibleEvents = platformId == null
+        List<@NonNull Event> visibleEvents = platformId == null
                 ? events.findGlobalEvents(startDate, endDate.plusDays(1))
                 : events.findVisibleEvents(startDate, endDate.plusDays(1), platformId);
         logger.info("Assistant event tool returned {} event(s) for {}..{}",
@@ -44,11 +45,11 @@ public class AssistantService {
                 event.getKind(), event.getTime(), event.getPlace(), event.isRequired())).toList();
     }
 
-    public List<MemberCount> rtoMemberCountsForUser(String email, LocalDate startDate, LocalDate endDate) {
+    public List<@NonNull MemberCount> rtoMemberCountsForUser(String email, LocalDate startDate, LocalDate endDate) {
         validateAssistantDataRange(startDate, endDate);
         Long platformId = platformIdFor(email);
         if (platformId == null) return List.of();
-        List<OfficeDayRepository.PlatformDailyAttendanceProjection> counts =
+        List<OfficeDayRepository.@NonNull PlatformDailyAttendanceProjection> counts =
                 officeDays.findPlatformAttendance(platformId, email, startDate, endDate.plusDays(1));
         logger.info("Assistant member-count tool returned {} day(s) for {}..{}",
                 counts.size(), startDate, endDate);
@@ -56,9 +57,9 @@ public class AssistantService {
                 .map(day -> new MemberCount(day.getOfficeDate(), day.getAttendees())).toList();
     }
 
-    public List<ScheduledDay> myOfficeSchedule(String email, LocalDate startDate, LocalDate endDate) {
+    public List<@NonNull ScheduledDay> myOfficeSchedule(String email, LocalDate startDate, LocalDate endDate) {
         validateAssistantDataRange(startDate, endDate);
-        List<OfficeDay> schedule = officeDays
+        List<@NonNull OfficeDay> schedule = officeDays
                 .findAllByUserEmailAndOfficeDateGreaterThanEqualAndOfficeDateLessThanOrderByOfficeDateAsc(
                         email, startDate, endDate.plusDays(1));
         logger.info("Assistant schedule tool returned {} saved day(s) for {}..{}",

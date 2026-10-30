@@ -4,11 +4,16 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.proc.SecurityContext;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -16,10 +21,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.jwt.JwtValidators;
-import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,9 +39,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
-
-import org.springframework.http.HttpStatus;
 
 @Service
 public class AssistantJwtService {
@@ -49,12 +51,12 @@ public class AssistantJwtService {
 
     private final JwtEncoder encoder;
     private final JwtDecoder decoder;
-    private final String issuer;
-    private final String audience;
+    private final @NonNull String issuer;
+    private final @NonNull String audience;
 
     public AssistantJwtService(
-            @Value("${app.jwt.issuer:rto-tracker-local}") String issuer,
-            @Value("${app.jwt.audience:rto-assistant-services}") String audience,
+            @Value("${app.jwt.issuer:rto-tracker-local}") @NonNull String issuer,
+            @Value("${app.jwt.audience:rto-assistant-services}") @NonNull String audience,
             @Value("${app.jwt.private-key-path:.secrets/jwt-private.pem}") String privateKeyPath,
             @Value("${app.jwt.public-key-path:.secrets/jwt-public.pem}") String publicKeyPath) {
         this.issuer = issuer;
@@ -72,11 +74,13 @@ public class AssistantJwtService {
             NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withPublicKey(publicKey)
                     .signatureAlgorithm(SignatureAlgorithm.RS256)
                     .build();
-            OAuth2TokenValidator<Jwt> audienceValidator = jwt ->
-                    jwt.getAudience().contains(audience)
-                            ? OAuth2TokenValidatorResult.success()
-                            : OAuth2TokenValidatorResult.failure(
-                                    new OAuth2Error("invalid_token", "Invalid token audience", null));
+            OAuth2TokenValidator<Jwt> audienceValidator = jwt -> {
+                List<String> audiences = jwt.getAudience();
+                return audiences != null && audiences.contains(audience)
+                        ? OAuth2TokenValidatorResult.success()
+                        : OAuth2TokenValidatorResult.failure(
+                                new OAuth2Error("invalid_token", "Invalid token audience", null));
+            };
             OAuth2TokenValidator<Jwt> scopeValidator = jwt -> {
                 String scope = jwt.getClaimAsString("scope");
                 return scope != null && List.of(scope.split(" ")).contains(REQUIRED_SCOPE)
@@ -92,15 +96,15 @@ public class AssistantJwtService {
         }
     }
 
-    public Token issue(String email) {
-        Instant now = Instant.now();
+    public Token issue(@NonNull String email) {
+        Instant now = Objects.requireNonNull(Instant.now());
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .subject(email)
-                .audience(List.of(audience))
+                .audience(Objects.requireNonNull(List.<String>of(audience)))
                 .issuedAt(now)
-                .expiresAt(now.plus(TOKEN_LIFETIME))
-                .id(UUID.randomUUID().toString())
+                .expiresAt(Objects.requireNonNull(now.plus(TOKEN_LIFETIME)))
+                .id(Objects.requireNonNull(UUID.randomUUID().toString()))
                 .claim("scope", REQUIRED_SCOPE)
                 .build();
         JwsHeader header = JwsHeader.with(SignatureAlgorithm.RS256)
@@ -110,12 +114,12 @@ public class AssistantJwtService {
         return new Token(token, "Bearer", TOKEN_LIFETIME.toSeconds());
     }
 
-    public String requireUserEmail(String authorizationHeader) {
+    public String requireUserEmail(@Nullable String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             throw unauthorized();
         }
         try {
-            String email = decoder.decode(authorizationHeader.substring(7).trim()).getSubject();
+            String email = decoder.decode(Objects.requireNonNull(authorizationHeader.substring(7).trim())).getSubject();
             if (email == null || email.isBlank()) {
                 throw unauthorized();
             }
@@ -130,9 +134,9 @@ public class AssistantJwtService {
         return (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(der));
     }
 
-    private static RSAPublicKey loadPublicKey(String path) throws IOException, GeneralSecurityException {
+    private static @NonNull RSAPublicKey loadPublicKey(String path) throws IOException, GeneralSecurityException {
         byte[] der = decodePem(Files.readString(Path.of(path)), "PUBLIC KEY");
-        return (RSAPublicKey) KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(der));
+        return Objects.requireNonNull((RSAPublicKey) KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(der)));
     }
 
     private static byte[] decodePem(String pem, String label) {

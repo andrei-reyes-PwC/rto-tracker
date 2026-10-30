@@ -2,6 +2,7 @@ package com.rtotracker.backend;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -16,9 +17,9 @@ import java.util.Set;
 @Component
 public class CsrfOriginInterceptor implements HandlerInterceptor {
 
-    private static final Set<String> STATE_CHANGING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
+    private static final Set<@NonNull String> STATE_CHANGING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
 
-    private final Set<String> allowedOrigins;
+    private final Set<@NonNull String> allowedOrigins;
 
     public CsrfOriginInterceptor(
             @Value("${app.cors.allowed-origin}") String frontendOrigin,
@@ -29,7 +30,7 @@ public class CsrfOriginInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler)
             throws IOException {
         if (!STATE_CHANGING_METHODS.contains(request.getMethod().toUpperCase())) return true;
         String sourceHeader = request.getHeader("Origin");
@@ -40,7 +41,7 @@ public class CsrfOriginInterceptor implements HandlerInterceptor {
         return false;
     }
 
-    private static String originOf(String value) {
+    private static @NonNull String originOf(String value) {
         try {
             URI uri = new URI(value);
             if (uri.getScheme() == null || uri.getHost() == null || uri.getUserInfo() != null) return "";

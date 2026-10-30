@@ -36,7 +36,7 @@ public class InMemoryRateLimitStore implements RateLimitStore {
         AtomicReference<Decision> decision = new AtomicReference<>();
         AtomicReference<Boolean> capacityExceeded = new AtomicReference<>(false);
 
-        buckets.compute(key, (ignored, current) -> {
+        buckets.compute(key, (_, current) -> {
             if (current == null || expired(current, now)) {
                 if (current == null && !capacity.tryAcquire()) {
                     capacityExceeded.set(true);

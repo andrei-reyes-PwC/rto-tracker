@@ -7,8 +7,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import org.jspecify.annotations.NonNull;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 @Table(
@@ -36,11 +38,11 @@ public class OfficeDay {
         this.officeDate = officeDate;
     }
 
-    public String getUserEmail() {
-        return userEmail;
+    public @NonNull String getUserEmail() {
+        return Objects.requireNonNull(userEmail, "userEmail is not initialized");
     }
 
-    public LocalDate getOfficeDate() {
-        return officeDate;
+    public @NonNull LocalDate getOfficeDate() {
+        return Objects.requireNonNull(officeDate, "officeDate is not initialized");
     }
 }

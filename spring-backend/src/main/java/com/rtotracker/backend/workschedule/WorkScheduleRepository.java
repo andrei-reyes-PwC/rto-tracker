@@ -1,12 +1,13 @@
 package com.rtotracker.backend.workschedule;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Long> {
+public interface WorkScheduleRepository extends JpaRepository<@NonNull WorkSchedule, Long> {
 
     boolean existsByNameIgnoreCase(String name);
 
@@ -16,11 +17,11 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Long
             + "from WorkSchedule schedule left join User assignedUser on assignedUser.workSchedule = schedule "
             + "where :search = '' or lower(schedule.name) like concat('%', :search, '%') "
             + "group by schedule.id, schedule.name order by schedule.name asc")
-    List<WorkScheduleSummaryProjection> findAllSummaries(@Param("search") String search);
+    List<@NonNull WorkScheduleSummaryProjection> findAllSummaries(@Param("search") String search);
 
     @Query("select distinct schedule.id as id, schedule.name as name from WorkSchedule schedule "
             + "join User assignedUser on assignedUser.workSchedule = schedule where assignedUser.platform.id = :platformId order by schedule.name asc")
-    List<WorkScheduleOptionProjection> findOptionsByPlatformId(@Param("platformId") Long platformId);
+    List<@NonNull WorkScheduleOptionProjection> findOptionsByPlatformId(@Param("platformId") Long platformId);
 
     interface WorkScheduleSummaryProjection {
         Long getId();

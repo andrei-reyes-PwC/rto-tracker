@@ -29,7 +29,7 @@ class InMemoryRateLimitStoreTest {
         InMemoryRateLimitStore store = new InMemoryRateLimitStore(properties);
         try (var executor = Executors.newFixedThreadPool(8)) {
             var requests = java.util.stream.IntStream.range(0, 32)
-                    .mapToObj(index -> executor.submit(
+                    .mapToObj(_ -> executor.submit(
                             () -> store.consume("api-ip", "same-client", 5, 60_000).allowed()))
                     .toList();
             long allowed = 0;

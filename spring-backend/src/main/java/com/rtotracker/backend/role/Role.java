@@ -4,6 +4,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.jspecify.annotations.NonNull;
+
+import java.util.Objects;
 
 @Entity
 @Table(name = "roles")
@@ -19,8 +22,8 @@ public class Role {
     protected Role() {
     }
 
-    public String getCode() {
-        return code;
+    public @NonNull String getCode() {
+        return Objects.requireNonNull(code, "code is not initialized");
     }
 
     public boolean isProtectedRole() {

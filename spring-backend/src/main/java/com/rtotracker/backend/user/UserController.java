@@ -4,11 +4,11 @@ import com.rtotracker.backend.auth.AdminAuthorizationService;
 import com.rtotracker.backend.auth.AuthSession;
 import com.rtotracker.backend.platform.Platform;
 import com.rtotracker.backend.platform.PlatformService;
+import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.role.RoleService;
+import com.rtotracker.backend.site.SiteService;
 import com.rtotracker.backend.workschedule.WorkSchedule;
 import com.rtotracker.backend.workschedule.WorkScheduleService;
-import com.rtotracker.backend.role.Role;
-import com.rtotracker.backend.site.SiteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +21,8 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,8 +38,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -85,9 +87,9 @@ public class UserController {
             HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
         Pageable pageable = PageRequest.of(page, size);
-        Page<UserResponse> users = userService.findAll(pageable, platformId, withoutPlatform,
+        Page<@NonNull UserResponse> users = userService.findAll(pageable, platformId, withoutPlatform,
                 workScheduleId, withoutWorkSchedule, siteId, withoutSite, roleCode, search);
-        List<PlatformResponse> platforms = includePlatforms
+        List<@NonNull PlatformResponse> platforms = includePlatforms
                 ? platformService.findAll().stream().map(PlatformResponse::from).toList()
                 : List.of();
         return UserPageResponse.from(users, platforms);
@@ -111,10 +113,10 @@ public class UserController {
         boolean isSuperAdmin = authorization.isSuperAdmin(manager);
         Long scopedPlatformId = isSuperAdmin ? platformId : manager.getPlatform().getId();
         Pageable pageable = PageRequest.of(page, size);
-        Page<UserResponse> users = userService.findAll(pageable, scopedPlatformId, isSuperAdmin && withoutPlatform,
+        Page<@NonNull UserResponse> users = userService.findAll(pageable, scopedPlatformId, isSuperAdmin && withoutPlatform,
                 workScheduleId, withoutWorkSchedule, isSuperAdmin ? siteId : null,
                 isSuperAdmin && withoutSite, roleCode, search);
-        List<ManagedUserResponse> content = users.getContent().stream()
+        List<@NonNull ManagedUserResponse> content = users.getContent().stream()
                 .map(user -> new ManagedUserResponse(user.email(), user.roles(), user.platform(), user.workSchedule(), user.site()))
                 .toList();
         return new UserManagementPageResponse(content, users.getTotalElements(), users.getTotalPages(),
@@ -126,20 +128,20 @@ public class UserController {
     public UserManagementFiltersResponse findManagementFilters(HttpServletRequest request) {
         User manager = authorization.requireUserManagementAccess(request);
         boolean isSuperAdmin = authorization.isSuperAdmin(manager);
-        List<PlatformOption> platforms = isSuperAdmin
+        List<@NonNull PlatformOption> platforms = isSuperAdmin
                 ? platformService.findAllOptions().stream()
                 .map(platform -> new PlatformOption(platform.getId(), platform.getName())).toList()
                 : List.of(new PlatformOption(manager.getPlatform().getId(), manager.getPlatform().getName()));
-        List<WorkScheduleOption> workSchedules = isSuperAdmin
+        List<@NonNull WorkScheduleOption> workSchedules = isSuperAdmin
                 ? workScheduleService.findAllSummaries("").stream()
                 .map(schedule -> new WorkScheduleOption(schedule.getId(), schedule.getName())).toList()
                 : workScheduleService.findOptionsByPlatformId(manager.getPlatform().getId()).stream()
                 .map(schedule -> new WorkScheduleOption(schedule.getId(), schedule.getName())).toList();
-        List<WorkScheduleOption> sites = isSuperAdmin
+        List<@NonNull WorkScheduleOption> sites = isSuperAdmin
                 ? siteService.findAll("").stream()
                 .map(site -> new WorkScheduleOption(site.getId(), site.getName())).toList()
                 : List.of();
-        List<RoleFilterOption> roles = roleService.findAll().stream()
+        List<@NonNull RoleFilterOption> roles = roleService.findAll().stream()
                 .map(role -> new RoleFilterOption(role.getCode())).toList();
         return new UserManagementFiltersResponse(platforms, workSchedules, sites, roles);
     }
@@ -153,7 +155,7 @@ public class UserController {
 
     @PostMapping
     @Operation(summary = "Create a user")
-    public ResponseEntity<UserResponse> create(
+    public ResponseEntity<@NonNull UserResponse> create(
             @Valid @RequestBody UserRequest request,
             HttpServletRequest servletRequest) {
         authorization.requireSuperAdmin(servletRequest);
@@ -217,7 +219,7 @@ public class UserController {
     public record UserUpdateRequest(
             @NotBlank @Email @Pattern(regexp = "^[^@\\s]+@(?:[^@.\\s]+\\.)+[^@.\\s]+$")
             @Size(max = 254) String email,
-            @NotEmpty List<@NotBlank @Size(max = 50) String> roles,
+            @NotEmpty List<@NonNull @NotBlank @Size(max = 50) String> roles,
             @Valid MembershipUpdateRequest assignments) {
     }
 
@@ -226,42 +228,42 @@ public class UserController {
     }
 
     public record BatchAssignmentsRequest(
-            @NotEmpty @Size(max = 1000) List<@NotBlank @Email @Size(max = 254) String> emails,
+            @NotEmpty @Size(max = 1000) List<@NonNull @NotBlank @Email @Size(max = 254) String> emails,
             Map<@NotBlank String, @Positive Long> assignments,
-            List<@NotBlank @Size(max = 50) String> roles) {
+            List<@NonNull @NotBlank @Size(max = 50) String> roles) {
     }
 
-    public record UserPageResponse(List<UserResponse> content, long totalElements, int totalPages,
-                                   int number, int size, List<PlatformResponse> platforms) {
-        static UserPageResponse from(Page<UserResponse> users, List<PlatformResponse> platforms) {
+    public record UserPageResponse(List<@NonNull UserResponse> content, long totalElements, int totalPages,
+                                   int number, int size, List<@NonNull PlatformResponse> platforms) {
+        static @NonNull UserPageResponse from(Page<@NonNull UserResponse> users, List<@NonNull PlatformResponse> platforms) {
             return new UserPageResponse(users.getContent(), users.getTotalElements(), users.getTotalPages(),
                     users.getNumber(), users.getSize(), platforms);
         }
     }
 
-    public record UserManagementPageResponse(List<ManagedUserResponse> content, long totalElements, int totalPages,
+    public record UserManagementPageResponse(List<@NonNull ManagedUserResponse> content, long totalElements, int totalPages,
                                              int number, int size) {
     }
 
-    public record UserManagementFiltersResponse(List<PlatformOption> platforms,
-                                                List<WorkScheduleOption> workSchedules,
-                                                List<WorkScheduleOption> sites,
-                                                List<RoleFilterOption> roles) {
+    public record UserManagementFiltersResponse(List<@NonNull PlatformOption> platforms,
+                                                List<@NonNull WorkScheduleOption> workSchedules,
+                                                List<@NonNull WorkScheduleOption> sites,
+                                                List<@NonNull RoleFilterOption> roles) {
     }
 
     public record RoleFilterOption(String code) {
     }
 
-    public record ManagedUserResponse(String email, List<String> roles, PlatformOption platform,
+    public record ManagedUserResponse(String email, List<@NonNull String> roles, PlatformOption platform,
                                       WorkScheduleOption workSchedule, WorkScheduleOption site) {
     }
 
     public record WorkScheduleOption(Long id, String name) {
-        static WorkScheduleOption from(WorkSchedule workSchedule) {
+        static @Nullable WorkScheduleOption from(WorkSchedule workSchedule) {
             return workSchedule == null ? null : new WorkScheduleOption(workSchedule.getId(), workSchedule.getName());
         }
 
-        static WorkScheduleOption from(com.rtotracker.backend.site.Site site) {
+        static @Nullable WorkScheduleOption from(com.rtotracker.backend.site.Site site) {
             return site == null ? null : new WorkScheduleOption(site.getId(), site.getName());
         }
     }
@@ -270,14 +272,14 @@ public class UserController {
     }
 
     public record PlatformResponse(Long id, String name) {
-        static PlatformResponse from(Platform platform) {
+        static @NonNull PlatformResponse from(Platform platform) {
             return new PlatformResponse(platform.getId(), platform.getName());
         }
     }
 
-    public record UserResponse(String email, List<String> roles, PlatformOption platform,
+    public record UserResponse(String email, List<@NonNull String> roles, PlatformOption platform,
                                WorkScheduleOption workSchedule, WorkScheduleOption site) {
-        public static UserResponse from(User user) {
+        public static @NonNull UserResponse from(User user) {
             return new UserResponse(user.getEmail(), user.getRoles().stream()
                     .map(Role::getCode).sorted().toList(), user.getPlatform() == null ? null
                     : new PlatformOption(user.getPlatform().getId(), user.getPlatform().getName()),

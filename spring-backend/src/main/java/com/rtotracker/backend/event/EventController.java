@@ -12,8 +12,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDate;
-import java.util.List;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +27,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
 
 @RestController
 @Validated
@@ -46,11 +49,11 @@ public class EventController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    public List<EventResponse> visible(@RequestParam String month, HttpServletRequest request) {
+    public List<@NonNull EventResponse> visible(@RequestParam String month, HttpServletRequest request) {
         LocalDate start = monthStart(month);
         String email = AuthSession.requireEmail(request);
         User user = users.findByEmail(email);
-        List<Event> result = user.getPlatform() == null
+        List<@NonNull Event> result = user.getPlatform() == null
                 ? events.findGlobalEvents(start, start.plusMonths(1))
                 : events.findVisibleEvents(start, start.plusMonths(1), user.getPlatform().getId());
         return result.stream().map(EventResponse::from).toList();
@@ -58,7 +61,7 @@ public class EventController {
 
     @GetMapping("/manage")
     @Transactional(readOnly = true)
-    public List<EventResponse> findAll(@RequestParam(defaultValue = "") String search,
+    public List<@NonNull EventResponse> findAll(@RequestParam(defaultValue = "") String search,
                                        @RequestParam(required = false) LocalDate date,
                                        HttpServletRequest request) {
         User actor = authorization.requireEventManager(request);
@@ -69,7 +72,7 @@ public class EventController {
     }
 
     @PostMapping
-    public ResponseEntity<EventResponse> create(@Valid @RequestBody EventRequest body, HttpServletRequest request) {
+    public ResponseEntity<@NonNull EventResponse> create(@Valid @RequestBody EventRequest body, HttpServletRequest request) {
         User actor = authorization.requireEventManager(request);
         Event saved = events.save(new Event(body.date(), normalize(body.title()), normalize(body.kind()),
                 normalize(body.time()), normalize(body.place()), body.required(), body.scope(), findPlatform(body, actor)));
@@ -79,7 +82,8 @@ public class EventController {
     @PutMapping("/{id}")
     public EventResponse update(@PathVariable Long id, @Valid @RequestBody EventRequest body, HttpServletRequest request) {
         User actor = authorization.requireEventManager(request);
-        Event event = events.findWithPlatformById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        Event event = Objects.requireNonNull(events.findWithPlatformById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found")));
         requireCanManage(event, actor);
         event.update(body.date(), normalize(body.title()), normalize(body.kind()), normalize(body.time()),
                 normalize(body.place()), body.required(), body.scope(), findPlatform(body, actor));
@@ -89,8 +93,8 @@ public class EventController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id, HttpServletRequest request) {
         User actor = authorization.requireEventManager(request);
-        Event event = events.findWithPlatformById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        Event event = Objects.requireNonNull(events.findWithPlatformById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found")));
         requireCanManage(event, actor);
         events.delete(event);
         return ResponseEntity.noContent().build();
@@ -143,7 +147,7 @@ public class EventController {
             @NotBlank @Size(max = 20) String scope, Long platformId) { }
     public record EventResponse(Long id, LocalDate date, String title, String kind, String time, String place,
             boolean required, String scope, Long platformId, String platformName) {
-        static EventResponse from(Event event) {
+        static @NonNull EventResponse from(Event event) {
             return new EventResponse(event.getId(), event.getDate(), event.getTitle(), event.getKind(), event.getTime(),
                     event.getPlace(), event.isRequired(), event.getScope(), event.getPlatform() == null ? null : event.getPlatform().getId(),
                     event.getPlatform() == null ? null : event.getPlatform().getName());

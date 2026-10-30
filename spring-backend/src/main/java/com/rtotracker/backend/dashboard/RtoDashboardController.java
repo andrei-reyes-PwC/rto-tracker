@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Min;
+import org.jspecify.annotations.NonNull;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -48,7 +49,7 @@ public class RtoDashboardController {
 
     @GetMapping("/sites")
     @Operation(summary = "List Site choices for the RTO dashboard filter")
-    public List<RtoDashboardService.SiteOption> findSiteOptions(HttpServletRequest request) {
+    public List<RtoDashboardService.@NonNull SiteOption> findSiteOptions(HttpServletRequest request) {
         authorization.requireDashboardAccess(request);
         return dashboardService.findSiteOptions();
     }

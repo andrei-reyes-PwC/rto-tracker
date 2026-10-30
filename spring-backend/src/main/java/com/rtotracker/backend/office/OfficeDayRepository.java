@@ -1,5 +1,6 @@
 package com.rtotracker.backend.office;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -8,12 +9,12 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.List;
 
-public interface OfficeDayRepository extends JpaRepository<OfficeDay, Long> {
+public interface OfficeDayRepository extends JpaRepository<@NonNull OfficeDay, Long> {
 
-    List<OfficeDay> findAllByUserEmailAndOfficeDateGreaterThanEqualAndOfficeDateLessThanOrderByOfficeDateAsc(
+    List<@NonNull OfficeDay> findAllByUserEmailAndOfficeDateGreaterThanEqualAndOfficeDateLessThanOrderByOfficeDateAsc(
             String userEmail, LocalDate startInclusive, LocalDate endExclusive);
 
-    List<OfficeDay> findAllByOfficeDateBetweenOrderByOfficeDateAsc(LocalDate startInclusive, LocalDate endInclusive);
+    List<@NonNull OfficeDay> findAllByOfficeDateBetweenOrderByOfficeDateAsc(LocalDate startInclusive, LocalDate endInclusive);
 
     @Query("""
             select officeDay.officeDate as officeDate, officeDay.userEmail as userEmail
@@ -24,7 +25,7 @@ public interface OfficeDayRepository extends JpaRepository<OfficeDay, Long> {
               and officeDay.officeDate = :officeDate
             order by officeDay.officeDate asc, officeDay.userEmail asc
             """)
-    List<PlatformOfficeDayProjection> findPlatformOfficeDaysForDate(
+    List<@NonNull PlatformOfficeDayProjection> findPlatformOfficeDaysForDate(
             @Param("platformId") Long platformId,
             @Param("currentUserEmail") String currentUserEmail,
             @Param("officeDate") LocalDate officeDate);
@@ -40,7 +41,7 @@ public interface OfficeDayRepository extends JpaRepository<OfficeDay, Long> {
             group by officeDay.officeDate
             order by officeDay.officeDate asc
             """)
-    List<PlatformDailyAttendanceProjection> findPlatformAttendance(
+    List<@NonNull PlatformDailyAttendanceProjection> findPlatformAttendance(
             @Param("platformId") Long platformId,
             @Param("currentUserEmail") String currentUserEmail,
             @Param("startInclusive") LocalDate startInclusive,

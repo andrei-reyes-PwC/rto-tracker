@@ -1,12 +1,13 @@
 package com.rtotracker.backend.workschedule;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -18,12 +19,12 @@ public class WorkScheduleService {
     }
 
     @Transactional(readOnly = true)
-    public List<WorkScheduleRepository.WorkScheduleSummaryProjection> findAllSummaries(String search) {
+    public List<WorkScheduleRepository.@NonNull WorkScheduleSummaryProjection> findAllSummaries(String search) {
         return workSchedules.findAllSummaries(search.trim().toLowerCase());
     }
 
     @Transactional(readOnly = true)
-    public List<WorkScheduleRepository.WorkScheduleOptionProjection> findOptionsByPlatformId(Long platformId) {
+    public List<WorkScheduleRepository.@NonNull WorkScheduleOptionProjection> findOptionsByPlatformId(Long platformId) {
         return workSchedules.findOptionsByPlatformId(platformId);
     }
 
@@ -36,8 +37,8 @@ public class WorkScheduleService {
     }
 
     public WorkSchedule update(Long id, String name) {
-        WorkSchedule schedule = workSchedules.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Work schedule not found"));
+        WorkSchedule schedule = Objects.requireNonNull(workSchedules.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Work schedule not found")));
         String normalizedName = normalizeName(name);
         if (workSchedules.existsByNameIgnoreCaseAndIdNot(normalizedName, id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A work schedule with this name already exists");
@@ -47,8 +48,8 @@ public class WorkScheduleService {
     }
 
     public void delete(Long id) {
-        WorkSchedule schedule = workSchedules.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Work schedule not found"));
+        WorkSchedule schedule = Objects.requireNonNull(workSchedules.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Work schedule not found")));
         workSchedules.delete(schedule);
     }
 

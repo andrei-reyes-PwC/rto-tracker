@@ -1,6 +1,7 @@
 package com.rtotracker.backend.ratelimit;
 
 import com.rtotracker.backend.auth.AuthSession;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -11,11 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doThrow;
 
 class RateLimitInterceptorTest {
 
@@ -88,7 +89,7 @@ class RateLimitInterceptorTest {
         assertEquals(503, response.getStatus());
     }
 
-    private static MockHttpServletRequest request(String method, String path) {
+    private static @NonNull MockHttpServletRequest request(String method, String path) {
         MockHttpServletRequest request = new MockHttpServletRequest(method, path);
         request.setRequestURI(path);
         return request;

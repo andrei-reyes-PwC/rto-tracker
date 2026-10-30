@@ -7,6 +7,7 @@ import com.rtotracker.backend.site.SiteRepository;
 import com.rtotracker.backend.user.User;
 import com.rtotracker.backend.user.UserRepository;
 import com.rtotracker.backend.workschedule.WorkSchedule;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +36,7 @@ public class RtoDashboardService {
     }
 
     @Transactional(readOnly = true)
-    public List<SiteOption> findSiteOptions() {
+    public List<@NonNull SiteOption> findSiteOptions() {
         return sites.findAllSummaries("").stream()
                 .map(site -> new SiteOption(site.getId(), site.getName()))
                 .toList();
@@ -44,19 +45,20 @@ public class RtoDashboardService {
     @Transactional(readOnly = true)
     public WeeklyRtoSummary getWeeklySummary(LocalDate weekStart, Long siteId) {
         LocalDate weekEnd = weekStart.plusDays(4);
-        List<OfficeDay> plannedDays = officeDays.findAllByOfficeDateBetweenOrderByOfficeDateAsc(weekStart, weekEnd);
-        Set<String> emails = plannedDays.stream().map(OfficeDay::getUserEmail).collect(java.util.stream.Collectors.toSet());
+        List<@NonNull OfficeDay> plannedDays = officeDays.findAllByOfficeDateBetweenOrderByOfficeDateAsc(weekStart, weekEnd);
+        Set<String> emails = new HashSet<>();
+        plannedDays.forEach(day -> emails.add(day.getUserEmail()));
         Map<String, User> userByEmail = new HashMap<>();
         users.findAllById(emails).forEach(user -> userByEmail.put(user.getEmail(), user));
 
-        Map<LocalDate, Set<String>> dailyAttendees = new LinkedHashMap<>();
+        Map<LocalDate, Set<@NonNull String>> dailyAttendees = new LinkedHashMap<>();
         for (int day = 0; day < 5; day++) dailyAttendees.put(weekStart.plusDays(day), new HashSet<>());
-        Set<String> weeklyAttendees = new HashSet<>();
+        Set<@NonNull String> weeklyAttendees = new HashSet<>();
         Map<GroupKey, GroupAccumulator> platforms = new HashMap<>();
         Map<GroupKey, GroupAccumulator> workSchedules = new HashMap<>();
 
         for (OfficeDay plannedDay : plannedDays) {
-            String email = plannedDay.getUserEmail();
+            @NonNull String email = plannedDay.getUserEmail();
             User user = userByEmail.get(email);
             if (siteId != null && (user == null || user.getSite() == null
                     || !siteId.equals(user.getSite().getId()))) {
@@ -78,41 +80,41 @@ public class RtoDashboardService {
             addAttendance(workSchedules, scheduleKey, plannedDay.getOfficeDate(), email);
         }
 
-        List<DailyAttendance> daily = dailyAttendees.entrySet().stream()
+        List<@NonNull DailyAttendance> daily = dailyAttendees.entrySet().stream()
                 .map(entry -> new DailyAttendance(entry.getKey(), entry.getValue().size()))
                 .toList();
-        List<GroupAttendance> byPlatform = groupAttendance(platforms, weekStart);
-        List<GroupAttendance> byWorkSchedule = groupAttendance(workSchedules, weekStart);
+        List<@NonNull GroupAttendance> byPlatform = groupAttendance(platforms, weekStart);
+        List<@NonNull GroupAttendance> byWorkSchedule = groupAttendance(workSchedules, weekStart);
         return new WeeklyRtoSummary(weekStart, weekEnd, plannedDays.size(), weeklyAttendees.size(),
                 daily, byPlatform, byWorkSchedule);
     }
 
     private static void addAttendance(Map<GroupKey, GroupAccumulator> groups, GroupKey key,
-                                      LocalDate date, String email) {
-        GroupAccumulator group = groups.computeIfAbsent(key, ignored -> new GroupAccumulator());
+                                      LocalDate date, @NonNull String email) {
+        GroupAccumulator group = groups.computeIfAbsent(key, _ -> new GroupAccumulator());
         group.rtoDays++;
         group.attendees.add(email);
-        group.dailyAttendees.computeIfAbsent(date, ignored -> new HashSet<>()).add(email);
+        group.dailyAttendees.computeIfAbsent(date, _ -> new HashSet<>()).add(email);
     }
 
-    private static List<GroupAttendance> groupAttendance(Map<GroupKey, GroupAccumulator> groups, LocalDate weekStart) {
-        List<GroupAttendance> result = new ArrayList<>();
+    private static List<@NonNull GroupAttendance> groupAttendance(Map<GroupKey, GroupAccumulator> groups, LocalDate weekStart) {
+        List<@NonNull GroupAttendance> result = new ArrayList<>();
         groups.forEach((key, value) -> {
-            List<DailyAttendance> daily = new ArrayList<>();
+            List<@NonNull DailyAttendance> daily = new ArrayList<>();
             for (int day = 0; day < 5; day++) {
                 LocalDate date = weekStart.plusDays(day);
                 daily.add(new DailyAttendance(date, value.dailyAttendees.getOrDefault(date, Set.of()).size()));
             }
             result.add(new GroupAttendance(key.id(), key.name(), value.attendees.size(), value.rtoDays, daily));
         });
-        result.sort(Comparator.comparingLong(GroupAttendance::rtoDays).reversed()
+        result.sort(Comparator.<@NonNull GroupAttendance>comparingLong(GroupAttendance::rtoDays).reversed()
                 .thenComparing(GroupAttendance::name, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(result);
     }
 
     public record WeeklyRtoSummary(LocalDate weekStart, LocalDate weekEnd, long totalRtoDays, long uniqueAttendees,
-                                   List<DailyAttendance> daily, List<GroupAttendance> byPlatform,
-                                   List<GroupAttendance> byWorkSchedule) {
+                                   List<@NonNull DailyAttendance> daily, List<@NonNull GroupAttendance> byPlatform,
+                                   List<@NonNull GroupAttendance> byWorkSchedule) {
     }
 
     public record SiteOption(Long id, String name) {
@@ -121,15 +123,15 @@ public class RtoDashboardService {
     public record DailyAttendance(LocalDate date, long attendees) {
     }
 
-    public record GroupAttendance(Long id, String name, long attendees, long rtoDays, List<DailyAttendance> daily) {
+    public record GroupAttendance(Long id, String name, long attendees, long rtoDays, List<@NonNull DailyAttendance> daily) {
     }
 
     private record GroupKey(Long id, String name) {
     }
 
     private static final class GroupAccumulator {
-        private final Set<String> attendees = new TreeSet<>();
-        private final Map<LocalDate, Set<String>> dailyAttendees = new HashMap<>();
+        private final Set<@NonNull String> attendees = new TreeSet<>();
+        private final Map<LocalDate, Set<@NonNull String>> dailyAttendees = new HashMap<>();
         private long rtoDays;
     }
 }

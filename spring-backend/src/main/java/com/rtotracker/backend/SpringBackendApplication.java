@@ -1,7 +1,8 @@
 package com.rtotracker.backend;
 
-import org.springframework.boot.SpringApplication;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
@@ -11,7 +12,7 @@ public class SpringBackendApplication {
 
     @Bean
     ApplicationRunner printSwaggerUrl(Environment environment) {
-        return args -> {
+        return _ -> {
             if (!environment.getProperty("springdoc.swagger-ui.enabled", Boolean.class, true)) return;
             String port = environment.getProperty("local.server.port",
                     environment.getProperty("server.port", "8080"));
@@ -20,7 +21,7 @@ public class SpringBackendApplication {
         };
     }
 
-    public static void main(String[] args) {
+    public static void main(String @NonNull [] args) {
         SpringApplication.run(SpringBackendApplication.class, args);
     }
 }

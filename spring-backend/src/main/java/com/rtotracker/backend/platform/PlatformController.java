@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -38,7 +39,7 @@ public class PlatformController {
 
     @GetMapping
     @Operation(summary = "List platforms")
-    public List<PlatformSummary> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
+    public List<@NonNull PlatformSummary> findAll(@RequestParam(defaultValue = "") String search, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
         return platformService.findAllSummaries(search).stream()
                 .map(platform -> new PlatformSummary(platform.getId(), platform.getName(), platform.getUserCount()))
@@ -47,7 +48,7 @@ public class PlatformController {
 
     @GetMapping("/options")
     @Operation(summary = "List platform options for filters")
-    public List<PlatformOption> findAllOptions(HttpServletRequest request) {
+    public List<@NonNull PlatformOption> findAllOptions(HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
         return platformService.findAllOptions().stream()
                 .map(platform -> new PlatformOption(platform.getId(), platform.getName()))
@@ -56,7 +57,7 @@ public class PlatformController {
 
     @PostMapping
     @Operation(summary = "Create a platform")
-    public ResponseEntity<PlatformResponse> create(@Valid @RequestBody PlatformRequest request,
+    public ResponseEntity<@NonNull PlatformResponse> create(@Valid @RequestBody PlatformRequest request,
                                                     HttpServletRequest servletRequest) {
         authorization.requireSuperAdmin(servletRequest);
         PlatformResponse created = PlatformResponse.from(
@@ -84,7 +85,7 @@ public class PlatformController {
     }
 
     public record PlatformResponse(Long id, String name) {
-        public static PlatformResponse from(Platform platform) {
+        public static @NonNull PlatformResponse from(Platform platform) {
             return new PlatformResponse(platform.getId(), platform.getName());
         }
     }

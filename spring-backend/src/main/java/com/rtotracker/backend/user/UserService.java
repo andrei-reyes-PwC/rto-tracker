@@ -5,10 +5,11 @@ import com.rtotracker.backend.platform.Platform;
 import com.rtotracker.backend.platform.PlatformRepository;
 import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.role.RoleRepository;
-import com.rtotracker.backend.workschedule.WorkSchedule;
-import com.rtotracker.backend.workschedule.WorkScheduleRepository;
 import com.rtotracker.backend.site.Site;
 import com.rtotracker.backend.site.SiteRepository;
+import com.rtotracker.backend.workschedule.WorkSchedule;
+import com.rtotracker.backend.workschedule.WorkScheduleRepository;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -16,10 +17,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Locale;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,11 +55,11 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserController.UserResponse> findAll(Pageable pageable, Long platformId, boolean withoutPlatform,
+    public Page<UserController.@NonNull UserResponse> findAll(Pageable pageable, Long platformId, boolean withoutPlatform,
                                                       Long workScheduleId, boolean withoutWorkSchedule,
                                                       Long siteId, boolean withoutSite,
                                                       String roleCode, String search) {
-        Page<User> matchingUsers = users.findAllByFilters(platformId, withoutPlatform, workScheduleId,
+        Page<@NonNull User> matchingUsers = users.findAllByFilters(platformId, withoutPlatform, workScheduleId,
                 withoutWorkSchedule, siteId, withoutSite, roleCode, normalizeSearch(search), pageable);
         return matchingUsers.map(UserController.UserResponse::from);
     }
@@ -69,9 +72,9 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public User findByEmail(String email) {
-        return users.findById(normalize(email))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    public @NonNull User findByEmail(String email) {
+        return Objects.requireNonNull(users.findById(normalize(email))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")));
     }
 
     public User create(String email, String password) {
@@ -83,10 +86,10 @@ public class UserService {
                 Set.of(defaultRole())));
     }
 
-    public User update(String currentEmail, String replacementEmail, List<String> requestedRoleCodes,
+    public User update(String currentEmail, String replacementEmail, List<@NonNull String> requestedRoleCodes,
                        MembershipUpdate membershipUpdate, boolean allowProtectedSelfEdit) {
         User current = findByEmail(currentEmail);
-        Set<String> protectedRoleCodes = current.getRoles().stream().filter(Role::isProtectedRole)
+        Set<@NonNull String> protectedRoleCodes = current.getRoles().stream().filter(Role::isProtectedRole)
                 .map(Role::getCode).collect(Collectors.toSet());
         if (!protectedRoleCodes.isEmpty() && !allowProtectedSelfEdit) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected users cannot be edited");
@@ -97,13 +100,12 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A user with this email already exists");
         }
 
-        Set<String> requestedCodes = requestedRoleCodes.stream()
-                .map(String::trim)
-                .collect(Collectors.toSet());
+        Set<String> requestedCodes = new HashSet<>();
+        requestedRoleCodes.forEach(code -> requestedCodes.add(code.trim()));
         if (requestedCodes.isEmpty() || requestedCodes.contains("")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Select at least one valid role");
         }
-        List<Role> requestedRoles = roles.findAllById(requestedCodes);
+        List<@NonNull Role> requestedRoles = roles.findAllById(requestedCodes);
         if (requestedRoles.size() != requestedCodes.size()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more roles do not exist");
         }
@@ -113,19 +115,19 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected roles cannot be assigned");
         }
 
-        Set<Role> replacementRoles = new java.util.HashSet<>(requestedRoles);
+        Set<@NonNull Role> replacementRoles = new java.util.HashSet<>(requestedRoles);
         replacementRoles.addAll(current.getRoles().stream().filter(Role::isProtectedRole).toList());
         Platform platform = membershipUpdate == null ? current.getPlatform()
-                : membershipUpdate.platformId() == null ? null : platforms.findById(membershipUpdate.platformId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Platform not found"));
+                : membershipUpdate.platformId() == null ? null : Objects.requireNonNull(platforms.findById(membershipUpdate.platformId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Platform not found")));
         WorkSchedule workSchedule = membershipUpdate == null ? current.getWorkSchedule()
                 : membershipUpdate.workScheduleId() == null ? null
-                : workSchedules.findById(membershipUpdate.workScheduleId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work schedule not found"));
+                : Objects.requireNonNull(workSchedules.findById(membershipUpdate.workScheduleId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work schedule not found")));
         Site site = membershipUpdate == null ? current.getSite()
                 : membershipUpdate.siteId() == null ? null
-                : sites.findById(membershipUpdate.siteId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Site not found"));
+                : Objects.requireNonNull(sites.findById(membershipUpdate.siteId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Site not found")));
         if (current.getEmail().equals(normalizedReplacement)) {
             current.setRoles(replacementRoles);
             current.setPlatform(platform);
@@ -146,24 +148,25 @@ public class UserService {
         return findByEmail(replacement.getEmail());
     }
 
-    public void updateAssignments(List<String> emails, Map<String, Long> assignments, List<String> requestedRoleCodes) {
-        Set<String> allowed = Set.of("platformId", "workScheduleId", "siteId");
+    public void updateAssignments(List<@NonNull String> emails, Map<String, Long> assignments, List<@NonNull String> requestedRoleCodes) {
+        Set<@NonNull String> allowed = Set.of("platformId", "workScheduleId", "siteId");
         Map<String, Long> requestedAssignments = assignments == null ? Map.of() : assignments;
         if ((requestedAssignments.isEmpty() && requestedRoleCodes == null) || !allowed.containsAll(requestedAssignments.keySet())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Choose at least one valid field to update");
         }
         Platform platform = requestedAssignments.containsKey("platformId") && requestedAssignments.get("platformId") != null
-                ? platforms.findById(requestedAssignments.get("platformId"))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Platform not found")) : null;
+                ? Objects.requireNonNull(platforms.findById(requestedAssignments.get("platformId"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Platform not found"))) : null;
         WorkSchedule workSchedule = requestedAssignments.containsKey("workScheduleId") && requestedAssignments.get("workScheduleId") != null
-                ? workSchedules.findById(requestedAssignments.get("workScheduleId"))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work schedule not found")) : null;
+                ? Objects.requireNonNull(workSchedules.findById(requestedAssignments.get("workScheduleId"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work schedule not found"))) : null;
         Site site = requestedAssignments.containsKey("siteId") && requestedAssignments.get("siteId") != null
-                ? sites.findById(requestedAssignments.get("siteId"))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Site not found")) : null;
-        List<Role> replacementRoles = null;
+                ? Objects.requireNonNull(sites.findById(requestedAssignments.get("siteId"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Site not found"))) : null;
+        List<@NonNull Role> replacementRoles = null;
         if (requestedRoleCodes != null) {
-            Set<String> requestedCodes = requestedRoleCodes.stream().map(String::trim).collect(Collectors.toSet());
+            Set<String> requestedCodes = new HashSet<>();
+            requestedRoleCodes.forEach(code -> requestedCodes.add(code.trim()));
             if (requestedCodes.isEmpty() || requestedCodes.contains("")) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Select at least one valid role");
             }
@@ -172,7 +175,7 @@ public class UserService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more selected roles are invalid");
             }
         }
-        List<User> selected = emails.stream().map(this::findByEmail).distinct().toList();
+        List<@NonNull User> selected = emails.stream().map(this::findByEmail).distinct().toList();
         if (selected.stream().anyMatch(user -> user.getRoles().stream().anyMatch(Role::isProtectedRole))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Protected users cannot be batch edited");
         }
@@ -193,9 +196,9 @@ public class UserService {
         return email.trim().toLowerCase(Locale.ROOT);
     }
 
-    private Role defaultRole() {
-        return roles.findById("USER")
-                .orElseThrow(() -> new IllegalStateException("The USER role is missing from the role catalog"));
+    private @NonNull Role defaultRole() {
+        return Objects.requireNonNull(roles.findById("USER")
+                .orElseThrow(() -> new IllegalStateException("The USER role is missing from the role catalog")));
     }
 
     public record MembershipUpdate(Long platformId, Long workScheduleId, Long siteId) {

@@ -1,9 +1,10 @@
 package com.rtotracker.backend.ratelimit;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Max;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class RateLimitProperties {
     private long loginWindowMillis = 900_000;
     @Min(1)
     private int maxBuckets = 100_000;
-    private List<String> trustedProxies = new ArrayList<>();
+    private List<@NonNull String> trustedProxies = new ArrayList<>();
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -39,6 +40,6 @@ public class RateLimitProperties {
     public void setLoginWindowMillis(long loginWindowMillis) { this.loginWindowMillis = loginWindowMillis; }
     public int getMaxBuckets() { return maxBuckets; }
     public void setMaxBuckets(int maxBuckets) { this.maxBuckets = maxBuckets; }
-    public List<String> getTrustedProxies() { return trustedProxies; }
-    public void setTrustedProxies(List<String> trustedProxies) { this.trustedProxies = trustedProxies; }
+    public List<@NonNull String> getTrustedProxies() { return trustedProxies; }
+    public void setTrustedProxies(List<@NonNull String> trustedProxies) { this.trustedProxies = trustedProxies; }
 }

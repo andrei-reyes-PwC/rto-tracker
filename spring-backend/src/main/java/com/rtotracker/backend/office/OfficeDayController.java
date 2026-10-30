@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -82,6 +83,6 @@ public class OfficeDayController {
     }
 
     public record ReplaceOfficeDaysRequest(
-            @NotNull @Size(max = 31) List<@NotNull LocalDate> dates) {
+            @NotNull @Size(max = 31) List<@NonNull @NotNull LocalDate> dates) {
     }
 }

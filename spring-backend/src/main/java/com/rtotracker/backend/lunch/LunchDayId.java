@@ -9,6 +9,7 @@ import java.util.Objects;
 
 @Embeddable
 public class LunchDayId implements Serializable {
+    private static final long serialVersionUID = 1L;
     @Column(name = "lunch_date", nullable = false)
     private LocalDate lunchDate;
 

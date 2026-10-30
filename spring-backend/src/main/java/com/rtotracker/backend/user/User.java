@@ -1,9 +1,9 @@
 package com.rtotracker.backend.user;
 
-import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.platform.Platform;
-import com.rtotracker.backend.workschedule.WorkSchedule;
+import com.rtotracker.backend.role.Role;
 import com.rtotracker.backend.site.Site;
+import com.rtotracker.backend.workschedule.WorkSchedule;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,8 +13,10 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -32,7 +34,7 @@ public class User {
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_email", referencedColumnName = "email"),
             inverseJoinColumns = @JoinColumn(name = "role_code", referencedColumnName = "code"))
-    private Set<Role> roles = new HashSet<>();
+    private Set<@NonNull Role> roles = new HashSet<>();
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "platform_id")
@@ -54,25 +56,25 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
-    public User(String email, String passwordHash, Set<Role> roles) {
+    public User(String email, String passwordHash, Set<@NonNull Role> roles) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.roles = new HashSet<>(roles);
     }
 
-    public String getEmail() {
-        return email;
+    public @NonNull String getEmail() {
+        return Objects.requireNonNull(email, "email is not initialized");
     }
 
     public String getPasswordHash() {
         return passwordHash;
     }
 
-    public Set<Role> getRoles() {
+    public Set<@NonNull Role> getRoles() {
         return Set.copyOf(roles);
     }
 
-    public void setRoles(Set<Role> roles) {
+    public void setRoles(Set<@NonNull Role> roles) {
         this.roles = new HashSet<>(roles);
     }
 

@@ -1,12 +1,13 @@
 package com.rtotracker.backend.site;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -17,7 +18,7 @@ public class SiteService {
     }
 
     @Transactional(readOnly = true)
-    public List<SiteRepository.SiteSummary> findAll(String search) {
+    public List<SiteRepository.@NonNull SiteSummary> findAll(String search) {
         return sites.findAllSummaries(search.trim().toLowerCase());
     }
 
@@ -30,8 +31,8 @@ public class SiteService {
     }
 
     public Site update(Long id, String name) {
-        Site site = sites.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Site not found"));
+        Site site = Objects.requireNonNull(sites.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Site not found")));
         String value = name.trim();
         if (sites.existsByNameIgnoreCaseAndIdNot(value, id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A site with this name already exists");
@@ -41,8 +42,8 @@ public class SiteService {
     }
 
     public void delete(Long id) {
-        Site site = sites.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Site not found"));
+        Site site = Objects.requireNonNull(sites.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Site not found")));
         sites.delete(site);
     }
 
