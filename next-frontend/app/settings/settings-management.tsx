@@ -4,7 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Globe2, Save } from "lucide-react";
-import type { WeekendRules } from "@/api/settings";
+import type { PlanningRules } from "@/api/settings";
 import { settingsSchema, type SettingsFormValues } from "@/validation/settings";
 import { SettingsProvider, useSettings } from "@/providers/SettingsProvider";
 import SidebarPageLayout from "@/components/SidebarPageLayout";
@@ -35,7 +35,7 @@ function SettingsContent({ isSuperAdmin }: { isSuperAdmin: boolean }) {
       {saveError && <InlineNotification message={saveError} />}
       {loadError && <DataLoadError message={loadError} onRetry={retry} retrying={loading} />}
       {loading ? <div role="status" aria-label="Loading settings" aria-busy="true" className="grid gap-6 md:grid-cols-2">
-        {[0, 1].map((item) => <Card key={item} className="shadow-none"><CardHeader><Skeleton className="h-5 w-40" /><Skeleton className="h-4 w-full" /></CardHeader><CardContent className="space-y-6"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-9 w-28" /></CardContent></Card>)}
+        {[0, 1].map((item) => <Card key={item} className="shadow-none"><CardHeader><Skeleton className="h-5 w-40" /><Skeleton className="h-4 w-full" /></CardHeader><CardContent className="space-y-6"><Skeleton className="h-24 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-9 w-28" /></CardContent></Card>)}
       </div> : !loadError && data && <div className="grid items-start gap-6 md:grid-cols-2">
         <Card className="shadow-none">
           <CardHeader>
@@ -44,13 +44,13 @@ function SettingsContent({ isSuperAdmin }: { isSuperAdmin: boolean }) {
           </CardHeader>
           <CardContent>
             {!isSuperAdmin && <p className="mb-5 text-xs text-muted-foreground">Only super admins can change global settings.</p>}
-            <WeekendForm rules={data.global} inheritGlobal={false} platformId={null} readOnly={!isSuperAdmin} />
+            <PlanningForm rules={data.global} inheritGlobal={false} platformId={null} readOnly={!isSuperAdmin} />
           </CardContent>
         </Card>
         <Card className="shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base"><Building2 className="size-4 text-[#e65300]" /> Platform settings</CardTitle>
-            <CardDescription>Follow the global defaults or set weekend rules for a specific platform.</CardDescription>
+            <CardDescription>Follow the global defaults or set scheduling mode and weekend rules for a specific platform.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             {platform ? <>
@@ -62,7 +62,7 @@ function SettingsContent({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                 </Select>
                 <Badge variant="secondary">{platform.inheritGlobal ? "Inherits global defaults" : "Platform override"}</Badge>
               </div>
-              <WeekendForm key={platform.id} rules={platform.effective} inheritGlobal={platform.inheritGlobal} platformId={platform.id} readOnly={false} />
+              <PlanningForm key={platform.id} rules={platform.effective} inheritGlobal={platform.inheritGlobal} platformId={platform.id} readOnly={false} />
             </> : <p className="text-sm text-muted-foreground">Create a platform in Manage people to configure its settings.</p>}
           </CardContent>
         </Card>
@@ -72,8 +72,8 @@ function SettingsContent({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   </SidebarPageLayout>;
 }
 
-function WeekendForm({ rules, inheritGlobal, platformId, readOnly }: {
-  rules: WeekendRules; inheritGlobal: boolean; platformId: number | null; readOnly: boolean;
+function PlanningForm({ rules, inheritGlobal, platformId, readOnly }: {
+  rules: PlanningRules; inheritGlobal: boolean; platformId: number | null; readOnly: boolean;
 }) {
   const { data, save, saving } = useSettings();
   const id = useId();
@@ -89,6 +89,18 @@ function WeekendForm({ rules, inheritGlobal, platformId, readOnly }: {
       <Checkbox id={`${id}-inherit`} checked={field.value} onCheckedChange={(value) => field.onChange(value === true)} disabled={disabled} onBlur={field.onBlur} ref={field.ref} />
       <div className="space-y-1"><Label htmlFor={`${id}-inherit`}>Use global defaults</Label><p className="text-xs text-muted-foreground">Automatically follow future changes to global rules.</p></div>
     </div>} />}
+    <Controller name="schedulingMode" control={control} render={({ field }) => <div className="space-y-2">
+      <Label htmlFor={`${id}-mode`}>Scheduling mode</Label>
+      <Select value={platformId !== null && inherits ? data?.global.schedulingMode : field.value}
+        onValueChange={field.onChange} disabled={disabled || (platformId !== null && inherits)}>
+        <SelectTrigger id={`${id}-mode`} className="w-full" onBlur={field.onBlur} ref={field.ref}><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="FLEXIBLE">Flexible (default)</SelectItem>
+          <SelectItem value="PEZA">PEZA (50% per day)</SelectItem>
+        </SelectContent>
+      </Select>
+      <p className="text-xs text-muted-foreground">Flexible has no daily attendance limit. PEZA limits each platform to 50% of its members per day, rounded up. Existing bookings are preserved; new bookings require an available slot.</p>
+    </div>} />
     <div className="space-y-1"><p className="text-sm font-semibold">Weekend days off</p><p className="text-xs text-muted-foreground">Check a day to block new office-day selections.</p></div>
     {([['saturdayDayOff', 'Saturday'], ['sundayDayOff', 'Sunday']] as const).map(([name, label]) => <Controller key={name} name={name} control={control} render={({ field }) => <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
       <Label htmlFor={`${id}-${name}`}>{label}</Label>

@@ -38,7 +38,7 @@ All authenticated users have a personal account identified by email. User accoun
 
 ### Office planner
 
-- **PLAN-01** — As an authenticated user, I can view a monthly calendar and move between months or return to the current month.
+- **PLAN-01** — As an authenticated user, I can view a monthly calendar and move between months or return to the current month. The viewed month is stored in `?month=YYYY-MM`, restored on refresh or reopening a link, and follows browser Back/Forward. Missing or invalid values fall back to the current month.
 - **PLAN-02** — As an authenticated user, I can mark or clear future dates as office days, select remaining weekdays, and clear future selections; today and past dates are locked.
 - **PLAN-03** — As an authenticated user, I can save a month's office-day selections and see saved selections when I revisit that month.
 - **PLAN-04** — As an authenticated user, I can edit a month before saving; unsaved changes are treated as a draft and save failures are surfaced in the planner.
@@ -72,6 +72,8 @@ All authenticated users have a personal account identified by email. User accoun
 - **SET-02** - Saturday and Sunday can each be marked as days off. Platforms inherit global defaults unless an explicit platform override is saved; restoring inheritance follows future global changes. Users without a platform use global defaults. Initial defaults allow both weekend days to preserve existing behavior.
 - **SET-03** - My Schedule excludes effective days off from calendar columns, planned office-day totals, and the next office day. Each blocked Saturday/Sunday column is hidden independently; remaining dates stay aligned with their weekday headers. The API rejects newly added future dates on days off using the current rules, even when a planner has stale data. Existing saved plans remain stored and reappear when the day is unlocked. Editing, clearing, and saving visible dates preserves hidden saved selections; today/past dates remain locked.
 - **SET-04** - Assistant monthly recommendations exclude effective days off even when other dates cannot meet a target. Weekly dashboard reporting and exports continue to cover Monday through Friday.
+- **SET-05** - Global and platform settings include Flexible (the initial default, with existing unrestricted daily scheduling) and PEZA (50% per day). Platform overrides cover mode and weekend rules together; restoring inheritance follows global settings. PEZA daily capacity is half the platform's current total membership across roles, rounded up (10 members = 5 slots; 5 members = 3). Users without a platform have no platform capacity restriction.
+- **SET-06** - PEZA calendar user badges show booked / daily capacity on every visible date, including zero. Booked includes the user's current selection plus colleagues' saved plans; the tooltip states remaining slots. A draft reserves a slot only when saved. Full dates block new selections and are skipped by bulk selection. The API independently rechecks capacity and serializes competing saves; a full date rejects the entire monthly update with an explanation and no partial changes. Existing bookings can be kept or removed, including those above capacity after mode or membership changes. Flexible retains the existing colleague-count badge. The assistant excludes full dates from new recommendations.
 
 ### Work schedule administration
 

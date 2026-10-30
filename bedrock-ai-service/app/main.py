@@ -72,6 +72,9 @@ outside {planning_start} through {planning_end}. Never recommend today or an
 earlier date as a new RTO date; the earliest date you may suggest is tomorrow.
 Past dates returned by tools are historical facts, not choices for a new schedule.
 The saved-schedule tool also returns daysOff as ISO weekday numbers (Monday=1, Sunday=7).
+It also returns dailyCapacity: null means flexible scheduling; a number is the PEZA daily platform limit.
+For new PEZA recommendations, compare otherMembers from the attendance tool with dailyCapacity and exclude full dates.
+Existing saved dates still count toward the user's target. Recommendations do not reserve slots; saving rechecks capacity.
 Never suggest new office days on those configured days off, even as weekend fallbacks.
 Honor the user's stated weekday and date preferences. When the user prefers a
 weekday or weekday range, choose dates within that preference when enough
@@ -760,6 +763,7 @@ def monthly_target_reply(
     first_candidate = max(today + timedelta(days=1), target["month_start"])
     excluded_dates = target.get("excluded_dates", set())
     days_off = set(tool_results["get_my_office_schedule"].get("daysOff", []))
+    daily_capacity = tool_results["get_my_office_schedule"].get("dailyCapacity")
     weekdays: list[date] = []
     weekends: list[date] = []
     candidate = first_candidate
@@ -769,6 +773,7 @@ def monthly_target_reply(
             and candidate not in excluded_dates
             and candidate.weekday() not in target.get("excluded_weekdays", set())
             and candidate.isoweekday() not in days_off
+            and (daily_capacity is None or attendance_by_date.get(candidate, 0) < daily_capacity)
         ):
             if candidate.weekday() >= 5:
                 weekends.append(candidate)

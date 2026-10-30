@@ -42,7 +42,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setNotice("");
     try {
       if (platformId === null) {
-        const global = await updateGlobalSettings({ saturdayDayOff: input.saturdayDayOff, sundayDayOff: input.sundayDayOff });
+        const global = await updateGlobalSettings({ saturdayDayOff: input.saturdayDayOff, sundayDayOff: input.sundayDayOff, schedulingMode: input.schedulingMode });
         setData((current) => current && ({ global, platforms: current.platforms.map((platform) =>
           platform.inheritGlobal ? { ...platform, effective: global } : platform) }));
       } else {

@@ -2,7 +2,10 @@ package com.rtotracker.backend.office;
 
 import com.rtotracker.backend.user.UserRepository;
 import com.rtotracker.backend.settings.SettingsService;
+import com.rtotracker.backend.settings.SchedulingMode;
+import com.rtotracker.backend.platform.Platform;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,12 +13,20 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Objects;
 import java.util.TreeSet;
 
 @Service
 public class OfficeDayService {
+
+    private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+            .withLocale(Locale.ENGLISH);
 
     private final OfficeDayRepository officeDays;
     private final UserRepository users;
@@ -40,11 +51,13 @@ public class OfficeDayService {
 
     @Transactional(readOnly = true)
     public MonthlyScheduleQueryResponse getMonthlySchedule(String userEmail, YearMonth month) {
+        var rules = settings.rulesForUser(userEmail);
         OfficeDayQueryResponse schedule = getSchedule(userEmail, month);
         var currentUser = users.findById(userEmail);
         var platform = currentUser.isEmpty() ? null : Objects.requireNonNull(currentUser.get()).getPlatform();
         if (platform == null) {
-            return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), List.of(), settings.rulesForUser(userEmail).daysOff());
+            return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), List.of(), rules.daysOff(),
+                    rules.schedulingMode(), null);
         }
 
         List<@NonNull PlatformDailyAttendance> attendance = officeDays.findPlatformAttendance(
@@ -53,7 +66,8 @@ public class OfficeDayService {
                 .stream()
                 .map(day -> new PlatformDailyAttendance(day.getOfficeDate(), day.getAttendees()))
                 .toList();
-        return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), attendance, settings.rulesForUser(userEmail).daysOff());
+        return new MonthlyScheduleQueryResponse(month, schedule.officeDays(), attendance, rules.daysOff(),
+                rules.schedulingMode(), dailyCapacity(platform, rules.schedulingMode()));
     }
 
     @Transactional(readOnly = true)
@@ -96,6 +110,7 @@ public class OfficeDayService {
                     "Every office date must belong to the requested month");
         }
 
+        settings.lockPlanningWrites();
         LocalDate startInclusive = month.atDay(1);
         LocalDate endExclusive = month.plusMonths(1).atDay(1);
         LocalDate today = LocalDate.now();
@@ -117,6 +132,26 @@ public class OfficeDayService {
                     "New office days cannot be selected on configured days off. Reload your schedule to see the current rules.");
         }
 
+        if (rules.schedulingMode() == SchedulingMode.PEZA) {
+            var user = Objects.requireNonNull(users.findById(userEmail)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account not found")));
+            var platform = user.getPlatform();
+            Long capacity = dailyCapacity(platform, rules.schedulingMode());
+            if (platform != null && capacity != null) {
+                Map<LocalDate, Long> counts = officeDays.findPlatformAttendance(platform.getId(), userEmail,
+                        startInclusive, endExclusive).stream().collect(Collectors.toMap(
+                                OfficeDayRepository.PlatformDailyAttendanceProjection::getOfficeDate,
+                                OfficeDayRepository.PlatformDailyAttendanceProjection::getAttendees));
+                for (LocalDate date : new TreeSet<>(dates)) {
+                    if (date.isAfter(today) && !savedDates.contains(date) && counts.getOrDefault(date, 0L) >= capacity) {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                                "PEZA daily capacity is full for " + date.format(DISPLAY_DATE) + " (" + capacity
+                                        + " slots). Reload your schedule to see available slots.");
+                    }
+                }
+            }
+        }
+
         LocalDate editableStart = today.plusDays(1).isAfter(startInclusive) ? today.plusDays(1) : startInclusive;
         if (editableStart.isBefore(endExclusive)) {
             officeDays.deleteMonth(userEmail, editableStart, endExclusive);
@@ -131,6 +166,12 @@ public class OfficeDayService {
         return getSchedule(userEmail, month);
     }
 
+    private @Nullable Long dailyCapacity(@Nullable Platform platform, SchedulingMode mode) {
+        if (platform == null || mode != SchedulingMode.PEZA) return null;
+        long members = users.countByPlatformId(platform.getId());
+        return mode.dailyCapacity(members);
+    }
+
     public record OfficeDayQueryResponse(
             YearMonth month,
             List<@NonNull LocalDate> officeDays) {
@@ -140,7 +181,9 @@ public class OfficeDayService {
             YearMonth month,
             List<@NonNull LocalDate> officeDays,
             List<@NonNull PlatformDailyAttendance> platformAttendance,
-            List<@NonNull Integer> daysOff) {
+            List<@NonNull Integer> daysOff,
+            SchedulingMode schedulingMode,
+            @Nullable Long dailyCapacity) {
     }
 
     public record PlatformOfficeDayQueryResponse(

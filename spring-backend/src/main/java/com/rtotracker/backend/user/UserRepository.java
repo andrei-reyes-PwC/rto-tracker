@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<@NonNull User, String> {
+    long countByPlatformId(Long platformId);
     Optional<@NonNull User> findByEmailIgnoreCase(String email);
 
     @Query("select user.email from User user order by user.email asc")

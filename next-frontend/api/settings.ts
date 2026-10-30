@@ -1,7 +1,8 @@
-export type WeekendRules = { saturdayDayOff: boolean; sundayDayOff: boolean };
-export type PlatformSettings = { id: number; name: string; inheritGlobal: boolean; effective: WeekendRules };
-export type ManagementSettings = { global: WeekendRules; platforms: PlatformSettings[] };
-export type SettingsInput = WeekendRules & { inheritGlobal: boolean };
+export type SchedulingMode = "FLEXIBLE" | "PEZA";
+export type PlanningRules = { saturdayDayOff: boolean; sundayDayOff: boolean; schedulingMode: SchedulingMode };
+export type PlatformSettings = { id: number; name: string; inheritGlobal: boolean; effective: PlanningRules };
+export type ManagementSettings = { global: PlanningRules; platforms: PlatformSettings[] };
+export type SettingsInput = PlanningRules & { inheritGlobal: boolean };
 
 async function readResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -15,7 +16,7 @@ export async function getSettings(signal?: AbortSignal): Promise<ManagementSetti
   return readResponse(await fetch("/api/settings", { credentials: "include", cache: "no-store", signal }));
 }
 
-export async function updateGlobalSettings(rules: WeekendRules): Promise<WeekendRules> {
+export async function updateGlobalSettings(rules: PlanningRules): Promise<PlanningRules> {
   return readResponse(await fetch("/api/settings/global", {
     method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(rules),
   }));

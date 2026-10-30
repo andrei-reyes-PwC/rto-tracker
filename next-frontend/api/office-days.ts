@@ -1,3 +1,5 @@
+import type { SchedulingMode } from "@/api/settings";
+
 export type OfficeDaySchedule = {
   month: string;
   officeDays: string[];
@@ -6,6 +8,8 @@ export type OfficeDaySchedule = {
 export type MonthlyOfficeDaySchedule = OfficeDaySchedule & {
   platformAttendance: { date: string; attendees: number }[];
   daysOff: number[];
+  schedulingMode: SchedulingMode;
+  dailyCapacity: number | null;
 };
 
 export type PlatformOfficeDaySchedule = {

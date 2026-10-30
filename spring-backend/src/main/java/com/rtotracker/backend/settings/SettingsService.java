@@ -31,37 +31,41 @@ public class SettingsService {
     }
 
     public ManagementSettings managementSettings(User actor, boolean superAdmin) {
-        WeekendRules global = globalRules();
+        PlanningRules global = globalRules();
         List<@NonNull Platform> visible = superAdmin
                 ? platforms.findAll(Sort.<@NonNull Platform>by(Platform::getName))
                 : List.of(Objects.requireNonNull(actor.getPlatform()));
         return new ManagementSettings(global, visible.stream().map(platform -> platformSettings(platform, global)).toList());
     }
 
-    public WeekendRules rulesForUser(String email) {
+    public PlanningRules rulesForUser(String email) {
         User user = Objects.requireNonNull(users.findById(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account not found")));
         return effectiveRules(user.getPlatform(), globalRules());
     }
 
-    public WeekendRules globalRules() {
+    public PlanningRules globalRules() {
         GlobalSettings settings = singleton();
-        return new WeekendRules(settings.isSaturdayDayOff(), settings.isSundayDayOff());
+        return new PlanningRules(settings.isSaturdayDayOff(), settings.isSundayDayOff(), settings.getSchedulingMode());
     }
 
     @Transactional
-    public WeekendRules updateGlobal(boolean saturdayDayOff, boolean sundayDayOff) {
+    public PlanningRules updateGlobal(boolean saturdayDayOff, boolean sundayDayOff, SchedulingMode schedulingMode) {
+        lockPlanningWrites();
         GlobalSettings settings = singleton();
-        settings.update(saturdayDayOff, sundayDayOff);
+        settings.update(saturdayDayOff, sundayDayOff, schedulingMode);
         globals.save(settings);
-        return new WeekendRules(saturdayDayOff, sundayDayOff);
+        return new PlanningRules(saturdayDayOff, sundayDayOff, schedulingMode);
     }
 
     @Transactional
-    public PlatformSettings updatePlatform(Long id, boolean inheritGlobal, boolean saturdayDayOff, boolean sundayDayOff) {
+    public PlatformSettings updatePlatform(Long id, boolean inheritGlobal, boolean saturdayDayOff, boolean sundayDayOff,
+                                           SchedulingMode schedulingMode) {
+        lockPlanningWrites();
         Platform platform = Objects.requireNonNull(platforms.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Platform not found")));
-        platform.updateWeekendDaysOff(inheritGlobal ? null : saturdayDayOff, inheritGlobal ? null : sundayDayOff);
+        platform.updatePlanningRules(inheritGlobal ? null : saturdayDayOff, inheritGlobal ? null : sundayDayOff,
+                inheritGlobal ? null : schedulingMode);
         platforms.save(platform);
         return platformSettings(platform, globalRules());
     }
@@ -71,17 +75,25 @@ public class SettingsService {
                 .orElseThrow(() -> new IllegalStateException("Global settings migration has not been applied")));
     }
 
-    private static @NonNull PlatformSettings platformSettings(Platform platform, WeekendRules global) {
+    @Transactional
+    public void lockPlanningWrites() {
+        // Acquire before any schedule reads so waiting saves see the preceding commit.
+        globals.lockPlanningWrites().orElseThrow(() ->
+                new IllegalStateException("Global settings migration has not been applied"));
+    }
+
+    private static @NonNull PlatformSettings platformSettings(Platform platform, PlanningRules global) {
         return new PlatformSettings(platform.getId(), platform.getName(), platform.getSaturdayDayOff() == null,
                 effectiveRules(platform, global));
     }
 
-    static WeekendRules effectiveRules(@Nullable Platform platform, WeekendRules global) {
+    static PlanningRules effectiveRules(@Nullable Platform platform, PlanningRules global) {
         if (platform == null || platform.getSaturdayDayOff() == null) return global;
-        return new WeekendRules(Boolean.TRUE.equals(platform.getSaturdayDayOff()), Boolean.TRUE.equals(platform.getSundayDayOff()));
+        return new PlanningRules(Boolean.TRUE.equals(platform.getSaturdayDayOff()), Boolean.TRUE.equals(platform.getSundayDayOff()),
+                Objects.requireNonNull(platform.getSchedulingMode()));
     }
 
-    public record WeekendRules(boolean saturdayDayOff, boolean sundayDayOff) {
+    public record PlanningRules(boolean saturdayDayOff, boolean sundayDayOff, SchedulingMode schedulingMode) {
         public boolean isDayOff(LocalDate date) {
             return (date.getDayOfWeek().getValue() == 6 && saturdayDayOff)
                     || (date.getDayOfWeek().getValue() == 7 && sundayDayOff);
@@ -95,6 +107,6 @@ public class SettingsService {
         }
     }
 
-    public record PlatformSettings(Long id, String name, boolean inheritGlobal, WeekendRules effective) { }
-    public record ManagementSettings(WeekendRules global, List<@NonNull PlatformSettings> platforms) { }
+    public record PlatformSettings(Long id, String name, boolean inheritGlobal, PlanningRules effective) { }
+    public record ManagementSettings(PlanningRules global, List<@NonNull PlatformSettings> platforms) { }
 }

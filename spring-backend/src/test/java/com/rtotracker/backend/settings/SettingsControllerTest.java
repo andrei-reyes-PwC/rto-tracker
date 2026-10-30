@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.Objects;
 
 import static org.mockito.Mockito.*;
+import static com.rtotracker.backend.settings.SchedulingMode.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -67,9 +68,9 @@ class SettingsControllerTest {
     void platformAdminsCannotWriteGlobalOrAnotherPlatformsSettings() throws Exception {
         var session = session("ADMIN", true);
         perform(put("/api/settings/global").session(session).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"saturdayDayOff\":true,\"sundayDayOff\":true}")).andExpect(status().isForbidden());
+                .content("{\"saturdayDayOff\":true,\"sundayDayOff\":true,\"schedulingMode\":\"FLEXIBLE\"}")).andExpect(status().isForbidden());
         perform(put("/api/settings/platforms/3").session(session).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"inheritGlobal\":false,\"saturdayDayOff\":true,\"sundayDayOff\":false}"))
+                .content("{\"inheritGlobal\":false,\"saturdayDayOff\":true,\"sundayDayOff\":false,\"schedulingMode\":\"FLEXIBLE\"}"))
                 .andExpect(status().isForbidden());
         verifyNoInteractions(settings);
     }
@@ -77,34 +78,46 @@ class SettingsControllerTest {
     @Test
     void platformAdminCanReadAndUpdateOnlyOwnPlatform() throws Exception {
         var session = session("ADMIN", true);
-        var rules = new SettingsService.WeekendRules(true, false);
+        var rules = new SettingsService.PlanningRules(true, false, PEZA);
         when(settings.managementSettings(any(), eq(false))).thenReturn(new SettingsService.ManagementSettings(rules,
                 List.of(new SettingsService.PlatformSettings(2L, "Own platform", true, rules))));
-        when(settings.updatePlatform(2L, false, true, false))
+        when(settings.updatePlatform(2L, false, true, false, PEZA))
                 .thenReturn(new SettingsService.PlatformSettings(2L, "Own platform", false, rules));
         perform(get("/api/settings").session(session)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.platforms.length()").value(1));
         perform(put("/api/settings/platforms/2").session(session).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"inheritGlobal\":false,\"saturdayDayOff\":true,\"sundayDayOff\":false}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.effective.saturdayDayOff").value(true));
+                .content("{\"inheritGlobal\":false,\"saturdayDayOff\":true,\"sundayDayOff\":false,\"schedulingMode\":\"PEZA\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.effective.saturdayDayOff").value(true))
+                .andExpect(jsonPath("$.effective.schedulingMode").value("PEZA"));
     }
 
     @Test
     void superAdminCanUpdateGlobalAndAnyPlatformAndMissingBooleansAreRejected() throws Exception {
         var session = session("SUPER_ADMIN", false);
-        when(settings.updateGlobal(true, true)).thenReturn(new SettingsService.WeekendRules(true, true));
+        when(settings.updateGlobal(true, true, FLEXIBLE)).thenReturn(new SettingsService.PlanningRules(true, true, FLEXIBLE));
         perform(put("/api/settings/global").session(session).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"saturdayDayOff\":true,\"sundayDayOff\":true}"))
+                .content("{\"saturdayDayOff\":true,\"sundayDayOff\":true,\"schedulingMode\":\"FLEXIBLE\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.sundayDayOff").value(true));
         perform(put("/api/settings/platforms/3").session(session).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"inheritGlobal\":true,\"saturdayDayOff\":false,\"sundayDayOff\":false}"))
+                .content("{\"inheritGlobal\":true,\"saturdayDayOff\":false,\"sundayDayOff\":false,\"schedulingMode\":\"FLEXIBLE\"}"))
                 .andExpect(status().isOk());
-        verify(settings).updatePlatform(3L, true, false, false);
+        verify(settings).updatePlatform(3L, true, false, false, FLEXIBLE);
         perform(put("/api/settings/global").session(session).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"saturdayDayOff\":null}"))
                 .andExpect(status().isBadRequest());
         perform(put("/api/settings/platforms/3").session(session).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"saturdayDayOff\":true,\"sundayDayOff\":true}"))
+                .content("{\"saturdayDayOff\":true,\"sundayDayOff\":true,\"schedulingMode\":\"FLEXIBLE\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void missingUnknownAndOversizedModesAreRejected() throws Exception {
+        var session = session("SUPER_ADMIN", false);
+        for (String mode : List.of("", ",\"schedulingMode\":\"UNKNOWN\"", ",\"schedulingMode\":\"" + "X".repeat(26) + "\"")) {
+            perform(put("/api/settings/global").session(session).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"saturdayDayOff\":false,\"sundayDayOff\":false" + mode + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(settings);
     }
 }

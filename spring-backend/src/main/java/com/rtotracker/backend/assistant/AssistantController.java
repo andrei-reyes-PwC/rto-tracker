@@ -3,6 +3,7 @@ package com.rtotracker.backend.assistant;
 import com.rtotracker.backend.auth.AssistantJwtService;
 import jakarta.validation.constraints.NotBlank;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.validation.annotation.Validated;
@@ -55,7 +56,8 @@ public class AssistantController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         String email = assistantJwtService.requireUserEmail(authorization);
         return new ScheduleResponse(startDate, endDate,
-                assistantService.myOfficeSchedule(email, startDate, endDate), assistantService.daysOffForUser(email));
+                assistantService.myOfficeSchedule(email, startDate, endDate), assistantService.daysOffForUser(email),
+                assistantService.dailyCapacityForUser(email));
     }
 
     public record EventsResponse(LocalDate startDate, LocalDate endDate,
@@ -66,5 +68,5 @@ public class AssistantController {
 
     public record ScheduleResponse(LocalDate startDate, LocalDate endDate,
                                    List<AssistantService.@NonNull ScheduledDay> officeDays,
-                                   List<@NonNull Integer> daysOff) { }
+                                   List<@NonNull Integer> daysOff, @Nullable Long dailyCapacity) { }
 }

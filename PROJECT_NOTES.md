@@ -1,5 +1,7 @@
 # Project Notes
 
+- Scheduling mode is configured with weekend rules at `/settings`, globally or by platform override. Flexible is the default; PEZA caps new bookings per platform/date at half its current membership, rounded up. Monthly reads expose mode/capacity; calendar badges show booked/capacity including the user's draft. Spring serializes schedule/settings writes and rejects full dates before replacing any plans. Existing bookings remain, and the assistant excludes full PEZA dates.
+
 This repository contains the RTO Tracker frontend and backend, plus a standalone Bedrock AI service for experimenting with Nova Micro.
 
 - `TECHNICAL_DOCUMENTATION.md` summarizes implemented system scope, application boundaries, responsibilities, data flow, stack, and open roadmap/deployment decisions.

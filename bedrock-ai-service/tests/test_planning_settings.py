@@ -5,7 +5,7 @@ from app.main import monthly_target_reply
 
 
 class PlanningSettingsTest(unittest.TestCase):
-    def reply(self, days_off):
+    def reply(self, days_off, daily_capacity=None, attendees=0):
         target = {
             "additional": False,
             "target_days": 1,
@@ -15,6 +15,7 @@ class PlanningSettingsTest(unittest.TestCase):
         tools = {
             "get_my_office_schedule": {
                 "daysOff": days_off,
+                "dailyCapacity": daily_capacity,
                 "monthlyTarget": {
                     "remainingDaysToRecommend": 1,
                     "savedDaysInTargetMonth": [],
@@ -23,7 +24,7 @@ class PlanningSettingsTest(unittest.TestCase):
                 },
             },
             "get_visible_events": {"events": []},
-            "get_rto_member_counts": {"dailyCounts": []},
+            "get_rto_member_counts": {"dailyCounts": [{"date": "2026-10-31", "otherMembers": attendees}]},
         }
         return monthly_target_reply(target, tools, date(2026, 10, 30))
 
@@ -34,6 +35,17 @@ class PlanningSettingsTest(unittest.TestCase):
 
     def test_saturday_remains_a_fallback_when_it_is_not_a_day_off(self):
         self.assertIn("Saturday, October 31", self.reply([7]))
+
+    def test_full_peza_date_is_excluded(self):
+        reply = self.reply([], daily_capacity=3, attendees=3)
+        self.assertNotIn("Saturday, October 31", reply)
+        self.assertIn("only 0", reply)
+
+    def test_last_peza_slot_is_available(self):
+        self.assertIn("Saturday, October 31", self.reply([], daily_capacity=3, attendees=2))
+
+    def test_flexible_mode_does_not_limit_attendance(self):
+        self.assertIn("Saturday, October 31", self.reply([], attendees=100))
 
 
 if __name__ == "__main__":

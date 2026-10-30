@@ -1,5 +1,7 @@
 # Project Notes
 
+- The Spring saved-schedule tool returns nullable `dailyCapacity`: null allows flexible scheduling or indicates no platform; a number is the PEZA daily limit. Monthly recommendations exclude dates whose `otherMembers` count already reaches capacity, while saved dates still count toward the monthly target. Suggestions do not reserve slots; the schedule save rechecks availability.
+
 - Spring's saved-schedule tool includes effective `daysOff` as ISO weekday numbers (6 = Saturday, 7 = Sunday). Monthly date selection excludes those days even when weekdays are insufficient; the Bedrock prompt applies the same rule. Run `.venv/Scripts/python.exe -m unittest discover -s tests -v` on Windows to check weekend fallback behavior.
 - Python 3.11+ FastAPI application; install dependencies with `pip install .` from this directory. The `tzdata` dependency supplies IANA time zones on Windows. The frontend calls the service through its same-origin Next.js reverse proxy using a short-lived Spring-issued assistant JWT.
 - `app/main.py` defines `GET /health` and `POST /api/assistant/chat`; Swagger UI is served at `/docs`. The Bedrock system prompt assesses whether requests and context can help with the user's RTO planning, permits relevant practical questions, and asks focused clarifying questions when relevance or needed constraints are unclear. It refuses clearly unrelated requests and prohibits providing or inferring private RTO information for another platform, company, or service; the model makes this relevance decision rather than a keyword precheck.

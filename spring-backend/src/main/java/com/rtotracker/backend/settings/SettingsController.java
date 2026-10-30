@@ -32,9 +32,9 @@ public class SettingsController {
     }
 
     @PutMapping("/global")
-    public SettingsService.WeekendRules updateGlobal(@Valid @RequestBody WeekendRequest body, HttpServletRequest request) {
+    public SettingsService.PlanningRules updateGlobal(@Valid @RequestBody WeekendRequest body, HttpServletRequest request) {
         authorization.requireSuperAdmin(request);
-        return settings.updateGlobal(body.saturdayDayOff(), body.sundayDayOff());
+        return settings.updateGlobal(body.saturdayDayOff(), body.sundayDayOff(), body.schedulingMode());
     }
 
     @PutMapping("/platforms/{id}")
@@ -45,10 +45,11 @@ public class SettingsController {
                 && (actor.getPlatform() == null || !id.equals(actor.getPlatform().getId()))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage settings for your assigned platform");
         }
-        return settings.updatePlatform(id, body.inheritGlobal(), body.saturdayDayOff(), body.sundayDayOff());
+        return settings.updatePlatform(id, body.inheritGlobal(), body.saturdayDayOff(), body.sundayDayOff(), body.schedulingMode());
     }
 
-    public record WeekendRequest(@NotNull Boolean saturdayDayOff, @NotNull Boolean sundayDayOff) { }
+    public record WeekendRequest(@NotNull Boolean saturdayDayOff, @NotNull Boolean sundayDayOff,
+                                 @NotNull SchedulingMode schedulingMode) { }
     public record PlatformRequest(@NotNull Boolean inheritGlobal, @NotNull Boolean saturdayDayOff,
-                                  @NotNull Boolean sundayDayOff) { }
+                                  @NotNull Boolean sundayDayOff, @NotNull SchedulingMode schedulingMode) { }
 }

@@ -19,6 +19,7 @@ The application does not currently enforce a company-wide RTO quota or integrate
 - Site-filtered weekly Excel downloads with summary and breakdown formulas connected to an included raw office-day table; access follows dashboard ADMIN/SUPER_ADMIN authorization.
 - User, platform, Site, and work-schedule administration.
 - Global and platform-specific Saturday/Sunday day-off settings, enforced for new office-day selections and assistant monthly recommendations while preserving saved plans.
+- Global/platform scheduling modes: Flexible by default, or PEZA with a daily platform capacity of 50% of current members rounded up. The API serializes reservations and settings updates, rejects new bookings on full dates, and preserves existing plans. Calendar badges show booked/capacity; assistant recommendations skip full dates.
 - Site-and-date lunch procurement, recipient snapshots, credential scans, and receipt tracking.
 - An optional RTO planning assistant that can read the current user's schedule, visible events, and permitted aggregate attendance data.
 
