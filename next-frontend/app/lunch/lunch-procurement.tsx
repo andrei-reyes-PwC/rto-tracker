@@ -144,26 +144,32 @@ export default function LunchProcurement({ initialDate, initialSiteId }: { initi
         ) : day && (
           <>
             <Card>
-              <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>{day.locked ? "Lunch is locked" : "Lock lunch for this date"}</CardTitle><CardDescription>{day.locked ? `${day.totalRecipients} users are on the ${day.siteName ?? "selected Site"} locked list. The Site and recipient list cannot be changed.` : `${day.totalRecipients} users with a saved office day at ${day.siteName ?? "the selected Site"} will be included. Review the overview below, then lock this Site and date.`}</CardDescription></div><Badge variant={day.locked ? "default" : "secondary"}>{day.locked ? "Locked" : "Open"}</Badge></div></CardHeader>
+              <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>{day.locked ? "Lunch is locked" : "Lock lunch for this date"}</CardTitle><CardDescription>{day.locked ? `${day.originalTotal} users are on the original ${day.siteName ?? "selected Site"} list. Other registered users can collect lunch and will be recorded as additional recipients.` : `${day.totalRecipients} users with a saved office day at ${day.siteName ?? "the selected Site"} will be included. Review the overview below, then lock this Site and date.`}</CardDescription></div><Badge variant={day.locked ? "default" : "secondary"}>{day.locked ? "Locked" : "Open"}</Badge></div></CardHeader>
+              {day.locked && <CardContent><dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div><dt className="text-xs text-muted-foreground">Original list</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{day.originalTotal.toLocaleString()}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Original received</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{(day.totalReceived - day.additionalReceived).toLocaleString()}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Additional received</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{day.additionalReceived.toLocaleString()}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Total received</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{day.totalReceived.toLocaleString()}</dd></div>
+              </dl></CardContent>}
               {!day.locked && <CardContent><Button onClick={() => setConfirmLockOpen(true)} disabled={busy || !date || !siteFilter || day.totalRecipients === 0}><LockKeyhole />Lock {day.siteName ?? "selected Site"}</Button></CardContent>}
             </Card>
             <div className={day.locked ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start" : "space-y-4"}>
               <Card>
-                <CardHeader><CardTitle>User overview</CardTitle><CardDescription>Users with an office day saved for this date at {day.siteName ?? "the selected Site"}, grouped by platform and work schedule.</CardDescription></CardHeader>
+                <CardHeader><CardTitle>User overview</CardTitle><CardDescription>{day.locked ? "Original and additional recipients, grouped by platform and work schedule. Each cell shows original received / original list, additional received, and total received." : `Users with an office day saved for this date at ${day.siteName ?? "the selected Site"}, grouped by platform and work schedule.`}</CardDescription></CardHeader>
                 <CardContent>
                   <LunchSummaryBreakdown breakdown={day.breakdown} totalRecipients={day.totalRecipients} locked={day.locked} />
                 </CardContent>
               </Card>
               {day.locked && <aside className="xl:sticky xl:top-4"><LunchCredentialScanner onScan={scanCredential} /></aside>}
-              <LunchRosterPreview key={date} locked={day.locked} date={date} totalCount={day.totalRecipients} refreshKey={rosterRefreshKey} siteFilter={siteFilter} options={rosterOptions} />
             </div>
+            <LunchRosterPreview key={date} locked={day.locked} date={date} totalCount={day.totalRecipients} refreshKey={rosterRefreshKey} siteFilter={siteFilter} options={rosterOptions} />
           </>
         )}
         <AlertDialog open={confirmLockOpen} onOpenChange={(open) => { if (!busy) setConfirmLockOpen(open); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Lock lunch for {formatLunchDate(date)}?</AlertDialogTitle>
-            <AlertDialogDescription>This will lock the current roster of {day?.totalRecipients ?? 0} users with a saved office day for {day?.siteName ?? "the selected Site"} on this date. The Site and recipient list cannot be changed after locking.</AlertDialogDescription>
+            <AlertDialogDescription>This will lock the current roster of {day?.totalRecipients ?? 0} users with a saved office day for {day?.siteName ?? "the selected Site"} on this date. The Site and original list cannot be changed after locking. Other registered users can still collect lunch as additional recipients.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
@@ -190,9 +196,10 @@ function LunchCredentialScanner({ onScan }: { onScan: (credential: string) => Pr
     setMessage(null);
     try {
       const result = await onScan(scanned);
-      if (result.status === "MARKED_RECEIVED") setMessage({ text: `${result.email} marked as received.`, error: false });
-      else if (result.status === "ALREADY_RECEIVED") setMessage({ text: `${result.email} has already received lunch.`, error: true });
-      else setMessage({ text: `${result.email} is not on today's locked lunch list.`, error: true });
+      const listLabel = result.originalList ? "Original list" : "Additional recipient, not on original list";
+      if (result.status === "MARKED_RECEIVED") setMessage({ text: `${result.email} marked as received. ${listLabel}.`, error: false });
+      else if (result.status === "ALREADY_RECEIVED") setMessage({ text: `${result.email} has already received lunch. ${listLabel}.`, error: true });
+      else setMessage({ text: `${result.email} is not a registered user. Check the email and try again.`, error: true });
       setCredential("");
     } catch (error) {
       setMessage({ text: error instanceof Error ? error.message : "Could not process this scan.", error: true });
@@ -207,10 +214,10 @@ function LunchCredentialScanner({ onScan }: { onScan: (credential: string) => Pr
   }
 
   return <Card>
-    <CardHeader><CardTitle>Scan user credential</CardTitle><CardDescription>Scan or type a user email, then press Enter or select Check scan.</CardDescription></CardHeader>
+    <CardHeader><CardTitle>Scan user credential</CardTitle><CardDescription>Scan or type a registered user email, then press Enter or select Check scan. Users outside the original list are recorded as additional recipients at this Site.</CardDescription></CardHeader>
     <CardContent className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Input autoFocus autoComplete="off" aria-label="Scanned user email" placeholder="Scan user email" value={credential} onChange={(event) => setCredential(event.target.value)} onKeyDown={handleKeyDown} disabled={busy} />
+        <Input autoFocus autoComplete="off" maxLength={254} aria-label="Scanned user email" placeholder="Scan user email" value={credential} onChange={(event) => setCredential(event.target.value)} onKeyDown={handleKeyDown} disabled={busy} />
         <Button type="button" onClick={() => void processCredential(credential)} disabled={busy || credential.trim().length === 0}>{busy ? "Checking…" : "Check scan"}</Button>
       </div>
       {message && (message.error

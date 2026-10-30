@@ -9,8 +9,10 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<@NonNull User, String> {
+    Optional<@NonNull User> findByEmailIgnoreCase(String email);
 
     @Query("select user.email from User user order by user.email asc")
     List<@NonNull String> findAllEmails();
