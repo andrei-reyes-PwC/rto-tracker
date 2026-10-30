@@ -12,7 +12,9 @@ This file is the short working map for future work in `next-frontend`. Read it f
 
 ## Key files
 
-- `MonthlyCalendar.tsx` places the save status and Save schedule action directly below the month picker, with loading/saving states supplied by `ScheduleProvider`. `PlannerHeading.tsx` renders the page introduction.
+- Planner monthly reads revalidate whenever their effect starts, including returning from Settings through Next.js Activity and revisiting a month. Mode, daily capacity, day-off rules, and attendance counts refresh together while per-month drafts remain in state. Requests are aborted when the route is hidden; there is no already-loaded-month shortcut that can bypass revalidation.
+
+- `MonthlyCalendar.tsx` places the save status and Save schedule action directly below the month picker, with loading/saving states supplied by `ScheduleProvider`. On mobile, cell badges stack from bottom to top (attendance, events, lunch); at `sm` and above they use the existing wrapping row. `PlannerHeading.tsx` renders the page introduction.
 
 - The planner stores the viewed month in `?month=YYYY-MM`. `ScheduleProvider` reads `useSearchParams`; calendar navigation updates native history without a page reload, preserving other query parameters/hash and per-month drafts. Back/Forward restores the URL month; Today writes the current client month. Missing/invalid values show the current month without changing the URL. `app/page.tsx` supplies a Suspense boundary with the planner skeleton for URL reads; schedule/event/lunch requests wait until the client date is ready.
 

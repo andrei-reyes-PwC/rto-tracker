@@ -119,7 +119,6 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<PlannerEvent[]>([]);
   const [lunchProcurementDates, setLunchProcurementDates] = useState<string[]>([]);
   const [loadRetry, setLoadRetry] = useState(0);
-  const loadedMonths = useRef(new Set<string>());
   const previousUser = useRef<typeof user>(null);
   const currentDateKey = useSyncExternalStore(
     subscribeToCurrentDate,
@@ -165,7 +164,6 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
     if (!user) {
       previousUser.current = null;
-      loadedMonths.current.clear();
       setSavedByMonth({});
       setDaysOffByMonth({});
       setPlanningByMonth({});
@@ -177,12 +175,10 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const userDataChanged = previousUser.current !== user;
     const accountChanged = previousUser.current?.email !== user.email;
     previousUser.current = user;
 
     if (accountChanged) {
-      loadedMonths.current.clear();
       setSavedByMonth({});
       setDaysOffByMonth({});
       setPlanningByMonth({});
@@ -190,17 +186,12 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       setPlatformAttendanceByMonth({});
       setLoadError("");
       setSaveError("");
-    } else if (userDataChanged) {
-      loadedMonths.current.delete(monthKey);
     }
 
     if (!isCurrentDateReady) return;
-    if (!userDataChanged && loadedMonths.current.has(monthKey)) {
-      setIsLoadingMonth(false);
-      setLoadError("");
-      return;
-    }
 
+    // Next.js Activity restores state but restarts effects when this route is revisited.
+    // Refresh saved data and planning rules on every activation, retaining local drafts.
     const controller = new AbortController();
     setIsLoadingMonth(true);
     setLoadError("");
@@ -208,7 +199,6 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     getOfficeDays(monthKey, controller.signal)
       .then((schedule) => {
         if (controller.signal.aborted) return;
-        loadedMonths.current.add(monthKey);
         setSavedByMonth((current) => ({ ...current, [monthKey]: schedule.officeDays }));
         setDaysOffByMonth((current) => ({ ...current, [monthKey]: schedule.daysOff }));
         setPlanningByMonth((current) => ({ ...current, [monthKey]: { schedulingMode: schedule.schedulingMode, dailyCapacity: schedule.dailyCapacity } }));
@@ -321,7 +311,6 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         delete next[monthKey];
         return next;
       });
-      loadedMonths.current.add(monthKey);
     } catch (error: unknown) {
       setSaveError(error instanceof Error ? error.message : "Could not save this month's schedule.");
     } finally {
@@ -343,9 +332,8 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     if (!isDayOff(date, daysOff)) setSelectedPlatformDate(date);
   }, [daysOff]);
   const retryLoading = useCallback(() => {
-    loadedMonths.current.delete(monthKey);
     setLoadRetry((attempt) => attempt + 1);
-  }, [monthKey]);
+  }, []);
 
   const value: ScheduleContextValue = {
     hasUnsavedChanges,

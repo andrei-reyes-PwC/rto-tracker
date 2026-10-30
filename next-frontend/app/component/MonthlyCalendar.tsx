@@ -125,7 +125,7 @@ export default function MonthlyCalendar() {
                     <Checkbox aria-label={`Mark ${new Intl.DateTimeFormat("en", { month: "long", day: "numeric", year: "numeric" }).format(date)} as an office day`} checked={isOfficeDay} onCheckedChange={() => toggleDay(key)} disabled={disabled || key <= todayKey || (!isOfficeDay && !canSelectDay(key))} title={key <= todayKey ? "Today and past office days are locked" : !isOfficeDay && !canSelectDay(key) ? "PEZA daily capacity is full" : undefined} className="pointer-events-auto cursor-pointer data-checked:bg-[#e65300] data-checked:border-[#e65300]" />
                   </span>
                   {(user?.platform && platformAttendanceCounts || eventCount > 0 || hasLunchProcurement) && (
-                    <span className="mt-auto flex flex-wrap items-start gap-1">
+                    <span className="mt-auto flex flex-col-reverse items-start gap-1 pt-1 sm:flex-row sm:flex-wrap sm:pt-0">
                       {user?.platform && platformAttendanceCounts && (dailyCapacity !== null || platformColleagues > 0) && (
                         <span aria-label={attendanceLabel} title={attendanceLabel} className={`inline-flex h-5 items-center gap-1 self-start whitespace-nowrap rounded-full px-0 text-[9px] font-semibold sm:px-1.5 ${isFull ? "bg-red-50 text-red-700" : booked > 0 ? "bg-orange-50 text-[#b83b00]" : "bg-slate-100 text-slate-500"}`}>
                           <Users className="size-3 shrink-0" />{dailyCapacity === null ? platformColleagues : `${booked} / ${dailyCapacity}`}

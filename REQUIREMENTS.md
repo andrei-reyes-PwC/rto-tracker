@@ -75,6 +75,8 @@ All authenticated users have a personal account identified by email. User accoun
 - **SET-05** - Global and platform settings include Flexible (the initial default, with existing unrestricted daily scheduling) and PEZA (50% per day). Platform overrides cover mode and weekend rules together; restoring inheritance follows global settings. PEZA daily capacity is half the platform's current total membership across roles, rounded up (10 members = 5 slots; 5 members = 3). Users without a platform have no platform capacity restriction.
 - **SET-06** - PEZA calendar user badges show booked / daily capacity on every visible date, including zero. Booked includes the user's current selection plus colleagues' saved plans; the tooltip states remaining slots. A draft reserves a slot only when saved. Full dates block new selections and are skipped by bulk selection. The API independently rechecks capacity and serializes competing saves; a full date rejects the entire monthly update with an explanation and no partial changes. Existing bookings can be kept or removed, including those above capacity after mode or membership changes. Flexible retains the existing colleague-count badge. The assistant excludes full dates from new recommendations.
 
+- **SET-07** - Returning to My Schedule or revisiting a month refreshes its effective scheduling mode, daily capacity, day-off rules, saved plans, and attendance counts without a manual page refresh. Unsaved edits remain drafts; failed reads show the existing retry action.
+
 ### Work schedule administration
 
 - **WSCH-01** — As a `SUPER_ADMIN`, I can list, create, edit, and delete named work schedules by name. User work schedule assignments are managed from Manage Users.
